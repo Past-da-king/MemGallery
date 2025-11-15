@@ -90,17 +90,27 @@ class GeminiService @Inject constructor(
             val parts = mutableListOf<Part>()
 
             if (imageUri != null) {
-                val imageBytes = context.contentResolver.openInputStream(Uri.parse(imageUri))?.use { it.readBytes() }
+                val imageBytes = getBytesFromUri(imageUri)
                     ?: throw IOException("Could not read image file from URI: $imageUri")
-                val mimeType = context.contentResolver.getType(Uri.parse(imageUri)) ?: "image/jpeg"
+                val parsedUri = Uri.parse(imageUri)
+                val mimeType = if (parsedUri.scheme == "content") {
+                    context.contentResolver.getType(parsedUri) ?: "image/jpeg"
+                } else {
+                    "image/jpeg"
+                }
                 parts.add(Part.fromBytes(imageBytes, mimeType))
                 promptBuilder.append("Analyze the provided image in detail. ")
             }
 
             if (audioUri != null) {
-                val audioBytes = context.contentResolver.openInputStream(Uri.parse(audioUri))?.use { it.readBytes() }
+                val audioBytes = getBytesFromUri(audioUri)
                     ?: throw IOException("Could not read audio file from URI: $audioUri")
-                val mimeType = context.contentResolver.getType(Uri.parse(audioUri)) ?: "audio/m4a"
+                val parsedUri = Uri.parse(audioUri)
+                val mimeType = if (parsedUri.scheme == "content") {
+                    context.contentResolver.getType(parsedUri) ?: "audio/m4a"
+                } else {
+                    "audio/m4a"
+                }
                 parts.add(Part.fromBytes(audioBytes, mimeType))
                 promptBuilder.append("Transcribe the provided audio recording verbatim and analyze its content. ")
             }
@@ -126,6 +136,15 @@ class GeminiService @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
+        }
+    }
+
+    private fun getBytesFromUri(uriString: String): ByteArray? {
+        val uri = Uri.parse(uriString)
+        return when (uri.scheme) {
+            "content" -> context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            "file" -> uri.path?.let { java.io.File(it).readBytes() }
+            else -> throw IllegalArgumentException("Unsupported URI scheme: ${uri.scheme}")
         }
     }
 

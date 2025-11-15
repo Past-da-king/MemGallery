@@ -5,13 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,17 +39,25 @@ fun MemoryDetailScreen(
                 title = { Text(memory?.aiTitle ?: "Memory") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Implement edit functionality */ }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                text = { Text("Share") },
-                icon = { Icon(Icons.Default.Share, contentDescription = "Share") },
+            FloatingActionButton(
                 onClick = { /* TODO: Implement share functionality */ }
-            )
+            ) {
+                Icon(Icons.Default.Share, contentDescription = "Share")
+            }
         }
     ) { padding ->
         memory?.let {
@@ -89,7 +99,11 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Card {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("AI Summary", style = MaterialTheme.typography.headlineSmall)
                 Text(memory.aiSummary, style = MaterialTheme.typography.bodyLarge)
@@ -101,7 +115,7 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
         Text("Tags", style = MaterialTheme.typography.headlineSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             memory.aiTags.forEach { tag ->
-                AssistChip(onClick = { /* No action */ }, label = { Text(tag) })
+                SuggestionChip(onClick = { /* No action */ }, label = { Text(tag) })
             }
         }
     }

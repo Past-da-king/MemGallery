@@ -46,7 +46,10 @@ fun GalleryScreen(
                     IconButton(onClick = { navController.navigate(Screen.ApiKey.route) }) {
                         Icon(Icons.Default.Person, contentDescription = "API Key Settings")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         },
         floatingActionButton = {
@@ -56,7 +59,7 @@ fun GalleryScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            OutlinedTextField(
+            TextField(
                 value = searchText,
                 onValueChange = viewModel::onSearchTextChange,
                 modifier = Modifier
@@ -64,7 +67,11 @@ fun GalleryScreen(
                     .padding(16.dp),
                 placeholder = { Text("Search memories...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                shape = CircleShape
+                shape = CircleShape,
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
             Row(
                 modifier = Modifier
@@ -74,53 +81,53 @@ fun GalleryScreen(
             ) {
                 val filters = listOf("All", "Images", "Notes", "Audio")
                 filters.forEach { filter ->
-                    AssistChip(
+                    Button(
                         onClick = { selectedFilter = filter },
-                        label = { Text(filter) }
-                    )
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedFilter == filter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Text(filter)
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Highlight Card Placeholder
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(180.dp)
                     .padding(horizontal = 16.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color(0xFF8A2BE2), Color(0xFF4B0082))
+                        ),
+                        shape = MaterialTheme.shapes.large
+                    )
             ) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(Color(0xFF8A2BE2), Color(0xFF4B0082))
-                            )
-                        )
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            "HIGHLIGHT",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "Kyoto Trip Memories",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = Color.White
-                        )
-                         Text(
-                            "A look back at the unforgettable journey through Japan.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.9f)
-                        )
-                    }
+                    Text(
+                        "HIGHLIGHT",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Kyoto Trip Memories",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White
+                    )
+                    Text(
+                        "A look back at the unforgettable journey through Japan.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
                 }
             }
 
@@ -193,7 +200,7 @@ private fun AddContentSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable {
                     onHideSheet()
-                    navController.navigate(Screen.TextInput.route)
+                    navController.navigate(Screen.TextInput.createRoute())
                 }
             ) {
                 Icon(Icons.Default.TextFields, contentDescription = "Add Text", modifier = Modifier.size(48.dp))
@@ -213,7 +220,7 @@ private fun AddContentSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable {
                     onHideSheet()
-                    navController.navigate(Screen.AudioCapture.route)
+                    navController.navigate(Screen.AudioCapture.createRoute())
                 }
             ) {
                 Icon(Icons.Default.Mic, contentDescription = "Add Audio", modifier = Modifier.size(48.dp))
@@ -221,5 +228,8 @@ private fun AddContentSheet(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onHideSheet, modifier = Modifier.fillMaxWidth()) {
+            Text("Cancel")
+        }
     }
 }

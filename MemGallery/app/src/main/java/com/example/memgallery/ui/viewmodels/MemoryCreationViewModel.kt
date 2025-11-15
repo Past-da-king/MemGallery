@@ -2,7 +2,6 @@ package com.example.memgallery.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.memgallery.data.remote.dto.AiAnalysisDto
 import com.example.memgallery.data.repository.MemoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +25,32 @@ class MemoryCreationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<MemoryCreationUiState>(MemoryCreationUiState.Idle)
     val uiState: StateFlow<MemoryCreationUiState> = _uiState.asStateFlow()
 
-    fun createMemory(imageUri: String?, audioUri: String?, userText: String?) {
+    private val _draftImageUri = MutableStateFlow<String?>(null)
+    val draftImageUri: StateFlow<String?> = _draftImageUri.asStateFlow()
+
+    private val _draftAudioUri = MutableStateFlow<String?>(null)
+    val draftAudioUri: StateFlow<String?> = _draftAudioUri.asStateFlow()
+
+    private val _draftUserText = MutableStateFlow<String?>(null)
+    val draftUserText: StateFlow<String?> = _draftUserText.asStateFlow()
+
+    fun setDraftImageUri(uri: String?) {
+        _draftImageUri.value = uri
+    }
+
+    fun setDraftAudioUri(uri: String?) {
+        _draftAudioUri.value = uri
+    }
+
+    fun setDraftUserText(text: String?) {
+        _draftUserText.value = text
+    }
+
+    fun createMemory() {
+        val imageUri = _draftImageUri.value
+        val audioUri = _draftAudioUri.value
+        val userText = _draftUserText.value
+
         if (imageUri == null && audioUri == null && userText.isNullOrBlank()) {
             _uiState.value = MemoryCreationUiState.Error("At least one input is required.")
             return
@@ -51,5 +75,8 @@ class MemoryCreationViewModel @Inject constructor(
     
     fun resetState() {
         _uiState.value = MemoryCreationUiState.Idle
+        _draftImageUri.value = null
+        _draftAudioUri.value = null
+        _draftUserText.value = null
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.MemoryCreationViewModel
 import com.example.memgallery.ui.viewmodels.MemoryCreationUiState
 
@@ -17,18 +18,11 @@ import com.example.memgallery.ui.viewmodels.MemoryCreationUiState
 @Composable
 fun TextInputScreen(
     navController: NavController,
-    viewModel: MemoryCreationViewModel = hiltViewModel()
+    existingImageUri: String?,
+    existingAudioUri: String?,
+    existingUserText: String?
 ) {
-    var userText by remember { mutableStateOf("") }
-    val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(uiState) {
-        if (uiState is MemoryCreationUiState.Success) {
-            // Navigate back to the gallery after successful creation
-            navController.popBackStack(route = "gallery", inclusive = false)
-            viewModel.resetState()
-        }
-    }
+    var userText by remember { mutableStateOf(existingUserText ?: "") }
 
     Scaffold(
         topBar = {
@@ -60,30 +54,23 @@ fun TextInputScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (uiState is MemoryCreationUiState.Loading) {
-                CircularProgressIndicator()
-            } else {
-                Button(
-                    onClick = {
-                        viewModel.createMemory(
-                            imageUri = null,
-                            audioUri = null,
+            Button(
+                onClick = {
+                    navController.navigate(
+                        Screen.PostCapture.createRoute(
+                            imageUri = existingImageUri,
+                            audioUri = existingAudioUri,
                             userText = userText
                         )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = userText.isNotBlank()
-                ) {
-                    Text("Save Now")
-                }
-            }
-
-            if (uiState is MemoryCreationUiState.Error) {
-                Text(
-                    text = (uiState as MemoryCreationUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                    ) {
+                        // Ensure we don't have a deep back stack of creation screens
+                        popUpTo(Screen.Gallery.route)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = userText.isNotBlank()
+            ) {
+                Text("Continue")
             }
         }
     }
