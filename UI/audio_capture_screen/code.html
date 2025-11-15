@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MemGallery - Record Audio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#8c25f4",
+            "background-light": "#f7f5f8",
+            "background-dark": "#191022",
+          },
+          fontFamily: {
+            "display": ["Spline Sans", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.5rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display">
+<div class="relative flex h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-hidden">
+<!-- Top App Bar -->
+<div class="flex items-center p-4 pb-2 justify-between shrink-0">
+<button class="flex items-center justify-center size-12 text-white/80">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+<h2 class="text-white/80 text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Record Audio</h2>
+<div class="w-12"></div>
+</div>
+<!-- Main Content Area -->
+<div class="flex flex-1 flex-col items-center justify-center p-4">
+<!-- Recording State -->
+<div class="flex flex-col items-center justify-center gap-8 w-full">
+<!-- Timer -->
+<p class="text-white/80 text-xl font-medium leading-tight tracking-wider">00:34</p>
+<!-- Waveform Visualization -->
+<div class="flex w-full h-40 items-center justify-center" data-alt="A stylized purple audio waveform visualization pulsing rhythmically on a dark background.">
+<svg height="100%" preserveaspectratio="none" viewbox="0 0 300 100" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 50 Q 15 20, 30 50 T 60 50 Q 75 80, 90 50 T 120 50 Q 135 30, 150 50 T 180 50 Q 195 70, 210 50 T 240 50 Q 255 25, 270 50 T 300 50" fill="none" stroke="#8c25f4" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+</div>
+</div>
+<!-- Review State (Hidden by default, shown for example) -->
+<!-- To show this state, add 'hidden' to the div above and remove it from the div below -->
+<div class="hidden flex-col items-center justify-center gap-8 w-full">
+<p class="text-white/80 text-lg font-medium leading-tight">Review your recording</p>
+<!-- Playback Control Bar -->
+<div class="w-full max-w-sm flex items-center gap-4">
+<button class="flex items-center justify-center text-white/80">
+<span class="material-symbols-outlined text-4xl">play_circle</span>
+</button>
+<div class="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+<div class="w-1/4 h-full bg-primary"></div>
+</div>
+<p class="text-white/80 text-sm font-medium tabular-nums">02:45</p>
+</div>
+</div>
+</div>
+<!-- Bottom Action Area -->
+<div class="flex flex-col items-center gap-4 p-4 pb-12 shrink-0">
+<!-- Recording State Button -->
+<button class="flex items-center justify-center size-20 cursor-pointer rounded-full bg-[#FF3B30]">
+<span class="material-symbols-outlined text-5xl text-white">mic</span>
+</button>
+<!-- Review State Buttons (Hidden by default, shown for example) -->
+<!-- To show this state, add 'hidden' to the button above and remove it from the div below -->
+<div class="hidden w-full max-w-sm flex items-center justify-center gap-4">
+<button class="flex min-w-[84px] max-w-[480px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-transparent text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] border border-white/20">
+<span class="truncate">Cancel</span>
+</button>
+<button class="flex min-w-[84px] max-w-[480px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-primary text-white gap-2 pl-5 text-base font-bold leading-normal tracking-[0.015em]">
+<span class="truncate">Save</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MemGallery - New Memory Captured</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#8d22f9", "background-light": "#f7f5f8", "background-dark": "#190f23", "text-light": "#333333", "text-dark": "#E0E0E0", "text-secondary-light": "#8E8E93", "text-secondary-dark": "#A0A0A0", "card-light": "#FFFFFF", "card-dark": "#1E2324"}, fontFamily: {display: "Spline Sans"}, borderRadius: {DEFAULT: "0.5rem", lg: "1rem", xl: "1.5rem", full: "9999px"}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24;
+            font-size: 24px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+<!-- Top App Bar -->
+<div class="flex items-center p-4 pb-2 justify-between">
+<div class="flex size-12 shrink-0 items-center" data-icon="Placeholder" data-size="24px" data-weight="regular">
+</div>
+<h2 class="text-text-light dark:text-text-dark text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">New Memory Captured</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 bg-transparent text-text-light dark:text-text-dark gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<span class="material-symbols-outlined text-text-secondary-light dark:text-text-secondary-dark">close</span>
+</button>
+</div>
+</div>
+<!-- Screenshot Image Container -->
+<div class="flex w-full grow flex-col px-4 pt-4 pb-6">
+<div class="w-full gap-1 overflow-hidden rounded-xl bg-card-light dark:bg-card-dark shadow-xl shadow-gray-200/50 dark:shadow-black/50 aspect-[9/16] flex">
+<div class="w-full bg-center bg-no-repeat bg-cover aspect-auto flex-1" data-alt="a screenshot of a user interface with text and graphics" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB82sWISFVYiI3F5NPgMXtY-dZPlvIPHnPLXLfP_wHL3RTiopWOhJWci_DSKReixETeMGRrXMAmty8UFRQahexbTaEpXFDgNNk71-aFK_L-p54KVSwonTVHU11-NGuxd2O_L1aQktNqIvXbpLukX6BcPkEXW2GHOZoRnWg3K63ra73HlC1DrrX8TMQ-DPCVJFGfRBEsoS4ztN1YVQX55zMBmW-RrTwumFMUhYS2p-cM-qu6NBSws_lgNARKj1_40BtwbA-0TkhFVf-6");'></div>
+</div>
+</div>
+<!-- Action Button Group -->
+<div class="flex flex-col px-4 pb-6 space-y-4">
+<div class="flex flex-1 gap-3 flex-wrap justify-center">
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-primary/10 dark:bg-primary/20 text-primary gap-2 text-base font-bold leading-normal tracking-[0.015em]">
+<span class="material-symbols-outlined">mic</span>
+<span class="truncate">Add Audio</span>
+</button>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-primary/10 dark:bg-primary/20 text-primary gap-2 text-base font-bold leading-normal tracking-[0.015em]">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="truncate">Add Text</span>
+</button>
+</div>
+<button class="flex w-full max-w-[480px] mx-auto cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] gap-2">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="truncate">Save Now</span>
+</button>
+</div>
+<!-- Spacer -->
+<div class="flex-grow"></div>
+<!-- AI Progress Indicator -->
+<div class="flex flex-col gap-3 p-4 bg-card-light dark:bg-card-dark rounded-t-xl shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] dark:shadow-none border-t border-gray-200 dark:border-white/10">
+<div class="flex gap-6 justify-between">
+<p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">Processing with Gemini…</p>
+</div>
+<div class="relative h-2 w-full overflow-hidden rounded-full bg-primary/10 dark:bg-primary/20">
+<div class="absolute h-full w-1/2 rounded-full bg-gradient-to-r from-primary/50 to-primary"></div>
+</div>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-sm font-normal leading-normal">Summarizing, tagging, organizing…</p>
+</div>
+</div>
+</body></html>
