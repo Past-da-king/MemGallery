@@ -23,7 +23,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "memgallery_db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides

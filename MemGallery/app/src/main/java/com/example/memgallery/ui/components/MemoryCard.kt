@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,7 +38,7 @@ fun MemoryCard(
         ) {
             Image(
                 painter = rememberAsyncImagePainter(model = memory.imageUri),
-                contentDescription = memory.aiTitle,
+                contentDescription = memory.aiTitle ?: "Pending Memory",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -59,7 +60,7 @@ fun MemoryCard(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = memory.aiTitle,
+                    text = memory.aiTitle ?: "Pending...",
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     maxLines = 1,
@@ -85,6 +86,13 @@ fun MemoryCard(
                         Icon(
                             imageVector = Icons.Outlined.EditNote,
                             contentDescription = "Text",
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                    if (memory.status == "PENDING") {
+                        Icon(
+                            imageVector = Icons.Default.HourglassEmpty,
+                            contentDescription = "Pending",
                             tint = Color.White.copy(alpha = 0.8f)
                         )
                     }

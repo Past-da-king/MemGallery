@@ -106,7 +106,7 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("AI Summary", style = MaterialTheme.typography.headlineSmall)
-                Text(memory.aiSummary, style = MaterialTheme.typography.bodyLarge)
+                Text(memory.aiSummary.orEmpty(), style = MaterialTheme.typography.bodyLarge)
             }
         }
 
@@ -114,7 +114,7 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
 
         Text("Tags", style = MaterialTheme.typography.headlineSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            memory.aiTags.forEach { tag ->
+            memory.aiTags.orEmpty().forEach { tag ->
                 SuggestionChip(onClick = { /* No action */ }, label = { Text(tag) })
             }
         }

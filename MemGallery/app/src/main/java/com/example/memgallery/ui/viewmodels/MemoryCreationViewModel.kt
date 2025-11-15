@@ -59,7 +59,7 @@ class MemoryCreationViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = MemoryCreationUiState.Loading
 
-            val result = memoryRepository.createNewMemory(
+            val result = memoryRepository.savePendingMemory(
                 imageUri = imageUri,
                 audioUri = audioUri,
                 userText = userText

@@ -14,12 +14,13 @@ data class MemoryEntity(
     val audioFilePath: String?, // Stores the local file path of the recording
 
     // AI-generated data
-    val aiTitle: String,
-    val aiSummary: String,
-    val aiTags: List<String>, // Room will use a TypeConverter for this
+    val aiTitle: String?,
+    val aiSummary: String?,
+    val aiTags: List<String>?, // Room will use a TypeConverter for this
     val aiImageAnalysis: String?,
     val aiAudioTranscription: String?,
 
     // Metadata
-    val creationTimestamp: Long
+    val creationTimestamp: Long,
+    val status: String // e.g., "PENDING", "PROCESSING", "COMPLETED", "FAILED"
 )

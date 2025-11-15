@@ -29,9 +29,9 @@ class GalleryViewModel @Inject constructor(
                 memories
             } else {
                 memories.filter {
-                    it.aiTitle.contains(text, ignoreCase = true) ||
-                    it.aiSummary.contains(text, ignoreCase = true) ||
-                    it.aiTags.any { tag -> tag.contains(text, ignoreCase = true) }
+                    it.aiTitle?.contains(text, ignoreCase = true) ?: false ||
+                    it.aiSummary?.contains(text, ignoreCase = true) ?: false ||
+                    it.aiTags?.any { tag -> tag.contains(text, ignoreCase = true) } ?: false
                 }
             }
         }
