@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.Add
@@ -29,13 +30,19 @@ import androidx.navigation.NavController
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.components.MemoryCard
 import com.example.memgallery.ui.viewmodels.GalleryViewModel
-
+import kotlinx.coroutines.launch
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
-import kotlinx.coroutines.launch
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import coil.compose.rememberAsyncImagePainter
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +52,9 @@ fun GalleryScreen(
 ) {
     val memories by viewModel.memories.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
-    var selectedFilter by remember { mutableStateOf("All") }
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val highlightTag by viewModel.highlightTag.collectAsState()
+    val highlightMemories by viewModel.highlightMemories.collectAsState()
 
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -106,7 +115,7 @@ fun GalleryScreen(
                 val filters = listOf("All", "Images", "Notes", "Audio")
                 filters.forEach { filter ->
                     Button(
-                        onClick = { selectedFilter = filter },
+                        onClick = { viewModel.onFilterSelected(filter) },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (selectedFilter == filter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
                         )
@@ -128,39 +137,62 @@ fun GalleryScreen(
                 }
 
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    // Highlight Card Placeholder
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(Color(0xFF8A2BE2), Color(0xFF4B0082))
-                                ),
-                                shape = MaterialTheme.shapes.large
-                            )
+                    AnimatedVisibility(
+                        visible = highlightTag != null && highlightMemories.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(16.dp)
-                        ) {
-                            Text(
-                                "HIGHLIGHT",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.7f)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "Kyoto Trip Memories",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White
-                            )
-                            Text(
-                                "A look back at the unforgettable journey through Japan.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
+                        highlightMemories.firstOrNull()?.let { highlightMemory ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .clip(MaterialTheme.shapes.large)
+                                    .clickable {
+                                        navController.navigate(Screen.Detail.createRoute(highlightMemory.id))
+                                    }
+                            ) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = highlightMemory.imageUri),
+                                    contentDescription = highlightMemory.aiTitle,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                                                startY = 300f
+                                            )
+                                        )
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        "Memory related to ${highlightTag}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.7f)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        highlightMemory.aiTitle ?: "No Title",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        highlightMemory.aiSummary ?: "No summary available.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
