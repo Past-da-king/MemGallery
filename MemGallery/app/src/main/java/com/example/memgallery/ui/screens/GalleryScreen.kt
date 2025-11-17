@@ -10,6 +10,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +29,12 @@ import androidx.navigation.NavController
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.components.MemoryCard
 import com.example.memgallery.ui.viewmodels.GalleryViewModel
+
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.ActivityResultLauncher
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +50,16 @@ fun GalleryScreen(
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            navController.navigate(Screen.PostCapture.createRoute(imageUri = uri.toString())) {
+                popUpTo(Screen.Gallery.route) { inclusive = false }
+            }
+        }
+    }
 
 
     Scaffold(
@@ -179,7 +202,8 @@ fun GalleryScreen(
                                 showBottomSheet = false
                             }
                         }
-                    }
+                    },
+                    imagePickerLauncher = imagePickerLauncher
                 )
             }
         }
@@ -189,7 +213,8 @@ fun GalleryScreen(
 @Composable
 private fun AddContentSheet(
     navController: NavController,
-    onHideSheet: () -> Unit
+    onHideSheet: () -> Unit,
+    imagePickerLauncher: ActivityResultLauncher<String>
 ) {
     Column(
         modifier = Modifier
@@ -220,11 +245,21 @@ private fun AddContentSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable {
                     onHideSheet()
-                    navController.navigate(Screen.ImageCreation.route)
+                    imagePickerLauncher.launch("image/*")
                 }
             ) {
                 Icon(Icons.Default.Image, contentDescription = "Add Image", modifier = Modifier.size(48.dp))
                 Text("Add Image", style = MaterialTheme.typography.bodyLarge)
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable {
+                    onHideSheet()
+                    navController.navigate(Screen.CameraCapture.route)
+                }
+            ) {
+                Icon(Icons.Default.PhotoCamera, contentDescription = "Take Picture", modifier = Modifier.size(48.dp))
+                Text("Take Picture", style = MaterialTheme.typography.bodyLarge)
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

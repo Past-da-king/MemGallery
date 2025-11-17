@@ -12,6 +12,9 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import androidx.core.content.FileProvider
+import java.util.Objects
+
 private const val TAG = "FileUtils"
 
 @Singleton
@@ -56,5 +59,21 @@ class FileUtils @Inject constructor(@ApplicationContext private val context: Con
             e.printStackTrace()
             null
         }
+    }
+
+    fun createImageUri(): Uri {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val imageFileName = "JPEG_${timeStamp}_"
+        val storageDir: File? = context.externalCacheDir
+        val image = File.createTempFile(
+            imageFileName,  /* prefix */
+            ".jpg",         /* suffix */
+            storageDir      /* directory */
+        )
+        return FileProvider.getUriForFile(
+            Objects.requireNonNull(context),
+            context.packageName + ".provider",
+            image
+        )
     }
 }

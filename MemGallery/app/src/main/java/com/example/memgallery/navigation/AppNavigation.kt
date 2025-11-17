@@ -12,7 +12,8 @@ import com.example.memgallery.ui.screens.*
 sealed class Screen(val route: String) {
     object Gallery : Screen("gallery")
     object ApiKey : Screen("api_key")
-    object ImageCreation : Screen("image_creation")
+
+    object CameraCapture : Screen("camera_capture")
 
     object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}") {
         fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null): String {
@@ -65,8 +66,9 @@ fun AppNavigation() {
                 existingUserText = userText
             )
         }
-        composable(Screen.ImageCreation.route) {
-            ImageCreationScreen(navController = navController)
+
+        composable(Screen.CameraCapture.route) {
+            CameraCaptureScreen(navController = navController)
         }
         composable(
             route = Screen.AudioCapture.route,

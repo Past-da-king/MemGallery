@@ -1,3 +1,28 @@
-> Task :app:compileDebugKotlin FAILED
-e: file:///C:/Users/past9/OneDrive/Desktop/project/FFF/MemGallery/app/src/main/java/com/example/memgallery/ui/components/FullscreenImageViewer.kt:100:53 Unresolved reference 'Arrangement'.
-e: file:///C:/Users/past9/OneDrive/Desktop/project/FFF/MemGallery/app/src/main/java/com/example/memgallery/ui/components/FullscreenImageViewer.kt:114:57 Unresolved reference 'Arrangement'.
+2025-11-17 22:03:33.230  5868-5868  AndroidRuntime          com.example.memgallery               D  Shutting down VM
+2025-11-17 22:03:33.231  5868-5868  AndroidRuntime          com.example.memgallery               E  FATAL EXCEPTION: main (Ask Gemini)
+                                                                                                    Process: com.example.memgallery, PID: 5868
+                                                                                                    java.lang.IllegalArgumentException: Failed to find configured root that contains /storage/emulated/0/Android/data/com.example.memgallery/cache/JPEG_20251117_220333_2955477427746812528.jpg
+                                                                                                    	at androidx.core.content.FileProvider$SimplePathStrategy.getUriForFile(FileProvider.java:915)
+                                                                                                    	at androidx.core.content.FileProvider.getUriForFile(FileProvider.java:418)
+                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt.createImageUri(CameraCaptureScreen.kt:76)
+                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt.CameraCaptureScreen$lambda$9$lambda$8(CameraCaptureScreen.kt:49)
+                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt.$r8$lambda$vv77Gvw5pa7zYc6N6BBQDkgluW8(Unknown Source:0)
+                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt$$ExternalSyntheticLambda2.invoke(D8$$SyntheticClass:0)
+                                                                                                    	at androidx.activity.compose.ActivityResultRegistryKt.rememberLauncherForActivityResult$lambda$8$lambda$7$lambda$5(ActivityResultRegistry.kt:104)
+                                                                                                    	at androidx.activity.compose.ActivityResultRegistryKt.$r8$lambda$TFLSTuxHTEYc8WQ6btR0kc4Fybw(Unknown Source:0)
+                                                                                                    	at androidx.activity.compose.ActivityResultRegistryKt$$ExternalSyntheticLambda2.onActivityResult(D8$$SyntheticClass:0)
+                                                                                                    	at androidx.activity.result.ActivityResultRegistry.dispatchResult(ActivityResultRegistry.kt:335)
+                                                                                                    	at androidx.activity.ComponentActivity$activityResultRegistry$1.onLaunch$lambda$0(ComponentActivity.kt:170)
+                                                                                                    	at androidx.activity.ComponentActivity$activityResultRegistry$1.$r8$lambda$Gga0ztmPNYcZ2Poj0VEtDPu4ouA(Unknown Source:0)
+                                                                                                    	at androidx.activity.ComponentActivity$activityResultRegistry$1$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:995)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:103)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:273)
+                                                                                                    	at android.os.Looper.loop(Looper.java:363)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:10060)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:632)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:975)
+---------------------------- PROCESS ENDED (5868) for package com.example.memgallery ----------------------------
+2025-11-17 22:03:33.512   858-858   SurfaceFlinger          surfaceflinger                       E  alpha changed 0.016 -> 0.000 - Surface(name=bd2d8b4 com.example.memgallery/com.example.memgallery.MainActivity)/@0xff287aa - animation-leash of window_animation#3436
+2025-11-17 22:03:33.604  1116-4660  WindowManager           system_server                        E  win=Window{bd2d8b4 u0 com.example.memgallery/com.example.memgallery.MainActivity EXITING} destroySurfaces: appStopped=false cleanupOnResume=false win.mWindowRemovalAllowed=true win.mRemoveOnExit=true win.mViewVisibility=0 caller=com.android.server.wm.WindowState.onExitAnimationDone:224 com.android.server.wm.WindowState.onAnimationFinished:161 com.android.server.wm.WindowContainer$$ExternalSyntheticLambda8.onAnimationFinished:3 com.android.server.wm.SurfaceAnimator.cancelAnimation:17 com.android.server.wm.SurfaceAnimator.cancelAnimation:1 com.android.server.wm.WindowContainer.setParent:49 com.android.server.wm.WindowContainer.removeChild:17 
