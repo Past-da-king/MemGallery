@@ -43,6 +43,7 @@ import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import java.util.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,16 +149,25 @@ fun GalleryScreen(
                                     .fillMaxWidth()
                                     .height(180.dp)
                                     .clip(MaterialTheme.shapes.large)
+                                    .then(
+                                        if (highlightMemory.imageUri == null) {
+                                            Modifier.background(generateRandomGradientBrush(highlightMemory.id))
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
                                     .clickable {
                                         navController.navigate(Screen.Detail.createRoute(highlightMemory.id))
                                     }
                             ) {
-                                Image(
-                                    painter = rememberAsyncImagePainter(model = highlightMemory.imageUri),
-                                    contentDescription = highlightMemory.aiTitle,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                if (highlightMemory.imageUri != null) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = highlightMemory.imageUri),
+                                        contentDescription = highlightMemory.aiTitle,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -309,4 +319,17 @@ private fun AddContentSheet(
             Text("Cancel")
         }
     }
+}
+
+private fun generateRandomGradientBrush(seed: Int): Brush {
+    val colors = listOf(
+        listOf(Color(0xFF6A11CB), Color(0xFF2575FC)), // Purple to Blue
+        listOf(Color(0xFFFC00FF), Color(0xFF00DBDE)), // Pink to Cyan
+        listOf(Color(0xFFF7971E), Color(0xFFFFD200)), // Orange to Yellow
+        listOf(Color(0xFFEE0979), Color(0xFFFF6A00)), // Red to Orange
+        listOf(Color(0xFF00C6FF), Color(0xFF0072FF))  // Light Blue to Dark Blue
+    )
+    val random = java.util.Random(seed.toLong())
+    val selectedColors = colors[random.nextInt(colors.size)]
+    return Brush.verticalGradient(selectedColors)
 }

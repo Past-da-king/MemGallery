@@ -1,28 +1,52 @@
-2025-11-17 22:03:33.230  5868-5868  AndroidRuntime          com.example.memgallery               D  Shutting down VM
-2025-11-17 22:03:33.231  5868-5868  AndroidRuntime          com.example.memgallery               E  FATAL EXCEPTION: main (Ask Gemini)
-                                                                                                    Process: com.example.memgallery, PID: 5868
-                                                                                                    java.lang.IllegalArgumentException: Failed to find configured root that contains /storage/emulated/0/Android/data/com.example.memgallery/cache/JPEG_20251117_220333_2955477427746812528.jpg
-                                                                                                    	at androidx.core.content.FileProvider$SimplePathStrategy.getUriForFile(FileProvider.java:915)
-                                                                                                    	at androidx.core.content.FileProvider.getUriForFile(FileProvider.java:418)
-                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt.createImageUri(CameraCaptureScreen.kt:76)
-                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt.CameraCaptureScreen$lambda$9$lambda$8(CameraCaptureScreen.kt:49)
-                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt.$r8$lambda$vv77Gvw5pa7zYc6N6BBQDkgluW8(Unknown Source:0)
-                                                                                                    	at com.example.memgallery.ui.screens.CameraCaptureScreenKt$$ExternalSyntheticLambda2.invoke(D8$$SyntheticClass:0)
-                                                                                                    	at androidx.activity.compose.ActivityResultRegistryKt.rememberLauncherForActivityResult$lambda$8$lambda$7$lambda$5(ActivityResultRegistry.kt:104)
-                                                                                                    	at androidx.activity.compose.ActivityResultRegistryKt.$r8$lambda$TFLSTuxHTEYc8WQ6btR0kc4Fybw(Unknown Source:0)
-                                                                                                    	at androidx.activity.compose.ActivityResultRegistryKt$$ExternalSyntheticLambda2.onActivityResult(D8$$SyntheticClass:0)
-                                                                                                    	at androidx.activity.result.ActivityResultRegistry.dispatchResult(ActivityResultRegistry.kt:335)
-                                                                                                    	at androidx.activity.ComponentActivity$activityResultRegistry$1.onLaunch$lambda$0(ComponentActivity.kt:170)
-                                                                                                    	at androidx.activity.ComponentActivity$activityResultRegistry$1.$r8$lambda$Gga0ztmPNYcZ2Poj0VEtDPu4ouA(Unknown Source:0)
-                                                                                                    	at androidx.activity.ComponentActivity$activityResultRegistry$1$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-                                                                                                    	at android.os.Handler.handleCallback(Handler.java:995)
-                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:103)
-                                                                                                    	at android.os.Looper.loopOnce(Looper.java:273)
-                                                                                                    	at android.os.Looper.loop(Looper.java:363)
-                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:10060)
-                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
-                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:632)
-                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:975)
----------------------------- PROCESS ENDED (5868) for package com.example.memgallery ----------------------------
-2025-11-17 22:03:33.512   858-858   SurfaceFlinger          surfaceflinger                       E  alpha changed 0.016 -> 0.000 - Surface(name=bd2d8b4 com.example.memgallery/com.example.memgallery.MainActivity)/@0xff287aa - animation-leash of window_animation#3436
-2025-11-17 22:03:33.604  1116-4660  WindowManager           system_server                        E  win=Window{bd2d8b4 u0 com.example.memgallery/com.example.memgallery.MainActivity EXITING} destroySurfaces: appStopped=false cleanupOnResume=false win.mWindowRemovalAllowed=true win.mRemoveOnExit=true win.mViewVisibility=0 caller=com.android.server.wm.WindowState.onExitAnimationDone:224 com.android.server.wm.WindowState.onAnimationFinished:161 com.android.server.wm.WindowContainer$$ExternalSyntheticLambda8.onAnimationFinished:3 com.android.server.wm.SurfaceAnimator.cancelAnimation:17 com.android.server.wm.SurfaceAnimator.cancelAnimation:1 com.android.server.wm.WindowContainer.setParent:49 com.android.server.wm.WindowContainer.removeChild:17 
+
+
+Memory Delete Feature
+1. Hold-to-Select/Delete Mode
+
+Long-press on a memory card to enter selection mode.
+Multiple cards can be selected at once.
+Multiple selection behavior:
+
+If more than one card is selected, only full memory deletion is allowed.
+Prompt confirms: “Are you sure you want to delete these memories permanently?”
+
+
+
+2. Single Memory Selection
+
+User taps on a single memory/card to open options.
+Delete Media Option:
+
+Pop-up asks which media to delete: image, audio, or both.
+Only media uploaded via the app can be deleted; user-uploaded images are preserved.
+Deleting media does not remove text/transcription.
+
+
+Post-delete UI behavior:
+
+If all media is deleted, user is asked: “Do you want to hide this memory?”
+Hidden memories remain in the database but are no longer displayed in the UI.
+Text/transcriptions remain intact.
+
+
+
+3. Full Memory Deletion (Single or Multiple)
+
+Single memory: user can choose “Delete Full Memory” to remove everything.
+Multiple memories: full deletion is automatically applied.
+Confirmation prompt: “Are you sure you want to permanently delete this memory?”
+Effect: memory is fully removed from the database and UI.
+
+4. UI & Feedback
+
+Deletions update the UI immediately.
+Clear prompts differentiate between deleting media vs full memory to prevent accidental loss.
+Options are intuitive: Delete Media, Delete Full Memory, Hide Memory.
+
+
+This way, users can:
+
+Remove media without losing the memory or transcription.
+Fully delete one or multiple memories permanently.
+Hide memories if desired while preserving text.
+
