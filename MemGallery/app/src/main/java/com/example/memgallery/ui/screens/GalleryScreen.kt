@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
@@ -92,55 +93,6 @@ fun GalleryScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Highlight Card Placeholder
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .padding(horizontal = 16.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color(0xFF8A2BE2), Color(0xFF4B0082))
-                        ),
-                        shape = MaterialTheme.shapes.large
-                    )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        "HIGHLIGHT",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Kyoto Trip Memories",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White
-                    )
-                    Text(
-                        "A look back at the unforgettable journey through Japan.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "All Memories",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 128.dp),
                 modifier = Modifier.fillMaxSize(),
@@ -148,6 +100,64 @@ fun GalleryScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    // Highlight Card Placeholder
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Color(0xFF8A2BE2), Color(0xFF4B0082))
+                                ),
+                                shape = MaterialTheme.shapes.large
+                            )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "HIGHLIGHT",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Kyoto Trip Memories",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = Color.White
+                            )
+                            Text(
+                                "A look back at the unforgettable journey through Japan.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        text = "All Memories",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 items(memories) { memory ->
                     MemoryCard(memory = memory) {
                         navController.navigate(Screen.Detail.createRoute(memory.id))

@@ -82,6 +82,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // Accompanist Flow Layouts
+    implementation("com.google.accompanist:accompanist-flowlayout:0.32.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -18,6 +18,7 @@ securityCrypto = "1.1.0-alpha06"
 googleGenai = "1.27.0"
 gson = "2.10.1"
 coil = "2.6.0"
+accompanistFlowlayout = "0.32.0"
 
 
 [libraries]
@@ -51,6 +52,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 google-genai = { group = "com.google.genai", name = "google-genai", version.ref = "googleGenai" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+accompanist-flowlayout = { group = "com.google.accompanist", name = "accompanist-flowlayout", version.ref = "accompanistFlowlayout" }
 
 
 [plugins]

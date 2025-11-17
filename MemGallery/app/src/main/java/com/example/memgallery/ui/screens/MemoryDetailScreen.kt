@@ -1,20 +1,40 @@
 package com.example.memgallery.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.Alignment
+import com.google.accompanist.flowlayout.FlowRow
+import com.google.accompanist.flowlayout.FlowMainAxisAlignment
+import com.google.accompanist.flowlayout.FlowCrossAxisAlignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.Surface
+import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -22,6 +42,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.ui.components.AudioPlayer
 import com.example.memgallery.ui.viewmodels.MemoryDetailViewModel
+import com.example.memgallery.ui.components.FullscreenImageViewer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +57,7 @@ fun MemoryDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(memory?.aiTitle ?: "Memory") },
+                title = { Text(memory?.aiTitle ?: "Memory", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -70,6 +91,8 @@ fun MemoryDetailScreen(
 
 @Composable
 fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
+    var showFullscreenImage by remember { mutableStateOf(false) }
+    var fullscreenImageUri by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -82,10 +105,26 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
                 contentDescription = memory.aiTitle,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(4f / 3f),
+                    .aspectRatio(4f / 3f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable {
+                        fullscreenImageUri = memory.imageUri
+                        showFullscreenImage = true
+                    },
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.height(16.dp))
+        }
+
+
+
+        if (showFullscreenImage && fullscreenImageUri != null) {
+            FullscreenImageViewer(
+                imageUri = fullscreenImageUri!!,
+                onDismissRequest = { showFullscreenImage = false },
+                memoryTitle = memory.aiTitle ?: "Memory",
+                creationTimestamp = memory.creationTimestamp
+            )
         }
 
         if (memory.audioFilePath != null) {
@@ -94,8 +133,80 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
         }
 
         if (memory.userText != null) {
-            Text("Your Note", style = MaterialTheme.typography.headlineSmall)
-            Text(memory.userText, style = MaterialTheme.typography.bodyLarge)
+            var expanded by remember { mutableStateOf(false) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Full Note", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+                AnimatedVisibility(visible = expanded) {
+                    Text(memory.userText, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        if (memory.aiAudioTranscription != null) {
+            var expanded by remember { mutableStateOf(false) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("AI Audio Transcription", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+                AnimatedVisibility(visible = expanded) {
+                    Text(memory.aiAudioTranscription, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        if (memory.aiImageAnalysis != null) {
+            var expanded by remember { mutableStateOf(false) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("AI Image Analysis", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+                AnimatedVisibility(visible = expanded) {
+                    Text(memory.aiImageAnalysis, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
         }
 
@@ -105,18 +216,41 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("AI Summary", style = MaterialTheme.typography.headlineSmall)
+                Text("AI Summary", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 Text(memory.aiSummary.orEmpty(), style = MaterialTheme.typography.bodyLarge)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Tags", style = MaterialTheme.typography.headlineSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Tags", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            mainAxisAlignment = FlowMainAxisAlignment.Start,
+            crossAxisAlignment = FlowCrossAxisAlignment.Center,
+            mainAxisSpacing = 8.dp,
+            crossAxisSpacing = 8.dp
+        ) {
             memory.aiTags.orEmpty().forEach { tag ->
-                SuggestionChip(onClick = { /* No action */ }, label = { Text(tag) })
+                SuggestionChip(
+                    onClick = { /* No action */ },
+                    label = { Text(tag) },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Date Captured
+        Text("Date Captured", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        Text(
+            SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(Date(memory.creationTimestamp)),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

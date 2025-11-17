@@ -1,35 +1,3 @@
-> Task :app:lintDebug FAILED
-Lint found 2 errors, 36 warnings, 2 hints. First failure:
-
-C:\Users\past9\OneDrive\Desktop\project\FFF\MemGallery\app\src\main\java\com\example\memgallery\service\MemoryProcessingService.kt:77: Error: Missing permissions required by ConnectivityManager.getActiveNetwork: android.permission.ACCESS_NETWORK_STATE [MissingPermission]
-        val network = connectivityManager.activeNetwork ?: return false
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The full lint text report is located at:
-  C:\Users\past9\OneDrive\Desktop\project\FFF\MemGallery\app\build\intermediates\lint_intermediate_text_report\debug\lintReportDebug\lint-results-debug.txt
-
-FAILURE: Build failed with an exception.
-
-* What went wrong:
-Execution failed for task ':app:lintDebug'.
-> Lint found errors in the project; aborting build.
-
-  Fix the issues identified by lint, or create a baseline to see only new errors.
-  To create a baseline, run `gradlew updateLintBaseline` after adding the following to the module's build.gradle file:
-  ```
-  android {
-      lint {
-          baseline = file("lint-baseline.xml")
-      }
-  }
-  ```
-  For more details, see https://developer.android.com/studio/write/lint#snapshot
-
-  Lint found 2 errors, 36 warnings, 2 hints. First failure:
-
-  C:\Users\past9\OneDrive\Desktop\project\FFF\MemGallery\app\src\main\java\com\example\memgallery\service\MemoryProcessingService.kt:77: Error: Missing permissions required by ConnectivityManager.getActiveNetwork: android.permission.ACCESS_NETWORK_STATE [MissingPermission]
-          val network = connectivityManager.activeNetwork ?: return false
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  The full lint text report is located at:
-    C:\Users\past9\OneDrive\Desktop\project\FFF\MemGallery\app\build\intermediates\lint_intermediate_text_report\debug\lintReportDebug\lint-results-debug.txt
+> Task :app:compileDebugKotlin FAILED
+e: file:///C:/Users/past9/OneDrive/Desktop/project/FFF/MemGallery/app/src/main/java/com/example/memgallery/ui/components/FullscreenImageViewer.kt:100:53 Unresolved reference 'Arrangement'.
+e: file:///C:/Users/past9/OneDrive/Desktop/project/FFF/MemGallery/app/src/main/java/com/example/memgallery/ui/components/FullscreenImageViewer.kt:114:57 Unresolved reference 'Arrangement'.

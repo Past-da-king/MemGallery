@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MemGallery - Image Viewer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#8c25f4",
+            "background-light": "#f7f5f8",
+            "background-dark": "#191022",
+          },
+          fontFamily: {
+            "display": ["Spline Sans"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.5rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    .zoomed-image {
+      transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display">
+<div class="relative flex h-screen w-full flex-col bg-black dark group/design-root overflow-hidden">
+<div class="absolute inset-0 flex cursor-pointer items-center justify-center overflow-hidden" id="image-container">
+<img class="h-full w-full object-cover zoomed-image" data-alt="Vibrant abstract swirls of purple and blue light on a dark background" id="main-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2Eh_lO2SABr-69Zb2_kwtOj5kXu9VsezS8H8TonwlfEPjiT0sXK6hdA6svoZt03gP1rMb3i8-RploAh5xrzrzvgdo-Ix7qjZQBIf03QZ2TYFnZjy6IksgI83GdGBw4h8PeVAcMzX53Jx7Z5vuswFvpBwqdKAvWA3Sz6-CDWrF75aNmoRR4vtKyUHXdfjr2lisFODcXo3OtQtrRUrWUzfOYl3958hFVDpu8fVLrOYMZ4Vfq8r6hrm3OSTCAVlkSXWLicPIY9jz6tgK"/>
+</div>
+<div class="pointer-events-none absolute inset-0 flex flex-col justify-between opacity-0 group-hover/design-root:opacity-100 peer-focus-within:opacity-100 transition-opacity duration-300" id="ui-overlay">
+<div class="pointer-events-auto bg-gradient-to-b from-black/60 to-transparent pt-safe-top">
+<div class="flex h-auto items-center justify-between p-4">
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<div class="flex items-center gap-2">
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm">
+<span class="material-symbols-outlined text-2xl">share</span>
+</button>
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm">
+<span class="material-symbols-outlined text-2xl">edit</span>
+</button>
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm">
+<span class="material-symbols-outlined text-2xl">auto_awesome</span>
+</button>
+</div>
+</div>
+</div>
+<div class="pointer-events-auto bg-gradient-to-t from-black/60 to-transparent pb-safe-bottom">
+<div class="flex flex-col gap-4 p-4">
+<p class="text-white text-sm font-normal leading-normal">Captured Oct 26, 2023</p>
+</div>
+</div>
+</div>
+<div class="pointer-events-none absolute left-0 top-0 h-full w-16"></div>
+<div class="pointer-events-none absolute right-0 top-0 h-full w-16"></div>
+</div>
+
+</body></html>
