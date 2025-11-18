@@ -1,5 +1,7 @@
 package com.example.memgallery.ui.screens
 
+import android.text.method.ScrollingMovementMethod
+import android.widget.TextView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -41,8 +43,15 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.ui.components.AudioPlayer
-import com.example.memgallery.ui.viewmodels.MemoryDetailViewModel
 import com.example.memgallery.ui.components.FullscreenImageViewer
+import com.example.memgallery.ui.viewmodels.MemoryDetailViewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import io.noties.markwon.Markwon
+import androidx.compose.ui.graphics.toArgb
+import android.util.TypedValue
+import io.noties.markwon.image.ImagesPlugin
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -178,7 +187,7 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
                     )
                 }
                 AnimatedVisibility(visible = expanded) {
-                    Text(memory.aiAudioTranscription, style = MaterialTheme.typography.bodyLarge)
+                    MarkdownText(memory.aiAudioTranscription, style = MaterialTheme.typography.bodyLarge)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -204,7 +213,7 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
                     )
                 }
                 AnimatedVisibility(visible = expanded) {
-                    Text(memory.aiImageAnalysis, style = MaterialTheme.typography.bodyLarge)
+                    MarkdownText(memory.aiImageAnalysis, style = MaterialTheme.typography.bodyLarge)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -251,6 +260,34 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
             SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(Date(memory.creationTimestamp)),
             style = MaterialTheme.typography.bodyLarge
         )
-        Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+@Composable
+fun MarkdownText(markdown: String, modifier: Modifier = Modifier, style: androidx.compose.ui.text.TextStyle) {
+    val context = LocalContext.current
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val markwon = remember {
+        Markwon.builder(context)
+            .usePlugin(ImagesPlugin.create())
+            .build()
+    }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            TextView(ctx).apply {
+                movementMethod = ScrollingMovementMethod()
+                // Apply color and size from the style
+                setTextColor(onSurfaceColor.toArgb())
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, style.fontSize.value)
+                // Note: Setting fontFamily directly on TextView from Compose TextStyle is not straightforward.
+                // Markwon might handle some font styling, but for direct TextView control, it's more complex.
+                // For now, focus on color and size as requested.
+            }
+        },
+        update = { textView ->
+            markwon.setMarkdown(textView, markdown)
+        }
+    )
 }

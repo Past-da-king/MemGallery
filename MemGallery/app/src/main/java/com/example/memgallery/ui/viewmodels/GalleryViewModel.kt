@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,6 +31,12 @@ class GalleryViewModel @Inject constructor(
 
     private val _highlightMemories = MutableStateFlow<List<MemoryEntity>>(emptyList())
     val highlightMemories = _highlightMemories.asStateFlow()
+
+    private val _selectionModeActive = MutableStateFlow(false)
+    val selectionModeActive = _selectionModeActive.asStateFlow()
+
+    private val _selectedMemoryIds = MutableStateFlow(emptySet<Int>())
+    val selectedMemoryIds = _selectedMemoryIds.asStateFlow()
 
     private val _memories = memoryRepository.getMemories()
 
@@ -68,6 +75,55 @@ class GalleryViewModel @Inject constructor(
 
     fun onFilterSelected(filter: String) {
         _selectedFilter.value = filter
+    }
+
+    fun toggleSelectionMode() {
+        _selectionModeActive.value = !_selectionModeActive.value
+        if (!_selectionModeActive.value) {
+            _selectedMemoryIds.value = emptySet() // Clear selection when exiting mode
+        }
+    }
+
+    fun toggleMemorySelection(memoryId: Int) {
+        _selectedMemoryIds.value = if (_selectedMemoryIds.value.contains(memoryId)) {
+            _selectedMemoryIds.value - memoryId
+        } else {
+            _selectedMemoryIds.value + memoryId
+        }
+    }
+
+    fun clearSelection() {
+        _selectedMemoryIds.value = emptySet()
+        _selectionModeActive.value = false
+    }
+
+    fun deleteSelectedMemories() {
+        viewModelScope.launch {
+            _selectedMemoryIds.value.forEach { memoryId ->
+                val memoryToDelete = memoryRepository.getMemory(memoryId).first()
+                memoryToDelete?.let { memoryRepository.deleteMemory(it) }
+            }
+            clearSelection()
+        }
+    }
+
+    fun deleteMedia(memoryId: Int, deleteImage: Boolean, deleteAudio: Boolean) {
+        viewModelScope.launch {
+            memoryRepository.updateMemoryMedia(memoryId, deleteImage, deleteAudio)
+        }
+    }
+
+    fun deleteFullMemory(memoryId: Int) {
+        viewModelScope.launch {
+            val memoryToDelete = memoryRepository.getMemory(memoryId).first()
+            memoryToDelete?.let { memoryRepository.deleteMemory(it) }
+        }
+    }
+
+    fun hideMemory(memoryId: Int) {
+        viewModelScope.launch {
+            memoryRepository.hideMemory(memoryId, true)
+        }
     }
 
     init {

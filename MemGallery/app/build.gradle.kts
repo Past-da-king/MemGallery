@@ -48,6 +48,10 @@ android {
     }
 }
 
+configurations.all {
+    exclude(group = "org.jetbrains", module = "annotations-java5")
+}
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -84,6 +88,13 @@ dependencies {
 
     // Accompanist Flow Layouts
     implementation("com.google.accompanist:accompanist-flowlayout:0.32.0")
+
+    // Markwon for Markdown rendering
+    implementation("io.noties.markwon:core:4.6.2") {
+        exclude(group = "org.jetbrains", module = "annotations-java5")
+    }
+    implementation("io.noties.markwon:image:4.6.2")
+    implementation("io.noties.markwon:syntax-highlight:4.6.2")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -12,8 +12,8 @@ import com.google.genai.types.Schema
 import com.google.genai.types.GenerateContentConfig
 import com.google.gson.Gson
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableMap
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.example.memgallery.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -27,11 +27,13 @@ class GeminiService @Inject constructor(
 ) {
     private var client: Client? = null
 
-    private val systemInstructionContent = Content.fromParts(Part.fromText(
-        "You are an expert AI assistant for the MemGallery app. Your task is to analyze user-provided content and generate a structured JSON response. " +
-        "The JSON object must contain the following fields: 'title' (a short, evocative title for the memory), 'summary' (a single paragraph narrative synthesizing all inputs), " +
-        "'tags' (an array of 3-5 relevant string tags), 'image_analysis' (a detailed description of the image, if present), and 'audio_transcription' (a verbatim transcription of the audio, if present)."
-    ))
+    private lateinit var systemInstructionContent: Content
+
+    init {
+        val rawResource = context.resources.openRawResource(com.example.memgallery.R.raw.gemini_system_instructions)
+        val systemInstructionText = rawResource.bufferedReader().use { it.readText() }
+        systemInstructionContent = Content.fromParts(Part.fromText(systemInstructionText))
+    }
 
     private val responseSchema = Schema.fromJson("""
         {

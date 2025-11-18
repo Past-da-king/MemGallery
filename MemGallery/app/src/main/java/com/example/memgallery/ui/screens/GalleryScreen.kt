@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.components.MemoryCard
 import com.example.memgallery.ui.viewmodels.GalleryViewModel
+import com.example.memgallery.data.local.entity.MemoryEntity
 import kotlinx.coroutines.launch
 
 import android.net.Uri
@@ -56,6 +57,8 @@ fun GalleryScreen(
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val highlightTag by viewModel.highlightTag.collectAsState()
     val highlightMemories by viewModel.highlightMemories.collectAsState()
+    val selectionModeActive by viewModel.selectionModeActive.collectAsState()
+    val selectedMemoryIds by viewModel.selectedMemoryIds.collectAsState()
 
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -71,24 +74,59 @@ fun GalleryScreen(
         }
     }
 
+    var showMemoryOptionsSheet by remember { mutableStateOf(false) }
+    var selectedMemoryForOptions by remember { mutableStateOf<MemoryEntity?>(null) }
+
+
+    var showDeleteMultipleMemoriesDialog by remember { mutableStateOf(false) }
+
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("MemGallery") },
-                actions = {
-                    IconButton(onClick = { navController.navigate(Screen.ApiKey.route) }) {
-                        Icon(Icons.Default.Person, contentDescription = "API Key Settings")
+            if (selectionModeActive) {
+                TopAppBar(
+                    title = { Text("${selectedMemoryIds.size} selected") },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.clearSelection() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel Selection")
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                if (selectedMemoryIds.size == 1) {
+                                    val singleSelectedMemoryId = selectedMemoryIds.first()
+                                    selectedMemoryForOptions = memories.firstOrNull { it.id == singleSelectedMemoryId }
+                                    showMemoryOptionsSheet = true
+                                } else if (selectedMemoryIds.size > 1) {
+                                    showDeleteMultipleMemoriesDialog = true
+                                }
+                            },
+                            enabled = selectedMemoryIds.isNotEmpty()
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
                 )
-            )
+            } else {
+                TopAppBar(
+                    title = { Text("MemGallery") },
+                    actions = {
+                        IconButton(onClick = { navController.navigate(Screen.ApiKey.route) }) {
+                            Icon(Icons.Default.Person, contentDescription = "API Key Settings")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showBottomSheet = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Memory")
+            if (!selectionModeActive) {
+                FloatingActionButton(onClick = { showBottomSheet = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Memory")
+                }
             }
         }
     ) { padding ->
@@ -224,9 +262,24 @@ fun GalleryScreen(
                 }
 
                 items(memories) { memory ->
-                    MemoryCard(memory = memory) {
-                        navController.navigate(Screen.Detail.createRoute(memory.id))
-                    }
+                    val isSelected = selectedMemoryIds.contains(memory.id)
+                    MemoryCard(
+                        memory = memory,
+                        isSelected = isSelected,
+                        onClick = { clickedMemory ->
+                            if (selectionModeActive) {
+                                viewModel.toggleMemorySelection(clickedMemory.id)
+                            } else {
+                                navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
+                            }
+                        },
+                        onLongClick = { longPressedMemory ->
+                            if (!selectionModeActive) {
+                                viewModel.toggleSelectionMode()
+                            }
+                            viewModel.toggleMemorySelection(longPressedMemory.id)
+                        }
+                    )
                 }
             }
         }
@@ -249,7 +302,214 @@ fun GalleryScreen(
                 )
             }
         }
+
+        if (showMemoryOptionsSheet) {
+            selectedMemoryForOptions?.let { memory ->
+                ModalBottomSheet(
+                    onDismissRequest = { showMemoryOptionsSheet = false },
+                    sheetState = sheetState
+                ) {
+                    MemoryOptionsSheet(
+                        memory = memory,
+                        onDismiss = { showMemoryOptionsSheet = false },
+                        viewModel = viewModel,
+                        navController = navController
+                    )
+                }
+            }
+        }
+
+
+
+        if (showDeleteMultipleMemoriesDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteMultipleMemoriesDialog = false },
+                title = { Text("Confirm Deletion") },
+                text = { Text("Are you sure you want to permanently delete these ${selectedMemoryIds.size} memories?") },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.deleteSelectedMemories()
+                        showDeleteMultipleMemoriesDialog = false
+                    }) {
+                        Text("Delete All")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showDeleteMultipleMemoriesDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
+}
+
+@Composable
+private fun MemoryOptionsSheet(
+    memory: MemoryEntity,
+    onDismiss: () -> Unit,
+    viewModel: GalleryViewModel,
+    navController: NavController
+) {
+    var showDeleteMediaDialog by remember { mutableStateOf(false) }
+    var showDeleteFullMemoryDialog by remember { mutableStateOf(false) }
+    var showHideMemoryPrompt by remember { mutableStateOf(false) } // For after media deletion
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "Options for ${memory.aiTitle ?: "Memory"}",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { showDeleteMediaDialog = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Delete Media")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { showDeleteFullMemoryDialog = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Delete Full Memory")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = {
+                viewModel.hideMemory(memory.id)
+                onDismiss()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Hide Memory")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+            Text("Dismiss")
+        }
+    }
+
+    // Dialogs
+    if (showDeleteMediaDialog) {
+        DeleteMediaDialog(
+            memory = memory,
+            onDismiss = { showDeleteMediaDialog = false },
+            onConfirm = { deleteImage, deleteAudio ->
+                viewModel.deleteMedia(memory.id, deleteImage, deleteAudio)
+                // Check if all media is deleted to prompt for hiding
+                if ((deleteImage && memory.imageUri != null) && (deleteAudio && memory.audioFilePath != null)) {
+                    showHideMemoryPrompt = true
+                } else if (deleteImage && memory.imageUri != null && memory.audioFilePath == null) {
+                    showHideMemoryPrompt = true
+                } else if (deleteAudio && memory.audioFilePath != null && memory.imageUri == null) {
+                    showHideMemoryPrompt = true
+                }
+                showDeleteMediaDialog = false
+                onDismiss()
+            }
+        )
+    }
+
+    if (showDeleteFullMemoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteFullMemoryDialog = false },
+            title = { Text("Confirm Deletion") },
+            text = { Text("Are you sure you want to permanently delete this memory?") },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.deleteFullMemory(memory.id)
+                    showDeleteFullMemoryDialog = false
+                    onDismiss()
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteFullMemoryDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showHideMemoryPrompt) {
+        AlertDialog(
+            onDismissRequest = { showHideMemoryPrompt = false },
+            title = { Text("Hide Memory?") },
+            text = { Text("All media has been deleted. Do you want to hide this memory from the gallery?") },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.hideMemory(memory.id)
+                    showHideMemoryPrompt = false
+                    onDismiss()
+                }) {
+                    Text("Hide")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showHideMemoryPrompt = false }) {
+                    Text("Keep Visible")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun DeleteMediaDialog(
+    memory: MemoryEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (deleteImage: Boolean, deleteAudio: Boolean) -> Unit
+) {
+    var deleteImage by remember { mutableStateOf(false) }
+    var deleteAudio by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Media") },
+        text = {
+            Column {
+                Text("Which media do you want to delete?")
+                Spacer(modifier = Modifier.height(8.dp))
+                if (memory.imageUri != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = deleteImage, onCheckedChange = { deleteImage = it })
+                        Text("Image")
+                    }
+                }
+                if (memory.audioFilePath != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = deleteAudio, onCheckedChange = { deleteAudio = it })
+                        Text("Audio")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(deleteImage, deleteAudio) },
+                enabled = deleteImage || deleteAudio
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

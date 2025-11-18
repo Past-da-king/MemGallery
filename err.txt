@@ -1,52 +1,103 @@
-
-
-Memory Delete Feature
-1. Hold-to-Select/Delete Mode
-
-Long-press on a memory card to enter selection mode.
-Multiple cards can be selected at once.
-Multiple selection behavior:
-
-If more than one card is selected, only full memory deletion is allowed.
-Prompt confirms: “Are you sure you want to delete these memories permanently?”
+Anyways, now I want to write a detail plan that comes with these things. One. One, the functionality, please add functionality for toggling on and off the hidden set, hidden libraries to auto-index new screenshots without the user actually uploading them. So this is a feature where if a user takes a screenshot, the app gets notified or recognizes, oh, a new screenshot has been added and basically processes it. And now add a new functionality which basically the edit button, when it's clicked, right, when the edit button in the memory detail is clicked, it pulls up a, a, that thing, that, the bottom sheet for adding, for, for, for the bottom, no, no, no, the post-capture. Actually, it pulls up the post-capture, then in that state, in that state, the user can actually add the, edit the text. They can click on the text section, text button to edit the text, and they can, or add new text if there's no current text. They can click on the audio to actually add audio if there's no audio. If there's audio, we can't, you can't, you can't replace the audio that exists. No, we don't want to do that. Maybe text, you can, but audio that exists, you cannot. Image also, if there's no image, a user can add an image, but if they, by the existing image, you cannot replace that image. So that's how it's, the edit button is going to work. You can edit text, you can add new audio, you can add a new image if they do not, then after that is done, the user can press the save now, which will just re-index, the AI will re-index that memo, that thing again now. So to just re-process it, and yeah, with the new input, so with the new image, audio, or whatever has been added. Yeah, just re-process it. Yeah.  
 
 
 
-2. Single Memory Selection
-
-User taps on a single memory/card to open options.
-Delete Media Option:
-
-Pop-up asks which media to delete: image, audio, or both.
-Only media uploaded via the app can be deleted; user-uploaded images are preserved.
-Deleting media does not remove text/transcription.
-
-
-Post-delete UI behavior:
-
-If all media is deleted, user is asked: “Do you want to hide this memory?”
-Hidden memories remain in the database but are no longer displayed in the UI.
-Text/transcriptions remain intact.
+Oh, I want you to write a detailed implementation plan on how you're going to do this, implement this feature. And before you even start implementing the feature, please commit the current version of the project. Please write, run, git add and git commit. And yeah, just git add dot, then git, then you git commit the, uh, the files. Then yeah, then after that, and after you're done doing that, write a very, very, very, very detailed plan of how you're going to implement all of these things I have talked about.
 
 
 
-3. Full Memory Deletion (Single or Multiple)
-
-Single memory: user can choose “Delete Full Memory” to remove everything.
-Multiple memories: full deletion is automatically applied.
-Confirmation prompt: “Are you sure you want to permanently delete this memory?”
-Effect: memory is fully removed from the database and UI.
-
-4. UI & Feedback
-
-Deletions update the UI immediately.
-Clear prompts differentiate between deleting media vs full memory to prevent accidental loss.
-Options are intuitive: Delete Media, Delete Full Memory, Hide Memory.
 
 
-This way, users can:
+Alright, let’s structure this into a detailed plan with functionality, flow, and rules. I’ll break it down clearly so it’s implementable:
 
-Remove media without losing the memory or transcription.
-Fully delete one or multiple memories permanently.
-Hide memories if desired while preserving text.
+Settings Page Functionality
+
+
+API Key
+
+Input field for API Key.
+Validate button to verify key.
+Validation feedback (success/error).
+
+
+
+Show Hidden Memories
+
+Toggle to show/hide hidden memories.
+When On, hidden memories appear in the main view.
+When Off, hidden memories remain invisible.
+State persists across app sessions.
+
+
+
+Screenshots Auto-Indexing
+
+Toggle: Auto-index new screenshots.
+
+When On, app monitors device screenshots.
+Every new screenshot is automatically processed and indexed.
+
+
+Button: Index screenshots now.
+
+Manually triggers processing/indexing of all existing screenshots.
+
+
+Works without user uploading manually.
+
+
+
+
+Memory Detail Edit Functionality
+
+
+Edit Button Behavior
+
+When clicked, opens Post-Capture Bottom Sheet in edit mode.
+Allows modification/adding of content based on type.
+
+
+
+Editing Rules
+
+Text
+
+Can edit existing text.
+Can add new text if none exists.
+
+
+Audio
+
+Can add audio if none exists.
+Cannot replace existing audio.
+
+
+Image
+
+Can add an image if none exists.
+Cannot replace existing image.
+
+
+
+
+
+Save / Re-Index
+
+Once edits are done, user presses Save.
+AI re-processes the memory:
+
+Re-indexing considers newly added text, audio, and images.
+Ensures memory is updated in the system with new content.
+
+
+
+
+
+
+Implementation Considerations
+
+Persist toggle states across app launches.
+Trigger system-level listener for new screenshots (for auto-indexing).
+Bottom sheet must dynamically allow edits based on existing content.
+Save operation triggers re-indexing pipeline without overwriting existing protected content (audio/image rules).
 

@@ -97,10 +97,60 @@ class MemoryRepository @Inject constructor(
     }
 
     suspend fun deleteMemory(memory: MemoryEntity) {
+        memory.imageUri?.let { uriString ->
+            val uri = Uri.parse(uriString)
+            if (uri.scheme == "file") { // Only delete app-internal files
+                fileUtils.deleteFile(uri)
+            }
+        }
+        memory.audioFilePath?.let { uriString ->
+            val uri = Uri.parse(uriString)
+            if (uri.scheme == "file") { // Only delete app-internal files
+                fileUtils.deleteFile(uri)
+            }
+        }
         memoryDao.deleteMemory(memory)
     }
 
     suspend fun updateMemory(memory: MemoryEntity) {
         memoryDao.updateMemory(memory)
+    }
+
+    suspend fun updateMemoryMedia(memoryId: Int, deleteImage: Boolean, deleteAudio: Boolean) {
+        val existingMemory = memoryDao.getMemoryById(memoryId).first()
+        existingMemory?.let { memory ->
+            var updatedImageUri = memory.imageUri
+            var updatedAudioFilePath = memory.audioFilePath
+
+            if (deleteImage && memory.imageUri != null) {
+                val uri = Uri.parse(memory.imageUri)
+                if (uri.scheme == "file") { // Only delete app-internal files
+                    fileUtils.deleteFile(uri)
+                }
+                updatedImageUri = null
+            }
+
+            if (deleteAudio && memory.audioFilePath != null) {
+                val uri = Uri.parse(memory.audioFilePath)
+                if (uri.scheme == "file") { // Only delete app-internal files
+                    fileUtils.deleteFile(uri)
+                }
+                updatedAudioFilePath = null
+            }
+
+            val updatedMemory = memory.copy(
+                imageUri = updatedImageUri,
+                audioFilePath = updatedAudioFilePath
+            )
+            memoryDao.updateMemory(updatedMemory)
+        }
+    }
+
+    suspend fun hideMemory(memoryId: Int, hide: Boolean) {
+        val existingMemory = memoryDao.getMemoryById(memoryId).first()
+        existingMemory?.let { memory ->
+            val updatedMemory = memory.copy(isHidden = hide)
+            memoryDao.updateMemory(updatedMemory)
+        }
     }
 }

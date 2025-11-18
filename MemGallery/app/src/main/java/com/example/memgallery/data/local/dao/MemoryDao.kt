@@ -20,8 +20,11 @@ interface MemoryDao {
     @Delete
     suspend fun deleteMemory(memory: MemoryEntity)
 
-    @Query("SELECT * FROM memories ORDER BY creationTimestamp DESC")
+    @Query("SELECT * FROM memories WHERE isHidden = 0 ORDER BY creationTimestamp DESC")
     fun getAllMemories(): Flow<List<MemoryEntity>>
+
+    @Query("SELECT * FROM memories ORDER BY creationTimestamp DESC")
+    fun getAllMemoriesIncludingHidden(): Flow<List<MemoryEntity>>
 
     @Query("SELECT * FROM memories WHERE id = :id")
     fun getMemoryById(id: Int): Flow<MemoryEntity?>

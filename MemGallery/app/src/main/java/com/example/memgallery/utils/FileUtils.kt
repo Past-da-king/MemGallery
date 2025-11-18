@@ -76,4 +76,37 @@ class FileUtils @Inject constructor(@ApplicationContext private val context: Con
             image
         )
     }
+
+    fun deleteFile(uri: Uri): Boolean {
+        Log.d(TAG, "Attempting to delete file from URI: $uri")
+        return try {
+            when (uri.scheme) {
+                "file" -> {
+                    val file = File(uri.path!!)
+                    if (file.exists()) {
+                        file.delete().also {
+                            Log.d(TAG, "File deleted: ${uri.path} - $it")
+                        }
+                    } else {
+                        Log.d(TAG, "File does not exist: ${uri.path}")
+                        false
+                    }
+                }
+                "content" -> {
+                    // For content URIs, we might not have direct file access or ownership.
+                    // If the content URI points to a file copied by the app, its scheme would be "file".
+                    // If it's from a media picker, it's managed by the system.
+                    Log.w(TAG, "Attempted to delete content URI. Not supported for direct file deletion: $uri")
+                    false
+                }
+                else -> {
+                    Log.w(TAG, "Unsupported URI scheme for deletion: ${uri.scheme}")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete file: $uri", e)
+            false
+        }
+    }
 }

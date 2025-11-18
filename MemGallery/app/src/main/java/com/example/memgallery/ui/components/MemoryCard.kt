@@ -3,7 +3,10 @@ package com.example.memgallery.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Mic
@@ -22,11 +25,15 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.memgallery.data.local.entity.MemoryEntity
 import java.util.Random
+import androidx.compose.foundation.ExperimentalFoundationApi
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MemoryCard(
     memory: MemoryEntity,
-    onClick: () -> Unit
+    isSelected: Boolean,
+    onClick: (MemoryEntity) -> Unit,
+    onLongClick: (MemoryEntity) -> Unit
 ) {
     val randomGradientBrush = remember(memory.id) {
         generateRandomGradientBrush(memory.id)
@@ -34,7 +41,17 @@ fun MemoryCard(
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = { onClick(memory) },
+                onLongClick = { onLongClick(memory) }
+            )
+            .then(
+                if (isSelected) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                } else {
+                    Modifier
+                }
+            )
     ) {
         Box(
             modifier = Modifier

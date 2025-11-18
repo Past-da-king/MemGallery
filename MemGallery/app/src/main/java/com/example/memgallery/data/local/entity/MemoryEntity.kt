@@ -22,5 +22,6 @@ data class MemoryEntity(
 
     // Metadata
     val creationTimestamp: Long,
-    val status: String // e.g., "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+    val status: String, // e.g., "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+    val isHidden: Boolean = false
 )
