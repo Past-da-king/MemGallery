@@ -19,6 +19,7 @@ data class MemoryEntity(
     val aiTags: List<String>?, // Room will use a TypeConverter for this
     val aiImageAnalysis: String?,
     val aiAudioTranscription: String?,
+    val aiActions: List<com.example.memgallery.data.remote.dto.ActionDto>?,
 
     // Metadata
     val creationTimestamp: Long,

@@ -258,6 +258,62 @@ fun MemoryDetailContent(memory: MemoryEntity, modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (!memory.aiActions.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Actions", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            val context = LocalContext.current
+            memory.aiActions.forEach { action ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = action.type,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Button(
+                                onClick = { 
+                                    com.example.memgallery.utils.ActionHandler.handleAction(context, action) 
+                                },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text("Add Action", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = action.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (action.date != null || action.time != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${action.date ?: ""} ${action.time ?: ""}".trim(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Date Captured
         Text("Date Captured", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
         Text(

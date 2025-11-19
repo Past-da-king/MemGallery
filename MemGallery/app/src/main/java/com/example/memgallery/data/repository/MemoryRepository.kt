@@ -3,8 +3,6 @@ package com.example.memgallery.data.repository
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.work.Constraints
-import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.memgallery.data.local.dao.MemoryDao
@@ -70,6 +68,7 @@ class MemoryRepository @Inject constructor(
             aiTags = null, // Will be filled by AI
             aiImageAnalysis = null,
             aiAudioTranscription = null,
+            aiActions = null,
             creationTimestamp = System.currentTimeMillis(),
             status = "PENDING"
         )
@@ -84,7 +83,7 @@ class MemoryRepository @Inject constructor(
         imageUri: String?,
         audioUri: String?,
         userText: String?
-    ): Result<Unit> {
+    ): Result<com.example.memgallery.data.remote.dto.AiAnalysisDto> {
         Log.d(TAG, "processMemoryWithAI started for memoryId: $memoryId")
         if (!geminiService.isEnabled()) {
             Log.d(TAG, "GeminiService not enabled. Attempting to initialize with stored API key.")
@@ -113,6 +112,7 @@ class MemoryRepository @Inject constructor(
                     aiTags = aiAnalysis.tags,
                     aiImageAnalysis = aiAnalysis.imageAnalysis,
                     aiAudioTranscription = aiAnalysis.audioTranscription,
+                    aiActions = aiAnalysis.actions,
                     status = "COMPLETED"
                 )
                 memoryDao.updateMemory(updatedMemory)
@@ -121,6 +121,7 @@ class MemoryRepository @Inject constructor(
                 Log.e(TAG, "Memory with ID $memoryId not found for AI processing.")
                 throw IllegalStateException("Memory with ID $memoryId not found for AI processing.")
             }
+            aiAnalysis
         }
     }
 
@@ -201,6 +202,7 @@ class MemoryRepository @Inject constructor(
             aiTags = null,
             aiImageAnalysis = null,
             aiAudioTranscription = null,
+            aiActions = null,
             creationTimestamp = System.currentTimeMillis(),
             status = "PENDING"
         )
@@ -210,12 +212,12 @@ class MemoryRepository @Inject constructor(
     }
 
     private fun enqueueMemoryProcessing() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
+        // Network constraints removed to allow background processing
+        // Android restricts background network access (API 24+), causing WorkManager
+        // to report isConnected=false even when WiFi is active, preventing execution
+        // Network errors are handled by MemoryProcessingWorker.isNetworkError()
+        // which triggers automatic retry via Result.retry()
         val workRequest = OneTimeWorkRequestBuilder<MemoryProcessingWorker>()
-            .setConstraints(constraints)
             .setBackoffCriteria(
                 androidx.work.BackoffPolicy.EXPONENTIAL,
                 60,
@@ -224,6 +226,6 @@ class MemoryRepository @Inject constructor(
             .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
         workManager.enqueue(workRequest)
-        Log.d(TAG, "Enqueued MemoryProcessingWorker")
+        Log.d(TAG, "Enqueued MemoryProcessingWorker for background execution")
     }
 }

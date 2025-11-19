@@ -72,6 +72,20 @@ The JSON output must contain these fields:
 - [00:05] "I need to focus on studying for this subject now."
 ```
 
+6. **`actions`**
+
+   *   Extract actionable items from the content (text, image, or audio).
+   *   **Types**:
+       *   `EVENT`: A scheduled occurrence with a specific date/time (e.g., "Meeting with Bob", "Concert").
+       *   `TODO`: A task that needs to be completed (e.g., "Buy milk", "Finish report").
+       *   `REMINDER`: A specific prompt to remember something (e.g., "Remind me to call Mom").
+   *   **Fields**:
+       *   `type`: One of "EVENT", "TODO", "REMINDER".
+       *   `description`: Clear, concise description of the action.
+       *   `date`: YYYY-MM-DD format (if applicable, otherwise null).
+       *   `time`: HH:MM format (24-hour, if applicable, otherwise null).
+   *   If no actions are found, return an empty array.
+
 ---
 
 ### General Guidelines

@@ -20,48 +20,59 @@ private const val TAG = "FileUtils"
 @Singleton
 class FileUtils @Inject constructor(@ApplicationContext private val context: Context) {
 
-    fun copyFileToInternalStorage(uri: Uri, fileType: String): Uri? {
+    suspend fun copyFileToInternalStorage(uri: Uri, fileType: String): Uri? {
         Log.d(TAG, "Attempting to copy file from URI: $uri")
-        return try {
-            val inputStream = when (uri.scheme) {
-                "content" -> {
-                    Log.d(TAG, "URI scheme is 'content', using ContentResolver.")
-                    context.contentResolver.openInputStream(uri)
-                }
-                "file" -> {
-                    Log.d(TAG, "URI scheme is 'file', using direct file path.")
-                    uri.path?.let { java.io.File(it).inputStream() }
-                }
-                else -> throw IllegalArgumentException("Unsupported URI scheme: ${uri.scheme}")
-            } ?: return null
+        var attempt = 0
+        val maxAttempts = 5
+        val delayMs = 500L
 
-            val fileExtension = when (fileType) {
-                "image" -> ".jpg"
-                "audio" -> ".m4a"
-                else -> ""
-            }
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-            val fileName = "${fileType.uppercase()}_$timeStamp$fileExtension"
-            val file = File(context.filesDir, fileName)
-            Log.d(TAG, "Creating new file at: ${file.absolutePath}")
-            val outputStream = FileOutputStream(file)
+        while (attempt < maxAttempts) {
+            try {
+                val inputStream = when (uri.scheme) {
+                    "content" -> {
+                        Log.d(TAG, "URI scheme is 'content', using ContentResolver.")
+                        context.contentResolver.openInputStream(uri)
+                    }
+                    "file" -> {
+                        Log.d(TAG, "URI scheme is 'file', using direct file path.")
+                        uri.path?.let { java.io.File(it).inputStream() }
+                    }
+                    else -> throw IllegalArgumentException("Unsupported URI scheme: ${uri.scheme}")
+                } ?: return null
 
-            inputStream.use { input ->
-                outputStream.use { output ->
-                    input.copyTo(output)
+                val fileExtension = when (fileType) {
+                    "image" -> ".jpg"
+                    "audio" -> ".m4a"
+                    else -> ""
                 }
+                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                val fileName = "${fileType.uppercase()}_$timeStamp$fileExtension"
+                val file = File(context.filesDir, fileName)
+                Log.d(TAG, "Creating new file at: ${file.absolutePath}")
+                val outputStream = FileOutputStream(file)
+
+                inputStream.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                val newFileUri = Uri.fromFile(file)
+                Log.d(TAG, "File copied successfully. New URI: $newFileUri")
+                return newFileUri
+            } catch (e: IllegalStateException) {
+                Log.w(TAG, "Failed to copy file (Attempt ${attempt + 1}/$maxAttempts): content is pending or trashed. Retrying...", e)
+                attempt++
+                if (attempt < maxAttempts) {
+                    kotlinx.coroutines.delay(delayMs)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to copy file", e)
+                e.printStackTrace()
+                return null
             }
-            val newFileUri = Uri.fromFile(file)
-            Log.d(TAG, "File copied successfully. New URI: $newFileUri")
-            newFileUri
-        } catch (e: IllegalStateException) {
-            Log.e(TAG, "Failed to copy file: content is pending or trashed (Race condition?)", e)
-            return null
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to copy file", e)
-            e.printStackTrace()
-            null
         }
+        Log.e(TAG, "Failed to copy file after $maxAttempts attempts.")
+        return null
     }
 
     fun createImageUri(): Uri {

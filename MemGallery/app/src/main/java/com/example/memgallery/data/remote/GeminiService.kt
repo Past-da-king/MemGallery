@@ -49,7 +49,20 @@ class GeminiService @Inject constructor(
               "items": { "type": "string" }
             },
             "image_analysis": { "type": "string" },
-            "audio_transcription": { "type": "string" }
+            "audio_transcription": { "type": "string" },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string", "enum": ["EVENT", "TODO", "REMINDER"] },
+                  "description": { "type": "string" },
+                  "date": { "type": "string" },
+                  "time": { "type": "string" }
+                },
+                "required": ["type", "description"]
+              }
+            }
           },
           "required": ["title", "summary", "tags"]
         }

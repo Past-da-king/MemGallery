@@ -41,19 +41,21 @@ fun SettingsScreen(
     val autoIndexScreenshots by viewModel.autoIndexScreenshots.collectAsState()
     val context = LocalContext.current
 
-    val permissionToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_IMAGES
+    val permissionsToRequest = mutableListOf<String>()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+        permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
     } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
+        permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
             viewModel.setAutoIndexScreenshots(true)
         } else {
-            // If denied, turn it off to reflect reality
             viewModel.setAutoIndexScreenshots(false)
         }
     }
@@ -61,13 +63,15 @@ fun SettingsScreen(
     // Check permission on entry if feature is enabled
     androidx.compose.runtime.LaunchedEffect(Unit) {
         if (autoIndexScreenshots) {
-            val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                context, 
-                permissionToRequest
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            
-            if (!hasPermission) {
-                permissionLauncher.launch(permissionToRequest)
+            val allGranted = permissionsToRequest.all { permission ->
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+
+            if (!allGranted) {
+                permissionLauncher.launch(permissionsToRequest.toTypedArray())
             }
         }
     }
@@ -99,7 +103,7 @@ fun SettingsScreen(
                     checked = autoIndexScreenshots,
                     onCheckedChange = { isChecked ->
                         if (isChecked) {
-                            permissionLauncher.launch(permissionToRequest)
+                            permissionLauncher.launch(permissionsToRequest.toTypedArray())
                         } else {
                             viewModel.setAutoIndexScreenshots(false)
                         }

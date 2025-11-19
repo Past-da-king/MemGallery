@@ -20,5 +20,8 @@ data class AiAnalysisDto(
     val imageAnalysis: String?, // Nullable as it's only present for image inputs
 
     @SerializedName("audio_transcription")
-    val audioTranscription: String? // Nullable as it's only present for audio inputs
+    val audioTranscription: String?, // Nullable as it's only present for audio inputs
+
+    @SerializedName("actions")
+    val actions: List<ActionDto>? = null
 )

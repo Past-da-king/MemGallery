@@ -40,6 +40,11 @@ class MemoryProcessingWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         Log.d(TAG, "doWork started")
+        try {
+            setForeground(createForegroundInfo())
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to run as foreground service: ${e.message}. Continuing as background worker.")
+        }
 
         val imageUriString = inputData.getString(KEY_IMAGE_URI)
         if (imageUriString != null) {
@@ -74,6 +79,10 @@ class MemoryProcessingWorker @AssistedInject constructor(
 
             if (result.isSuccess) {
                 Log.d(TAG, "Memory ${memory.id} successfully processed")
+                val analysis = result.getOrNull()
+                if (analysis?.actions?.isNotEmpty() == true) {
+                    sendActionNotification(memory.id, analysis.actions)
+                }
             } else {
                 val e = result.exceptionOrNull()
                 Log.e(TAG, "Failed to process memory ${memory.id}", e)
@@ -134,6 +143,49 @@ class MemoryProcessingWorker @AssistedInject constructor(
             ForegroundInfo(1001, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
             ForegroundInfo(1001, notification)
+        }
+    }
+
+    private fun sendActionNotification(memoryId: Int, actions: List<com.example.memgallery.data.remote.dto.ActionDto>) {
+        val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "ai_actions_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "AI Actions",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifications for detected actions"
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        actions.forEachIndexed { index, action ->
+            val intent = com.example.memgallery.utils.ActionHandler.getActionIntent(action)
+            val pendingIntent = if (intent != null) {
+                android.app.PendingIntent.getActivity(
+                    applicationContext,
+                    memoryId * 100 + index, // Unique request code
+                    intent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+            } else null
+
+            val builder = NotificationCompat.Builder(applicationContext, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("Action Detected: ${action.type}")
+                .setContentText(action.description)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+
+            if (pendingIntent != null) {
+                val actionLabel = if (action.type == "EVENT") "Add to Calendar" else "Save Action"
+                builder.addAction(R.drawable.ic_launcher_foreground, actionLabel, pendingIntent)
+                builder.setContentIntent(pendingIntent) // Also make the notification body clickable
+            }
+
+            notificationManager.notify(memoryId * 100 + index, builder.build())
         }
     }
 }
