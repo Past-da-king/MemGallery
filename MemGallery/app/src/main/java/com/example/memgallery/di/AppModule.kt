@@ -2,6 +2,7 @@ package com.example.memgallery.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.example.memgallery.data.local.dao.MemoryDao
 import com.example.memgallery.data.local.database.AppDatabase
 import com.google.gson.Gson
@@ -37,4 +38,6 @@ object AppModule {
     fun provideGson(): Gson {
         return Gson()
     }
+
+
 }

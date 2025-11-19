@@ -1,103 +1,24 @@
-Anyways, now I want to write a detail plan that comes with these things. One. One, the functionality, please add functionality for toggling on and off the hidden set, hidden libraries to auto-index new screenshots without the user actually uploading them. So this is a feature where if a user takes a screenshot, the app gets notified or recognizes, oh, a new screenshot has been added and basically processes it. And now add a new functionality which basically the edit button, when it's clicked, right, when the edit button in the memory detail is clicked, it pulls up a, a, that thing, that, the bottom sheet for adding, for, for, for the bottom, no, no, no, the post-capture. Actually, it pulls up the post-capture, then in that state, in that state, the user can actually add the, edit the text. They can click on the text section, text button to edit the text, and they can, or add new text if there's no current text. They can click on the audio to actually add audio if there's no audio. If there's audio, we can't, you can't, you can't replace the audio that exists. No, we don't want to do that. Maybe text, you can, but audio that exists, you cannot. Image also, if there's no image, a user can add an image, but if they, by the existing image, you cannot replace that image. So that's how it's, the edit button is going to work. You can edit text, you can add new audio, you can add a new image if they do not, then after that is done, the user can press the save now, which will just re-index, the AI will re-index that memo, that thing again now. So to just re-process it, and yeah, with the new input, so with the new image, audio, or whatever has been added. Yeah, just re-process it. Yeah.  
-
-
-
-Oh, I want you to write a detailed implementation plan on how you're going to do this, implement this feature. And before you even start implementing the feature, please commit the current version of the project. Please write, run, git add and git commit. And yeah, just git add dot, then git, then you git commit the, uh, the files. Then yeah, then after that, and after you're done doing that, write a very, very, very, very detailed plan of how you're going to implement all of these things I have talked about.
-
-
-
-
-
-Alright, let’s structure this into a detailed plan with functionality, flow, and rules. I’ll break it down clearly so it’s implementable:
-
-Settings Page Functionality
-
-
-API Key
-
-Input field for API Key.
-Validate button to verify key.
-Validation feedback (success/error).
-
-
-
-Show Hidden Memories
-
-Toggle to show/hide hidden memories.
-When On, hidden memories appear in the main view.
-When Off, hidden memories remain invisible.
-State persists across app sessions.
-
-
-
-Screenshots Auto-Indexing
-
-Toggle: Auto-index new screenshots.
-
-When On, app monitors device screenshots.
-Every new screenshot is automatically processed and indexed.
-
-
-Button: Index screenshots now.
-
-Manually triggers processing/indexing of all existing screenshots.
-
-
-Works without user uploading manually.
-
-
-
-
-Memory Detail Edit Functionality
-
-
-Edit Button Behavior
-
-When clicked, opens Post-Capture Bottom Sheet in edit mode.
-Allows modification/adding of content based on type.
-
-
-
-Editing Rules
-
-Text
-
-Can edit existing text.
-Can add new text if none exists.
-
-
-Audio
-
-Can add audio if none exists.
-Cannot replace existing audio.
-
-
-Image
-
-Can add an image if none exists.
-Cannot replace existing image.
-
-
-
-
-
-Save / Re-Index
-
-Once edits are done, user presses Save.
-AI re-processes the memory:
-
-Re-indexing considers newly added text, audio, and images.
-Ensures memory is updated in the system with new content.
-
-
-
-
-
-
-Implementation Considerations
-
-Persist toggle states across app launches.
-Trigger system-level listener for new screenshots (for auto-indexing).
-Bottom sheet must dynamically allow edits based on existing content.
-Save operation triggers re-indexing pipeline without overwriting existing protected content (audio/image rules).
-
+    D  WindowStopped on com.example.memgallery/com.example.memgallery.MainActivity set to true
+2025-11-19 00:59:47.598 28248-28270 HWUI                    com.example.memgallery               D  CacheManager::trimMemory(20)
+2025-11-19 00:59:47.627  1116-2069  WindowManager           system_server                        E  win=Window{598ece0 u0 com.example.memgallery/com.example.memgallery.MainActivity} destroySurfaces: appStopped=true cleanupOnResume=false win.mWindowRemovalAllowed=false win.mRemoveOnExit=false win.mViewVisibility=8 caller=com.android.server.wm.ActivityRecord.destroySurfaces:25 com.android.server.wm.ActivityRecord.activityStopped:192 com.android.server.wm.ActivityClientController.activityStopped:97 android.app.IActivityClientController$Stub.onTransact:740 com.android.server.wm.ActivityClientController.onTransact:1 android.os.Binder.execTransactInternal:1462 android.os.Binder.execTransact:1401 
+2025-11-19 00:59:47.637 28248-28248 BBA2                    com.example.memgallery               D  setIsFg isFg = false; delayValue 3999ms
+2025-11-19 00:59:51.604 28248-28300 ScreenshotObserver      com.example.memgallery               D  New media detected: content://media/external/images/media/1000593950
+2025-11-19 00:59:51.654 28248-28300 ScreenshotObserver      com.example.memgallery               D  New media detected: content://media/external/images/media/1000593951
+2025-11-19 00:59:51.736 28248-28300 ScreenshotObserver      com.example.memgallery               D  New media detected: content://media/external/images/media/1000593950
+2025-11-19 00:59:51.760 28248-28299 ScreenshotObserver      com.example.memgallery               D  New media detected: content://media/external/images/media/1000593950
+2025-11-19 00:59:52.422 28248-28299 ScreenshotObserver      com.example.memgallery               D  New media detected: content://media/external/images/media/1000593951
+2025-11-19 01:00:47.595 28248-28874 Choreographer           com.example.memgallery               D  BBA2 receive callback when in bg : 4
+2025-11-19 01:00:47.645 28248-28270 HWUI                    com.example.memgallery               D  CacheManager::trimMemory(40)
+2025-11-19 01:01:13.321 28248-28248 WM-DelayedWorkTracker   com.example.memgallery               D  Scheduling work c72d66ac-66b8-4196-8929-b5d4c3e4de64
+2025-11-19 01:01:13.344 28248-28248 WM-GreedyScheduler      com.example.memgallery               D  Starting work for c72d66ac-66b8-4196-8929-b5d4c3e4de64
+2025-11-19 01:01:13.446 28248-28268 WM-Processor            com.example.memgallery               D  Processor: processing WorkGenerationalId(workSpecId=c72d66ac-66b8-4196-8929-b5d4c3e4de64, generation=0)
+2025-11-19 01:01:13.481 28248-28248 WM-WorkerWrapper        com.example.memgallery               D  Starting work for com.example.memgallery.service.MemoryProcessingWorker
+2025-11-19 01:01:13.484 28248-28299 MemoryProcessingWorker  com.example.memgallery               D  doWork started
+2025-11-19 01:01:13.529 28248-28299 MemoryProcessingWorker  com.example.memgallery               D  No pending memories to process
+2025-11-19 01:01:13.535 28248-28281 WM-WorkerWrapper        com.example.memgallery               I  Worker result SUCCESS for Work [ id=c72d66ac-66b8-4196-8929-b5d4c3e4de64, tags={ com.example.memgallery.service.MemoryProcessingWorker } ]
+2025-11-19 01:01:13.548 28248-28248 WM-Processor            com.example.memgallery               D  Processor c72d66ac-66b8-4196-8929-b5d4c3e4de64 executed; reschedule = false
+2025-11-19 01:01:13.571 28248-28281 WM-GreedyScheduler      com.example.memgallery               D  Cancelling work ID c72d66ac-66b8-4196-8929-b5d4c3e4de64
+2025-11-19 01:01:13.585 28248-28281 WM-SystemJobScheduler   com.example.memgallery               D  Scheduling work ID c72d66ac-66b8-4196-8929-b5d4c3e4de64Job ID 6
+2025-11-19 01:01:23.591 28248-28248 VRI[MainAc...y]@1938805 com.example.memgallery               I  handleAppVisibility mAppVisible = false visible = true
+2025-11-19 01:01:23.598 28248-28248 VRI[MainAc...y]@1938805 com.example.memgallery               I  stopped(false) old = true
+2025-11-19 01:01:23.600 28248-28248 VRI[MainAc...y]@1938805 com.example.memgallery               D  WindowStopped on com.example.memgallery/com.example.memgallery.MainActivity set to false

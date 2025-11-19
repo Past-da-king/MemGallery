@@ -73,7 +73,11 @@ fun MemoryDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Implement edit functionality */ }) {
+                    IconButton(onClick = {
+                        memory?.let {
+                            navController.navigate("post_capture_edit/${it.id}")
+                        }
+                    }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                 },

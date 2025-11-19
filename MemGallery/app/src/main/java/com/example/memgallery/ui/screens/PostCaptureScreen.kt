@@ -27,6 +27,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.MemoryCreationViewModel
 import com.example.memgallery.ui.viewmodels.MemoryCreationUiState
+import com.example.memgallery.ui.viewmodels.MemoryUpdateViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -36,15 +37,20 @@ import java.util.*
 @Composable
 fun PostCaptureScreen(
     navController: NavController,
-    initialImageUri: String?,
-    initialAudioUri: String?,
-    initialUserText: String?,
-    viewModel: MemoryCreationViewModel = hiltViewModel()
+    initialImageUri: String? = null,
+    initialAudioUri: String? = null,
+    initialUserText: String? = null,
+    memoryId: Int? = null,
+    creationViewModel: MemoryCreationViewModel = hiltViewModel(),
+    updateViewModel: MemoryUpdateViewModel = hiltViewModel()
 ) {
-    val draftImageUri by viewModel.draftImageUri.collectAsState()
-    val draftAudioUri by viewModel.draftAudioUri.collectAsState()
-    val draftUserText by viewModel.draftUserText.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val isEditMode = memoryId != null
+    val memory by updateViewModel.memory.collectAsState()
+
+    val draftImageUri by creationViewModel.draftImageUri.collectAsState()
+    val draftAudioUri by creationViewModel.draftAudioUri.collectAsState()
+    val draftUserText by creationViewModel.draftUserText.collectAsState()
+    val uiState by creationViewModel.uiState.collectAsState()
 
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
@@ -55,7 +61,7 @@ fun PostCaptureScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.setDraftImageUri(it.toString()) }
+        uri?.let { creationViewModel.setDraftImageUri(it.toString()) }
         showAddImageSheet = false
     }
 
@@ -63,35 +69,51 @@ fun PostCaptureScreen(
         contract = ActivityResultContracts.TakePicture(),
         onResult = { success ->
             if (success) {
-                tempImageUri?.let { viewModel.setDraftImageUri(it.toString()) }
+                tempImageUri?.let { creationViewModel.setDraftImageUri(it.toString()) }
             }
             showAddImageSheet = false
         }
     )
 
+    LaunchedEffect(memoryId) {
+        if (isEditMode) {
+            updateViewModel.loadMemory(memoryId!!)
+        }
+    }
+
+    LaunchedEffect(memory) {
+        if (isEditMode && memory != null) {
+            creationViewModel.setDraftImageUri(memory!!.imageUri)
+            creationViewModel.setDraftAudioUri(memory!!.audioFilePath)
+            creationViewModel.setDraftUserText(memory!!.userText)
+        }
+    }
+
     // Set initial draft values from navigation arguments
     LaunchedEffect(initialImageUri, initialAudioUri, initialUserText) {
-        if (initialImageUri != null) viewModel.setDraftImageUri(initialImageUri)
-        if (initialAudioUri != null) viewModel.setDraftAudioUri(initialAudioUri)
-        if (initialUserText != null) viewModel.setDraftUserText(initialUserText)
+        if (!isEditMode) {
+            if (initialImageUri != null) creationViewModel.setDraftImageUri(initialImageUri)
+            if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
+            if (initialUserText != null) creationViewModel.setDraftUserText(initialUserText)
+        }
     }
 
     // Navigate back on success
     LaunchedEffect(uiState) {
         if (uiState is MemoryCreationUiState.Success) {
             navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
-            viewModel.resetState()
+            creationViewModel.resetState()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("New Memory Captured") },
+                title = { Text(if (isEditMode) "Edit Memory" else "New Memory Captured") },
                 actions = {
                     IconButton(onClick = {
                         navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
-                        viewModel.resetState()
+                        creationViewModel.resetState()
                     }) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
@@ -121,7 +143,7 @@ fun PostCaptureScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable(enabled = draftImageUri == null) {
+                        .clickable(enabled = draftImageUri == null && !isEditMode) {
                             showAddImageSheet = true
                         },
                     contentAlignment = Alignment.Center
@@ -177,7 +199,8 @@ fun PostCaptureScreen(
                     onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                    enabled = draftAudioUri == null
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Add Audio", modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -199,19 +222,31 @@ fun PostCaptureScreen(
 
             // Save Now Button
             Button(
-                onClick = { viewModel.createMemory() },
+                onClick = {
+                    if (isEditMode) {
+                        val updatedMemory = memory!!.copy(
+                            userText = draftUserText,
+                            imageUri = draftImageUri,
+                            audioFilePath = draftAudioUri
+                        )
+                        updateViewModel.updateMemory(updatedMemory)
+                        navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
+                    } else {
+                        creationViewModel.createMemory()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(vertical = 12.dp),
                 enabled = uiState !is MemoryCreationUiState.Loading
             ) {
-                if (uiState is MemoryCreationUiState.Loading) {
+                if (uiState is MemoryCreationUiState.Loading && !isEditMode) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Icon(Icons.Default.AddCircle, contentDescription = "Save Now", modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Now")
+                    Text(if (isEditMode) "Update" else "Save Now")
                 }
             }
 

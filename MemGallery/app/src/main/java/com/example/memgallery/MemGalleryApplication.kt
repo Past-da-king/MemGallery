@@ -1,34 +1,55 @@
 package com.example.memgallery
 
 import android.app.Application
-import com.example.memgallery.data.remote.GeminiService
-import com.example.memgallery.data.repository.SettingsRepository
-import com.example.memgallery.service.MemoryProcessingService
+import android.util.Log
+import androidx.work.Configuration
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.hilt.work.HiltWorkerFactory
+import com.example.memgallery.service.MemoryProcessingWorker
+import com.example.memgallery.service.ScreenshotObserver
 import dagger.hilt.android.HiltAndroidApp
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltAndroidApp
-class MemGalleryApplication : Application() {
+class MemGalleryApplication : Application(), Configuration.Provider {
 
     @Inject
-    lateinit var geminiService: GeminiService
+    lateinit var screenshotObserver: ScreenshotObserver
+
+
 
     @Inject
-    lateinit var settingsRepository: SettingsRepository
-
-    @Inject
-    lateinit var memoryProcessingService: MemoryProcessingService
+    lateinit var hiltWorkerFactory: HiltWorkerFactory
 
     override fun onCreate() {
         super.onCreate()
-        initializeGeminiService()
-        memoryProcessingService.startProcessing()
+        screenshotObserver.start()
+        enqueueMemoryProcessingWorker()
     }
 
-    private fun initializeGeminiService() {
-        val apiKey = settingsRepository.getApiKey()
-        if (!apiKey.isNullOrBlank()) {
-            geminiService.initialize(apiKey)
-        }
+    private fun enqueueMemoryProcessingWorker() {
+        val workRequest = PeriodicWorkRequestBuilder<MemoryProcessingWorker>(
+            repeatInterval = 15, // Repeat every 15 minutes
+            repeatIntervalTimeUnit = TimeUnit.MINUTES
+        )
+            .setInitialDelay(10, TimeUnit.SECONDS) // Initial delay to allow app to start
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "MemoryProcessingWork",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
     }
+
+    override val workManagerConfiguration: Configuration
+        get() {
+            Log.d("MemGalleryApp", "Providing WorkManager Configuration with HiltWorkerFactory")
+            return Configuration.Builder()
+                .setWorkerFactory(hiltWorkerFactory)
+                .build()
+        }
 }

@@ -12,6 +12,7 @@ import com.example.memgallery.ui.screens.*
 sealed class Screen(val route: String) {
     object Gallery : Screen("gallery")
     object ApiKey : Screen("api_key")
+    object Settings : Screen("settings")
 
     object CameraCapture : Screen("camera_capture")
 
@@ -33,6 +34,10 @@ sealed class Screen(val route: String) {
         }
     }
 
+    object PostCaptureEdit : Screen("post_capture_edit/{memoryId}") {
+        fun createRoute(memoryId: Int) = "post_capture_edit/$memoryId"
+    }
+
     object Detail : Screen("detail/{memoryId}") {
         fun createRoute(memoryId: Int) = "detail/$memoryId"
     }
@@ -47,6 +52,9 @@ fun AppNavigation() {
         }
         composable(Screen.ApiKey.route) {
             ApiKeyManagementScreen(navController = navController)
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(navController = navController)
         }
         composable(
             route = Screen.TextInput.route,
@@ -104,6 +112,16 @@ fun AppNavigation() {
                 initialImageUri = imageUri,
                 initialAudioUri = audioUri,
                 initialUserText = userText
+            )
+        }
+        composable(
+            route = Screen.PostCaptureEdit.route,
+            arguments = listOf(navArgument("memoryId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val memoryId = backStackEntry.arguments?.getInt("memoryId") ?: 0
+            PostCaptureScreen(
+                navController = navController,
+                memoryId = memoryId
             )
         }
         composable(

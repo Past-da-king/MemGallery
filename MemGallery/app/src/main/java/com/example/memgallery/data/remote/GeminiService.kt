@@ -1,8 +1,10 @@
 package com.example.memgallery.data.remote
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import com.example.memgallery.data.remote.dto.AiAnalysisDto
 import com.google.genai.Client
 import com.google.genai.types.Content
@@ -11,14 +13,15 @@ import com.google.genai.types.Part
 import com.google.genai.types.Schema
 import com.google.genai.types.GenerateContentConfig
 import com.google.gson.Gson
-import com.google.common.collect.ImmutableList
 import dagger.hilt.android.qualifiers.ApplicationContext
-import com.example.memgallery.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "GeminiService"
 
 @Singleton
 class GeminiService @Inject constructor(
@@ -78,6 +81,7 @@ class GeminiService @Inject constructor(
         audioUri: String?,
         userText: String?
     ): Result<AiAnalysisDto> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "processMemory started")
         val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client is not initialized."))
 
         try {
@@ -92,19 +96,30 @@ class GeminiService @Inject constructor(
             val parts = mutableListOf<Part>()
 
             if (imageUri != null) {
+                Log.d(TAG, "Processing image URI: $imageUri")
                 val imageBytes = getBytesFromUri(imageUri)
                     ?: throw IOException("Could not read image file from URI: $imageUri")
+
+                val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                val resizedBitmap = resizeBitmap(bitmap, 1024)
+                val outputStream = ByteArrayOutputStream()
+                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                val resizedImageBytes = outputStream.toByteArray()
+                Log.d(TAG, "Image resized from ${imageBytes.size} to ${resizedImageBytes.size} bytes")
+
+
                 val parsedUri = Uri.parse(imageUri)
                 val mimeType = if (parsedUri.scheme == "content") {
                     context.contentResolver.getType(parsedUri) ?: "image/jpeg"
                 } else {
                     "image/jpeg"
                 }
-                parts.add(Part.fromBytes(imageBytes, mimeType))
+                parts.add(Part.fromBytes(resizedImageBytes, mimeType))
                 promptBuilder.append("Analyze the provided image in detail. ")
             }
 
             if (audioUri != null) {
+                Log.d(TAG, "Processing audio URI: $audioUri")
                 val audioBytes = getBytesFromUri(audioUri)
                     ?: throw IOException("Could not read audio file from URI: $audioUri")
                 val parsedUri = Uri.parse(audioUri)
@@ -125,6 +140,7 @@ class GeminiService @Inject constructor(
             parts.add(0, Part.fromText(promptBuilder.toString()))
 
             val multimodalContent = Content.fromParts(*parts.toTypedArray())
+            Log.d(TAG, "Sending request to Gemini API with ${parts.size} parts")
 
             val response: GenerateContentResponse? = localClient.models.generateContent(
                 "gemini-2.5-flash",
@@ -133,6 +149,7 @@ class GeminiService @Inject constructor(
             )
 
             val textResponse = response?.text() ?: throw Exception("Received an empty or null response from the API.")
+            Log.d(TAG, "Received response from Gemini API")
             parseJsonResponse(textResponse)
 
         } catch (e: Exception) {
@@ -150,7 +167,27 @@ class GeminiService @Inject constructor(
         }
     }
 
+    private fun resizeBitmap(bitmap: Bitmap, maxDimension: Int): Bitmap {
+        val originalWidth = bitmap.width
+        val originalHeight = bitmap.height
+        var resizedWidth = originalWidth
+        var resizedHeight = originalHeight
+
+        if (originalWidth > maxDimension || originalHeight > maxDimension) {
+            if (originalWidth > originalHeight) {
+                resizedWidth = maxDimension
+                resizedHeight = (originalHeight * (maxDimension.toFloat() / originalWidth)).toInt()
+            } else {
+                resizedHeight = maxDimension
+                resizedWidth = (originalWidth * (maxDimension.toFloat() / originalHeight)).toInt()
+            }
+        }
+
+        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false)
+    }
+
     private fun parseJsonResponse(responseText: String): Result<AiAnalysisDto> {
+        Log.d(TAG, "Raw JSON response: $responseText")
         val cleanedResponseText = responseText
             .removePrefix("```json")
             .removeSuffix("```")

@@ -7,7 +7,7 @@ import com.example.memgallery.data.local.converters.TagListConverter
 import com.example.memgallery.data.local.dao.MemoryDao
 import com.example.memgallery.data.local.entity.MemoryEntity
 
-@Database(entities = [MemoryEntity::class], version = 2, exportSchema = false)
+@Database(entities = [MemoryEntity::class], version = 3, exportSchema = false)
 @TypeConverters(TagListConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao

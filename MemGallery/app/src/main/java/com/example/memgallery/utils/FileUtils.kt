@@ -54,6 +54,9 @@ class FileUtils @Inject constructor(@ApplicationContext private val context: Con
             val newFileUri = Uri.fromFile(file)
             Log.d(TAG, "File copied successfully. New URI: $newFileUri")
             newFileUri
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "Failed to copy file: content is pending or trashed (Race condition?)", e)
+            return null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to copy file", e)
             e.printStackTrace()

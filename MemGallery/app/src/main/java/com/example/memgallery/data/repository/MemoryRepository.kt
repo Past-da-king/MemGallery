@@ -1,11 +1,19 @@
 package com.example.memgallery.data.repository
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.memgallery.data.local.dao.MemoryDao
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.remote.GeminiService
+import com.example.memgallery.service.MemoryProcessingWorker
 import com.example.memgallery.utils.FileUtils
+import com.example.memgallery.data.repository.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -15,10 +23,13 @@ private const val TAG = "MemoryRepository"
 
 @Singleton
 class MemoryRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val memoryDao: MemoryDao,
     private val geminiService: GeminiService,
-    private val fileUtils: FileUtils
+    private val fileUtils: FileUtils,
+    private val settingsRepository: SettingsRepository
 ) {
+    private val workManager = WorkManager.getInstance(context)
 
     fun getMemories(): Flow<List<MemoryEntity>> {
         return memoryDao.getAllMemories()
@@ -63,7 +74,9 @@ class MemoryRepository @Inject constructor(
             status = "PENDING"
         )
         Log.d(TAG, "Inserting new pending memory entity: $memoryEntity")
-        return Result.success(memoryDao.insertMemory(memoryEntity))
+        val memoryId = memoryDao.insertMemory(memoryEntity)
+        enqueueMemoryProcessing()
+        return Result.success(memoryId)
     }
 
     suspend fun processMemoryWithAI(
@@ -72,12 +85,24 @@ class MemoryRepository @Inject constructor(
         audioUri: String?,
         userText: String?
     ): Result<Unit> {
-        Log.d(TAG, "processMemoryWithAI called for memoryId: $memoryId")
+        Log.d(TAG, "processMemoryWithAI started for memoryId: $memoryId")
         if (!geminiService.isEnabled()) {
-            return Result.failure(IllegalStateException("API Key not set."))
+            Log.d(TAG, "GeminiService not enabled. Attempting to initialize with stored API key.")
+            val apiKey = settingsRepository.apiKeyFlow.first()
+            if (!apiKey.isNullOrBlank()) {
+                geminiService.initialize(apiKey)
+                Log.d(TAG, "GeminiService initialized with stored API key.")
+            } else {
+                Log.e(TAG, "processMemoryWithAI failed: API Key not set and not found in settings.")
+                return Result.failure(IllegalStateException("API Key not set."))
+            }
         }
 
         val analysisResult = geminiService.processMemory(imageUri, audioUri, userText)
+
+        analysisResult.onFailure {
+            Log.e(TAG, "AI processing failed for memoryId: $memoryId", it)
+        }
 
         return analysisResult.map { aiAnalysis ->
             val existingMemory = memoryDao.getMemoryById(memoryId).first() // Get the existing memory
@@ -92,7 +117,10 @@ class MemoryRepository @Inject constructor(
                 )
                 memoryDao.updateMemory(updatedMemory)
                 Log.d(TAG, "Memory $memoryId updated with AI analysis.")
-            } ?: throw IllegalStateException("Memory with ID $memoryId not found for AI processing.")
+            } ?: run {
+                Log.e(TAG, "Memory with ID $memoryId not found for AI processing.")
+                throw IllegalStateException("Memory with ID $memoryId not found for AI processing.")
+            }
         }
     }
 
@@ -152,5 +180,50 @@ class MemoryRepository @Inject constructor(
             val updatedMemory = memory.copy(isHidden = hide)
             memoryDao.updateMemory(updatedMemory)
         }
+    }
+
+    // TODO: This is a simplified version. The full AI processing should be triggered.
+    suspend fun createMemoryFromUri(uri: Uri) {
+        Log.d(TAG, "Creating memory from URI: $uri")
+        val permanentImageUri = fileUtils.copyFileToInternalStorage(uri, "image")?.toString()
+
+        if (permanentImageUri == null) {
+            Log.e(TAG, "Failed to copy image from URI: $uri. Aborting memory creation.")
+            return
+        }
+
+        val memoryEntity = MemoryEntity(
+            userText = null,
+            imageUri = permanentImageUri,
+            audioFilePath = null,
+            aiTitle = "New Screenshot", // Placeholder title
+            aiSummary = null,
+            aiTags = null,
+            aiImageAnalysis = null,
+            aiAudioTranscription = null,
+            creationTimestamp = System.currentTimeMillis(),
+            status = "PENDING"
+        )
+        memoryDao.insertMemory(memoryEntity)
+        Log.d(TAG, "Inserted new pending memory from URI: $uri")
+        enqueueMemoryProcessing()
+    }
+
+    private fun enqueueMemoryProcessing() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val workRequest = OneTimeWorkRequestBuilder<MemoryProcessingWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                androidx.work.BackoffPolicy.EXPONENTIAL,
+                60,
+                java.util.concurrent.TimeUnit.SECONDS
+            )
+            .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .build()
+        workManager.enqueue(workRequest)
+        Log.d(TAG, "Enqueued MemoryProcessingWorker")
     }
 }

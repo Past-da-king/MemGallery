@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,13 +28,16 @@ class ApiKeyViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
     val uiState: StateFlow<ApiKeyUiState> = _uiState.asStateFlow()
 
-    private val _apiKey = MutableStateFlow(settingsRepository.getApiKey() ?: "")
+    private val _apiKey = MutableStateFlow("")
     val apiKey: StateFlow<String> = _apiKey.asStateFlow()
 
     init {
-        // If a key already exists, initialize the Gemini service with it.
-        if (apiKey.value.isNotBlank()) {
-            geminiService.initialize(apiKey.value)
+        viewModelScope.launch {
+            val key = settingsRepository.apiKeyFlow.first()
+            if (!key.isNullOrBlank()) {
+                _apiKey.value = key
+                geminiService.initialize(key)
+            }
         }
     }
 
@@ -63,9 +67,11 @@ class ApiKeyViewModel @Inject constructor(
     }
 
     fun clearKey() {
-        settingsRepository.clearApiKey()
-        geminiService.disable()
-        _apiKey.value = ""
-        _uiState.value = ApiKeyUiState.Idle
+        viewModelScope.launch {
+            settingsRepository.clearApiKey()
+            geminiService.disable()
+            _apiKey.value = ""
+            _uiState.value = ApiKeyUiState.Idle
+        }
     }
 }
