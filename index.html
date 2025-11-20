@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemGallery - Your External Brain</title>
+    <meta name="description" content="MemGallery is an AI-powered Android application that acts as your personal memory assistant. Capture, process, and recall everything.">
+    <style>
+        :root {
+            --primary: #6200EE;
+            --primary-variant: #3700B3;
+            --secondary: #03DAC6;
+            --background: #121212;
+            --surface: #1E1E1E;
+            --on-primary: #FFFFFF;
+            --on-background: #E0E0E0;
+            --on-surface: #E0E0E0;
+            --text-secondary: #A0A0A0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--background);
+            color: var(--on-background);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--surface);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--on-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links a {
+            color: var(--on-surface);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: var(--primary);
+            color: var(--on-primary);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(98, 0, 238, 0.4);
+            background-color: var(--primary-variant);
+        }
+
+        .features {
+            padding: 4rem 2rem;
+            background-color: var(--surface);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background-color: var(--background);
+            padding: 2rem;
+            border-radius: 12px;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--on-primary);
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo">🧠 MemGallery</a>
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="https://github.com/YOUR_USERNAME/MemGallery" target="_blank">GitHub</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Your External Brain for Memories</h1>
+        <p>Capture, process, and recall everything with AI. From screenshots to voice notes, MemGallery organizes your digital life so you never forget a thing.</p>
+        <a href="https://github.com/YOUR_USERNAME/MemGallery/releases" class="cta-button">Download Alpha v0.0.3</a>
+    </section>
+
+    <section id="features" class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📸</div>
+                <h3 class="feature-title">Smart Capture</h3>
+                <p class="feature-desc">Automatically detects screenshots and allows quick capture of photos and audio.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">AI Powered</h3>
+                <p class="feature-desc">Uses Gemini AI to analyze content, extract text, and understand context.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">Semantic Search</h3>
+                <p class="feature-desc">Find memories by describing them naturally, not just by keywords.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Private & Secure</h3>
+                <p class="feature-desc">Your memories are stored locally. AI processing is secure and private.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 MemGallery. Open Source under MIT License.</p>
+    </footer>
+</body>
+</html>
