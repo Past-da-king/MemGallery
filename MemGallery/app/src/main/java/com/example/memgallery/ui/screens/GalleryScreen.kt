@@ -53,6 +53,9 @@ import java.util.Random
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.drawBehind
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,25 +91,14 @@ fun GalleryScreen(
     var selectedMemoryForOptions by remember { mutableStateOf<MemoryEntity?>(null) }
     var showDeleteMultipleMemoriesDialog by remember { mutableStateOf(false) }
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-
     // State to control Search Bar visibility (Drop Down)
     var isSearchBarVisible by remember { mutableStateOf(true) }
 
-    // Scroll detection to toggle search bar visibility
-    val nestedScrollConnection = remember {
-        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (available.y < -5) { // Scrolling down
-                   // We can't modify state directly here safely in all cases, but for simple visibility toggle it often works.
-                   // However, using LaunchedEffect with snapshotFlow is safer.
-                   // Let's rely on the LaunchedEffect below for scroll state changes.
-                }
-                return super.onPreScroll(available, source)
-            }
-        }
-    }
+    // Header Height State for Padding
+    val localDensity = LocalDensity.current
+    var headerHeightDp by remember { mutableStateOf(0.dp) }
 
+    // Scroll detection to toggle search bar visibility
     // Update search bar visibility based on scroll
     LaunchedEffect(gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset) {
         if (gridState.firstVisibleItemIndex > 0) {
@@ -124,9 +116,108 @@ fun GalleryScreen(
     }
 
     Scaffold(
-        modifier = if (selectionModeActive) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else Modifier,
-        topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+        floatingActionButton = {
+            if (!selectionModeActive) {
+                FloatingActionButton(
+                    onClick = { showBottomSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Memory")
+                }
+            }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            LazyVerticalStaggeredGrid(
+                state = gridState,
+                columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    // Content starts exactly where the header ends
+                    top = headerHeightDp + 16.dp, 
+                    bottom = padding.calculateBottomPadding() + 80.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                ),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalItemSpacing = 12.dp
+            ) {
+
+                // Highlight Section
+                if (highlightTag != null && highlightMemories.isNotEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        highlightMemories.firstOrNull()?.let { highlightMemory ->
+                            HighlightMemoryCard(
+                                memory = highlightMemory,
+                                tag = highlightTag!!,
+                                onClick = { navController.navigate(Screen.Detail.createRoute(highlightMemory.id)) }
+                            )
+                        }
+                    }
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Text(
+                            text = "All Memories",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                }
+
+                items(memories) { memory ->
+                    val isSelected = selectedMemoryIds.contains(memory.id)
+                    MemoryCard(
+                        memory = memory,
+                        isSelected = isSelected,
+                        onClick = { clickedMemory ->
+                            if (selectionModeActive) {
+                                viewModel.toggleMemorySelection(clickedMemory.id)
+                            } else {
+                                navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
+                            }
+                        },
+                        onLongClick = { longPressedMemory ->
+                            if (!selectionModeActive) {
+                                viewModel.toggleSelectionMode()
+                            }
+                            viewModel.toggleMemorySelection(longPressedMemory.id)
+                        }
+                    )
+                }
+            }
+
+            // Floating Header with Seamless Gradient Blur
+            val backgroundColor = MaterialTheme.colorScheme.background
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .onGloballyPositioned { coordinates ->
+                        headerHeightDp = with(localDensity) { coordinates.size.height.toDp() }
+                    }
+                    .drawBehind {
+                        // Gradient fades out over the bottom ~35% of the header
+                        // using multiple stops for a very smooth, feathered transition.
+                        val solidStop = 0.65f 
+                        
+                        val brush = Brush.verticalGradient(
+                            0.0f to backgroundColor,
+                            solidStop to backgroundColor,
+                            0.70f to backgroundColor.copy(alpha = 0.6f),
+                            0.78f to backgroundColor.copy(alpha = 0.35f),
+                            0.85f to backgroundColor.copy(alpha = 0.2f),
+                            0.90f to backgroundColor.copy(alpha = 0.1f),
+                            0.95f to backgroundColor.copy(alpha = 0.05f),
+                            1.0f to backgroundColor.copy(alpha = 0.0f)
+                        )
+                        drawRect(brush)
+                    }
+            ) {
                 if (selectionModeActive) {
                     TopAppBar(
                         title = { Text("${selectedMemoryIds.size} selected") },
@@ -150,15 +241,19 @@ fun GalleryScreen(
                             ) {
                                 Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
                             }
-                        }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent // Transparent to let the gradient background show
+                        )
                     )
                 } else {
                     // Fixed Header for Normal Mode
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .statusBarsPadding() // Fix clipping
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                            .statusBarsPadding() // Adds padding for status bar
+                            .padding(horizontal = 24.dp)
+                            .padding(top = 8.dp, bottom = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -212,7 +307,7 @@ fun GalleryScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                            .padding(bottom = 12.dp)
                     ) {
                         // Search Bar
                         Box(
@@ -246,96 +341,25 @@ fun GalleryScreen(
                         ) {
                             val filters = listOf("All", "Images", "Notes", "Audio")
                             items(filters) { filter ->
-                                val isSelected = selectedFilter == filter
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = { viewModel.onFilterSelected(filter) },
-                                    label = { Text(filter) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    ),
-                                    border = FilterChipDefaults.filterChipBorder(
-                                        enabled = true,
+                                    val isSelected = selectedFilter == filter
+                                    FilterChip(
                                         selected = isSelected,
-                                        borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                                        onClick = { viewModel.onFilterSelected(filter) },
+                                        label = { Text(filter) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            enabled = true,
+                                            selected = isSelected,
+                                            borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                                        )
                                     )
-                                )
                             }
                         }
                     }
                 }
-            }
-        },
-        floatingActionButton = {
-            if (!selectionModeActive) {
-                FloatingActionButton(
-                    onClick = { showBottomSheet = true },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Memory")
-                }
-            }
-        }
-    ) { padding ->
-        LazyVerticalStaggeredGrid(
-            state = gridState,
-            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 12.dp
-        ) {
-
-            // Highlight Section
-            if (highlightTag != null && highlightMemories.isNotEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    highlightMemories.firstOrNull()?.let { highlightMemory ->
-                        HighlightMemoryCard(
-                            memory = highlightMemory,
-                            tag = highlightTag!!,
-                            onClick = { navController.navigate(Screen.Detail.createRoute(highlightMemory.id)) }
-                        )
-                    }
-                }
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Text(
-                        text = "All Memories",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-            }
-
-            items(memories) { memory ->
-                val isSelected = selectedMemoryIds.contains(memory.id)
-                MemoryCard(
-                    memory = memory,
-                    isSelected = isSelected,
-                    onClick = { clickedMemory ->
-                        if (selectionModeActive) {
-                            viewModel.toggleMemorySelection(clickedMemory.id)
-                        } else {
-                            navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
-                        }
-                    },
-                    onLongClick = { longPressedMemory ->
-                        if (!selectionModeActive) {
-                            viewModel.toggleSelectionMode()
-                        }
-                        viewModel.toggleMemorySelection(longPressedMemory.id)
-                    }
-                )
-            }
-            
-            item(span = StaggeredGridItemSpan.FullLine) {
-                 Spacer(modifier = Modifier.height(80.dp)) // Bottom padding for FAB
             }
         }
 
