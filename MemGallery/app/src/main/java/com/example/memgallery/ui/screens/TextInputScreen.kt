@@ -1,77 +1,94 @@
+
 package com.example.memgallery.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.navigation.Screen
-import com.example.memgallery.ui.viewmodels.MemoryCreationViewModel
-import com.example.memgallery.ui.viewmodels.MemoryCreationUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextInputScreen(
     navController: NavController,
-    existingImageUri: String?,
-    existingAudioUri: String?,
-    existingUserText: String?
+    existingImageUri: String? = null,
+    existingAudioUri: String? = null,
+    existingUserText: String? = null
 ) {
-    var userText by remember { mutableStateOf(existingUserText ?: "") }
+    var text by remember { mutableStateOf(existingUserText ?: "") }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add a note") },
+                title = { Text("New Note") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (text.isNotBlank()) {
+                        navController.navigate(
+                            Screen.PostCapture.createRoute(
+                                imageUri = existingImageUri,
+                                audioUri = existingAudioUri,
+                                userText = text
+                            )
+                        ) {
+                            popUpTo(Screen.Gallery.route) { inclusive = false }
+                        }
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Continue")
+            }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp)
         ) {
-            OutlinedTextField(
-                value = userText,
-                onValueChange = { userText = it },
-                label = { Text("Your thoughts...") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    navController.navigate(
-                        Screen.PostCapture.createRoute(
-                            imageUri = existingImageUri,
-                            audioUri = existingAudioUri,
-                            userText = userText
-                        )
-                    ) {
-                        // Ensure we don't have a deep back stack of creation screens
-                        popUpTo(Screen.Gallery.route)
-                    }
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.fillMaxSize(),
+                placeholder = {
+                    Text(
+                        "What's on your mind?",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
                 },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = userText.isNotBlank()
-            ) {
-                Text("Continue")
-            }
+                textStyle = MaterialTheme.typography.headlineMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                )
+            )
         }
     }
 }

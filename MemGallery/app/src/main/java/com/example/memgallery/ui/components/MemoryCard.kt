@@ -38,7 +38,8 @@ fun MemoryCard(
     val randomGradientBrush = remember(memory.id) {
         generateRandomGradientBrush(memory.id)
     }
-    ElevatedCard(
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -47,84 +48,120 @@ fun MemoryCard(
             )
             .then(
                 if (isSelected) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                    Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
                 } else {
                     Modifier
                 }
-            )
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .then(
-                    if (memory.imageUri == null) {
-                        Modifier.background(randomGradientBrush)
-                    } else {
-                        Modifier
-                    }
-                )
+            modifier = Modifier.fillMaxWidth()
         ) {
+            // Image or Placeholder
             if (memory.imageUri != null) {
                 Image(
                     painter = rememberAsyncImagePainter(model = memory.imageUri),
-                    contentDescription = memory.aiTitle ?: "Pending Memory",
+                    contentDescription = memory.aiTitle ?: "Memory",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 150.dp, max = 300.dp) // Constrain height for staggered look
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .background(randomGradientBrush)
                 )
             }
-            // Gradient overlay
+
+            // Gradient Overlay for Text Protection
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .matchParentSize()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
-                            startY = 300f
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.6f),
+                                Color.Black.copy(alpha = 0.9f)
+                            ),
+                            startY = 0f
                         )
                     )
             )
-            // Content on top of the gradient
+
+            // Content
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp)
             ) {
                 Text(
-                    text = memory.aiTitle ?: "Pending...",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = memory.aiTitle ?: "Untitled Memory",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    ),
                     color = Color.White,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                
+                if (!memory.aiSummary.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = memory.aiSummary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                
+                // Icons Row
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (memory.imageUri != null) {
                         Icon(
                             imageVector = Icons.Outlined.PhotoCamera,
                             contentDescription = "Image",
-                            tint = Color.White.copy(alpha = 0.8f)
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                     if (memory.audioFilePath != null) {
                         Icon(
                             imageVector = Icons.Outlined.Mic,
                             contentDescription = "Audio",
-                            tint = Color.White.copy(alpha = 0.8f)
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                     if (!memory.userText.isNullOrBlank()) {
                         Icon(
                             imageVector = Icons.Outlined.EditNote,
                             contentDescription = "Text",
-                            tint = Color.White.copy(alpha = 0.8f)
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                     if (memory.status == "PENDING") {
                         Icon(
                             imageVector = Icons.Default.HourglassEmpty,
                             contentDescription = "Pending",
-                            tint = Color.White.copy(alpha = 0.8f)
+                            tint = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }

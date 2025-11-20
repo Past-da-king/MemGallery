@@ -11,7 +11,6 @@ import com.example.memgallery.ui.screens.*
 
 sealed class Screen(val route: String) {
     object Gallery : Screen("gallery")
-    object ApiKey : Screen("api_key")
     object Settings : Screen("settings")
 
     object CameraCapture : Screen("camera_capture")
@@ -49,9 +48,6 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = Screen.Gallery.route) {
         composable(Screen.Gallery.route) {
             GalleryScreen(navController = navController)
-        }
-        composable(Screen.ApiKey.route) {
-            ApiKeyManagementScreen(navController = navController)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)

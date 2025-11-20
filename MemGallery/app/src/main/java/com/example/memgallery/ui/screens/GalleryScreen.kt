@@ -3,22 +3,26 @@ package com.example.memgallery.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,6 +50,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import java.util.Random
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +71,7 @@ fun GalleryScreen(
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val gridState = rememberLazyStaggeredGridState()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -77,214 +85,249 @@ fun GalleryScreen(
 
     var showMemoryOptionsSheet by remember { mutableStateOf(false) }
     var selectedMemoryForOptions by remember { mutableStateOf<MemoryEntity?>(null) }
-
-
     var showDeleteMultipleMemoriesDialog by remember { mutableStateOf(false) }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    // State to control Search Bar visibility (Drop Down)
+    var isSearchBarVisible by remember { mutableStateOf(true) }
+
+    // Scroll detection to toggle search bar visibility
+    val nestedScrollConnection = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (available.y < -5) { // Scrolling down
+                   // We can't modify state directly here safely in all cases, but for simple visibility toggle it often works.
+                   // However, using LaunchedEffect with snapshotFlow is safer.
+                   // Let's rely on the LaunchedEffect below for scroll state changes.
+                }
+                return super.onPreScroll(available, source)
+            }
+        }
+    }
+
+    // Update search bar visibility based on scroll
+    LaunchedEffect(gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset) {
+        if (gridState.firstVisibleItemIndex > 0) {
+            isSearchBarVisible = false
+        } else if (gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0) {
+             isSearchBarVisible = true
+        }
+    }
 
     Scaffold(
+        modifier = if (selectionModeActive) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else Modifier,
         topBar = {
-            if (selectionModeActive) {
-                TopAppBar(
-                    title = { Text("${selectedMemoryIds.size} selected") },
-                    navigationIcon = {
-                        IconButton(onClick = { viewModel.clearSelection() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Cancel Selection")
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                if (selectionModeActive) {
+                    TopAppBar(
+                        title = { Text("${selectedMemoryIds.size} selected") },
+                        navigationIcon = {
+                            IconButton(onClick = { viewModel.clearSelection() }) {
+                                Icon(Icons.Default.Close, contentDescription = "Cancel Selection")
+                            }
+                        },
+                        actions = {
+                            IconButton(
+                                onClick = {
+                                    if (selectedMemoryIds.size == 1) {
+                                        val singleSelectedMemoryId = selectedMemoryIds.first()
+                                        selectedMemoryForOptions = memories.firstOrNull { it.id == singleSelectedMemoryId }
+                                        showMemoryOptionsSheet = true
+                                    } else if (selectedMemoryIds.size > 1) {
+                                        showDeleteMultipleMemoriesDialog = true
+                                    }
+                                },
+                                enabled = selectedMemoryIds.isNotEmpty()
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                            }
                         }
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = {
-                                if (selectedMemoryIds.size == 1) {
-                                    val singleSelectedMemoryId = selectedMemoryIds.first()
-                                    selectedMemoryForOptions = memories.firstOrNull { it.id == singleSelectedMemoryId }
-                                    showMemoryOptionsSheet = true
-                                } else if (selectedMemoryIds.size > 1) {
-                                    showDeleteMultipleMemoriesDialog = true
+                    )
+                } else {
+                    // Fixed Header for Normal Mode
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding() // Fix clipping
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "MemGallery",
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Search Icon (Visible when Search Bar is hidden)
+                            AnimatedVisibility(
+                                visible = !isSearchBarVisible,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                IconButton(
+                                    onClick = { isSearchBarVisible = true }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
                                 }
-                            },
-                            enabled = selectedMemoryIds.isNotEmpty()
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                            }
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // Settings Icon
+                            IconButton(
+                                onClick = { navController.navigate(Screen.Settings.route) },
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                            ) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
-                )
-            } else {
-                TopAppBar(
-                    title = { Text("MemGallery") },
-                    actions = {
-                        IconButton(onClick = { navController.navigate(Screen.ApiKey.route) }) {
-                            Icon(Icons.Default.Person, contentDescription = "API Key Settings")
+                }
+
+                // Collapsible Search Bar & Filters (Drop Down)
+                AnimatedVisibility(
+                    visible = isSearchBarVisible && !selectionModeActive,
+                    enter = androidx.compose.animation.expandVertically() + fadeIn(),
+                    exit = androidx.compose.animation.shrinkVertically() + fadeOut()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                    ) {
+                        // Search Bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            TextField(
+                                value = searchText,
+                                onValueChange = viewModel::onSearchTextChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Search memories...", style = MaterialTheme.typography.bodyLarge) },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                                shape = RoundedCornerShape(24.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                ),
+                                singleLine = true
+                            )
                         }
-                        IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+
+                        // Filters
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            modifier = Modifier.padding(top = 12.dp)
+                        ) {
+                            val filters = listOf("All", "Images", "Notes", "Audio")
+                            items(filters) { filter ->
+                                val isSelected = selectedFilter == filter
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { viewModel.onFilterSelected(filter) },
+                                    label = { Text(filter) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = isSelected,
+                                        borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                )
+                            }
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    )
-                )
+                    }
+                }
             }
         },
         floatingActionButton = {
             if (!selectionModeActive) {
-                FloatingActionButton(onClick = { showBottomSheet = true }) {
+                FloatingActionButton(
+                    onClick = { showBottomSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Memory")
                 }
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            TextField(
-                value = searchText,
-                onValueChange = viewModel::onSearchTextChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Search memories...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                shape = CircleShape,
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val filters = listOf("All", "Images", "Notes", "Audio")
-                filters.forEach { filter ->
-                    Button(
-                        onClick = { viewModel.onFilterSelected(filter) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedFilter == filter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+        LazyVerticalStaggeredGrid(
+            state = gridState,
+            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalItemSpacing = 12.dp
+        ) {
+
+            // Highlight Section
+            if (highlightTag != null && highlightMemories.isNotEmpty()) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    highlightMemories.firstOrNull()?.let { highlightMemory ->
+                        HighlightMemoryCard(
+                            memory = highlightMemory,
+                            tag = highlightTag!!,
+                            onClick = { navController.navigate(Screen.Detail.createRoute(highlightMemory.id)) }
                         )
-                    ) {
-                        Text(filter)
                     }
                 }
-            }
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 128.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Spacer(modifier = Modifier.height(24.dp))
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    AnimatedVisibility(
-                        visible = highlightTag != null && highlightMemories.isNotEmpty(),
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        highlightMemories.firstOrNull()?.let { highlightMemory ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .clip(MaterialTheme.shapes.large)
-                                    .then(
-                                        if (highlightMemory.imageUri == null) {
-                                            Modifier.background(generateRandomGradientBrush(highlightMemory.id))
-                                        } else {
-                                            Modifier
-                                        }
-                                    )
-                                    .clickable {
-                                        navController.navigate(Screen.Detail.createRoute(highlightMemory.id))
-                                    }
-                            ) {
-                                if (highlightMemory.imageUri != null) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(model = highlightMemory.imageUri),
-                                        contentDescription = highlightMemory.aiTitle,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.verticalGradient(
-                                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
-                                                startY = 300f
-                                            )
-                                        )
-                                )
-                                Column(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomStart)
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        "Memory related to ${highlightTag}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White.copy(alpha = 0.7f)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        highlightMemory.aiTitle ?: "No Title",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        highlightMemory.aiSummary ?: "No summary available.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                item(span = { GridItemSpan(maxLineSpan) }) {
+                item(span = StaggeredGridItemSpan.FullLine) {
                     Text(
                         text = "All Memories",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
+            }
 
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                items(memories) { memory ->
-                    val isSelected = selectedMemoryIds.contains(memory.id)
-                    MemoryCard(
-                        memory = memory,
-                        isSelected = isSelected,
-                        onClick = { clickedMemory ->
-                            if (selectionModeActive) {
-                                viewModel.toggleMemorySelection(clickedMemory.id)
-                            } else {
-                                navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
-                            }
-                        },
-                        onLongClick = { longPressedMemory ->
-                            if (!selectionModeActive) {
-                                viewModel.toggleSelectionMode()
-                            }
-                            viewModel.toggleMemorySelection(longPressedMemory.id)
+            items(memories) { memory ->
+                val isSelected = selectedMemoryIds.contains(memory.id)
+                MemoryCard(
+                    memory = memory,
+                    isSelected = isSelected,
+                    onClick = { clickedMemory ->
+                        if (selectionModeActive) {
+                            viewModel.toggleMemorySelection(clickedMemory.id)
+                        } else {
+                            navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
                         }
-                    )
-                }
+                    },
+                    onLongClick = { longPressedMemory ->
+                        if (!selectionModeActive) {
+                            viewModel.toggleSelectionMode()
+                        }
+                        viewModel.toggleMemorySelection(longPressedMemory.id)
+                    }
+                )
+            }
+            
+            item(span = StaggeredGridItemSpan.FullLine) {
+                 Spacer(modifier = Modifier.height(80.dp)) // Bottom padding for FAB
             }
         }
 
@@ -322,8 +365,6 @@ fun GalleryScreen(
                 }
             }
         }
-
-
 
         if (showDeleteMultipleMemoriesDialog) {
             AlertDialog(
@@ -525,63 +566,80 @@ private fun AddContentSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(24.dp)
     ) {
         Text(
-            "Add a new memory",
-            style = MaterialTheme.typography.headlineSmall,
+            "Create New",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.padding(bottom = 24.dp)
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+
+        val items = listOf(
+            Triple("Text Note", Icons.Default.TextFields) {
+                onHideSheet()
+                navController.navigate(Screen.TextInput.createRoute())
+            },
+            Triple("Upload Image", Icons.Default.Image) {
+                onHideSheet()
+                imagePickerLauncher.launch("image/*")
+            },
+            Triple("Take Photo", Icons.Default.PhotoCamera) {
+                onHideSheet()
+                navController.navigate(Screen.CameraCapture.route)
+            },
+            Triple("Record Audio", Icons.Default.Mic) {
+                onHideSheet()
+                navController.navigate(Screen.AudioCapture.createRoute())
+            }
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable {
-                    onHideSheet()
-                    navController.navigate(Screen.TextInput.createRoute())
+            items.forEach { (label, icon, action) ->
+                Card(
+                    onClick = action,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-            ) {
-                Icon(Icons.Default.TextFields, contentDescription = "Add Text", modifier = Modifier.size(48.dp))
-                Text("Add Text", style = MaterialTheme.typography.bodyLarge)
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable {
-                    onHideSheet()
-                    imagePickerLauncher.launch("image/*")
-                }
-            ) {
-                Icon(Icons.Default.Image, contentDescription = "Add Image", modifier = Modifier.size(48.dp))
-                Text("Add Image", style = MaterialTheme.typography.bodyLarge)
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable {
-                    onHideSheet()
-                    navController.navigate(Screen.CameraCapture.route)
-                }
-            ) {
-                Icon(Icons.Default.PhotoCamera, contentDescription = "Take Picture", modifier = Modifier.size(48.dp))
-                Text("Take Picture", style = MaterialTheme.typography.bodyLarge)
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable {
-                    onHideSheet()
-                    navController.navigate(Screen.AudioCapture.createRoute())
-                }
-            ) {
-                Icon(Icons.Default.Mic, contentDescription = "Add Audio", modifier = Modifier.size(48.dp))
-                Text("Add Audio", style = MaterialTheme.typography.bodyLarge)
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onHideSheet, modifier = Modifier.fillMaxWidth()) {
-            Text("Cancel")
-        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -596,4 +654,89 @@ private fun generateRandomGradientBrush(seed: Int): Brush {
     val random = java.util.Random(seed.toLong())
     val selectedColors = colors[random.nextInt(colors.size)]
     return Brush.verticalGradient(selectedColors)
+}
+
+@Composable
+fun HighlightMemoryCard(
+    memory: MemoryEntity,
+    tag: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (memory.imageUri != null) {
+                Image(
+                    painter = rememberAsyncImagePainter(model = memory.imageUri),
+                    contentDescription = memory.aiTitle,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(generateRandomGradientBrush(memory.id))
+                )
+            }
+
+            // Gradient Overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.4f),
+                                Color.Black.copy(alpha = 0.8f)
+                            ),
+                            startY = 200f
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+            ) {
+                SuggestionChip(
+                    onClick = { },
+                    label = { Text("Featured: $tag") },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    border = null
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = memory.aiTitle ?: "Untitled Memory",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (memory.aiSummary != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = memory.aiSummary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
 }
