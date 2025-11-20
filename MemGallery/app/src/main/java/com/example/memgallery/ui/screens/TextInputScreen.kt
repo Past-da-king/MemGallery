@@ -42,11 +42,18 @@ fun TextInputScreen(
             FloatingActionButton(
                 onClick = {
                     if (text.isNotBlank()) {
+                        // URL encode to handle long text and special characters safely
+                        val encodedText = try {
+                            java.net.URLEncoder.encode(text, "UTF-8")
+                        } catch (e: Exception) {
+                            text.take(500) // Fallback: truncate to safe length
+                        }
+                        
                         navController.navigate(
                             Screen.PostCapture.createRoute(
                                 imageUri = existingImageUri,
                                 audioUri = existingAudioUri,
-                                userText = text
+                                userText = encodedText
                             )
                         ) {
                             popUpTo(Screen.Gallery.route) { inclusive = false }

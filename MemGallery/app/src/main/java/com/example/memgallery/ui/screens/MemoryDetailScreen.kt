@@ -210,12 +210,10 @@ fun MemoryDetailContent(
                         Spacer(modifier = Modifier.height(24.dp))
                     }
 
-                    // User Note
+                    // User Note (Expandable)
                     if (memory.userText != null) {
-                        Text("Your Note", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(memory.userText, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(modifier = Modifier.height(24.dp))
+                        ExpandableSection(title = "Your Note", content = memory.userText)
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // AI Analysis Sections (Expandable)
