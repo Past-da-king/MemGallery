@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/YOUR_USERNAME/MemGallery/releases">
+  <a href="https://github.com/Past-da-king/MemGallery/releases">
     <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.3-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.3">
   </a>
 </p>
@@ -132,19 +132,6 @@ MemGallery transforms your Android device into an intelligent memory system that
 1. Go to the [Releases](../../releases) page
 2. Download the latest `MemGallery-v*.*.*.apk` file
 3. Open the APK on your Android device
-4. Allow installation from unknown sources if prompted
-5. Install and launch
-
-### Option 2: Build from Source
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/MemGallery.git
-cd MemGallery
-
-# Build the APK
-./gradlew assembleDebug
-
-# Install on connected device
 ./gradlew installDebug
 ```
 

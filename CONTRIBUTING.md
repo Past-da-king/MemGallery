@@ -7,7 +7,7 @@ Thank you for your interest in contributing to MemGallery! We welcome contributi
 1.  **Fork the repository** on GitHub.
 2.  **Clone your fork** locally:
     ```bash
-    git clone https://github.com/YOUR_USERNAME/MemGallery.git
+    git clone https://github.com/Past-da-king/MemGallery.git
     ```
 3.  **Create a new branch** for your feature or bug fix:
     ```bash
