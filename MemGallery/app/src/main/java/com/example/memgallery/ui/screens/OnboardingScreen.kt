@@ -12,6 +12,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -51,7 +52,7 @@ fun OnboardingScreen(
     navController: NavController,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -66,8 +67,9 @@ fun OnboardingScreen(
         ) { page ->
             when (page) {
                 0 -> WelcomePage()
-                1 -> PermissionsPage()
-                2 -> HowItWorksPage(
+                1 -> ApiKeySetupPage(viewModel = viewModel)
+                2 -> PermissionsPage()
+                3 -> HowItWorksPage(
                     onGetStarted = {
                         viewModel.completeOnboarding()
                         navController.navigate(Screen.Gallery.route) {
@@ -89,7 +91,7 @@ fun OnboardingScreen(
                 modifier = Modifier.align(Alignment.CenterStart),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                repeat(3) { iteration ->
+                repeat(4) { iteration ->
                     val color = if (pagerState.currentPage == iteration)
                         MaterialTheme.colorScheme.primary
                     else
@@ -103,7 +105,7 @@ fun OnboardingScreen(
                 }
             }
 
-            if (pagerState.currentPage < 2) {
+            if (pagerState.currentPage < 3) {
                 FloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
@@ -130,28 +132,12 @@ fun WelcomePage() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Premium Icon Placeholder
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.tertiary
-                        )
-                    ),
-                    shape = RoundedCornerShape(32.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "M",
-                style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        // App Icon
+        Image(
+            painter = androidx.compose.ui.res.painterResource(id = com.example.memgallery.R.mipmap.ic_launcher_foreground),
+            contentDescription = "MemGallery Icon",
+            modifier = Modifier.size(120.dp)
+        )
 
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -170,6 +156,152 @@ fun WelcomePage() {
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
+    val apiKey by viewModel.apiKey.collectAsState()
+    val apiKeyUiState by viewModel.apiKeyUiState.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Key Icon
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check, // Using Check as placeholder for Key
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "API Key Required",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "MemGallery uses Google's Gemini AI to analyze your memories.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Instructions Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Get your FREE API key:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8. dp))
+                Text(
+                    text = "1. Visit aistudio.google.com\n2. Sign in with Google\n3. Click 'Get API Key'\n4. Create API Key\n5. Copy and paste below",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // API Key Input
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = viewModel::onApiKeyChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Google AI Studio API Key") },
+            placeholder = { Text("AIzaSy...") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            isError = apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error
+        )
+
+        if (apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error) {
+            Text(
+                text = (apiKeyUiState as com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error).message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        if (apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success) {
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "API Key Valid!",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = viewModel::validateAndSaveKey,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = apiKey.isNotBlank() && apiKeyUiState !is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Loading,
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            if (apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Validate API Key")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "You can skip this and add it later in Settings",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
     }
 }
