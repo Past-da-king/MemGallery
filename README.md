@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/YOUR_USERNAME/MemGallery/releases">
+    <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.3-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.3">
+  </a>
+</p>
+
+<p align="center">
   <a href="#features">Features</a> •
   <a href="#why-memgallery">Why MemGallery?</a> •
   <a href="#how-it-works">How It Works</a> •
