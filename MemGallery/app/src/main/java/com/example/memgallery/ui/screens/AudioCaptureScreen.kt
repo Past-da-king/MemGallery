@@ -1,15 +1,15 @@
 package com.example.memgallery.ui.screens
 
 import android.Manifest
-import android.content.Context
-import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
@@ -18,21 +18,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.navigation.Screen
-import kotlinx.coroutines.delay
+import com.example.memgallery.ui.viewmodels.AudioCaptureViewModel
 import java.io.File
-import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
-import androidx.compose.runtime.DisposableEffect
-
-private const val TAG = "AudioCaptureScreen"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,60 +42,45 @@ fun AudioCaptureScreen(
     navController: NavController,
     existingImageUri: String?,
     existingAudioUri: String?,
-    existingUserText: String?
+    existingUserText: String?,
+    viewModel: AudioCaptureViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    var hasPermission by remember { mutableStateOf(false) }
-    var isRecording by remember { mutableStateOf(false) }
-    var recordingTime by remember { mutableStateOf(0L) }
-    var audioFilePath by remember { mutableStateOf<String?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val isRecording by viewModel.isRecording.collectAsState()
+    val recordingTime by viewModel.recordingTime.collectAsState()
+    val amplitudes by viewModel.amplitudes.collectAsState()
+    val recordedFilePath by viewModel.recordedFilePath.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    val mediaRecorder = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(context)
-        } else {
-            @Suppress("DEPRECATION")
-            MediaRecorder()
-        }
-    }
+    var hasPermission by remember { mutableStateOf(false) }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         hasPermission = isGranted
-        if (!isGranted) {
-            errorMessage = "Microphone permission denied. Cannot record audio."
-        }
     }
 
-    // Request permission when the screen is first launched
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         } else {
-            hasPermission = true // Permissions are granted by default on older Android versions
+            hasPermission = true
         }
     }
 
-    // Timer effect
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            recordingTime = 0L // Reset timer when recording starts
-            while (isRecording) {
-                delay(1000L)
-                recordingTime++
+    // Navigate when recording is finished and file is saved
+    LaunchedEffect(recordedFilePath) {
+        recordedFilePath?.let { path ->
+            val fileUri = Uri.fromFile(File(path)).toString()
+            navController.navigate(
+                Screen.PostCapture.createRoute(
+                    imageUri = existingImageUri,
+                    audioUri = fileUri,
+                    userText = existingUserText
+                )
+            ) {
+                popUpTo(Screen.Gallery.route)
             }
-        }
-    }
-
-    // Release MediaRecorder resources when the composable leaves the composition
-    DisposableEffect(Unit) {
-        onDispose {
-            if (isRecording) {
-                stopRecording(mediaRecorder)
-            }
-            mediaRecorder.release()
         }
     }
 
@@ -103,15 +90,25 @@ fun AudioCaptureScreen(
         String.format("%02d:%02d", minutes, seconds)
     }
 
+    // Pulsing animation for recording state
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (isRecording) 1.2f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Record Audio") },
+                title = { },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (isRecording) {
-                            stopRecording(mediaRecorder)
-                        }
+                        if (isRecording) viewModel.stopRecording()
                         navController.popBackStack()
                     }) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -119,7 +116,6 @@ fun AudioCaptureScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
                     navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
@@ -129,124 +125,134 @@ fun AudioCaptureScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Timer
-            Text(
-                text = formattedTime,
-                fontSize = 80.sp,
-                fontWeight = FontWeight.Light
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = if (isRecording) "Recording..." else "Ready to Record",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = formattedTime,
+                    fontSize = 80.sp,
+                    fontWeight = FontWeight.Thin,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.displayLarge
+                )
+            }
 
-            // Placeholder for Waveform
+            // Audio Visualizer
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .height(150.dp)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Waveform placeholder", modifier = Modifier.align(Alignment.Center))
+                if (isRecording) {
+                    AudioVisualizer(amplitudes = amplitudes)
+                } else {
+                    // Static line when not recording
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawLine(
+                            color = Color.Gray.copy(alpha = 0.3f),
+                            start = Offset(0f, size.height / 2),
+                            end = Offset(size.width, size.height / 2),
+                            strokeWidth = 4.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
             }
 
-            if (errorMessage != null) {
+            if (error != null) {
                 Text(
-                    text = errorMessage!!,
+                    text = error ?: "",
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 
-            // Start/Stop Button
-            FloatingActionButton(
-                onClick = {
-                    if (!hasPermission) {
-                        errorMessage = "Microphone permission is required to record audio."
-                        return@FloatingActionButton
-                    }
-
-                    if (isRecording) {
-                        stopRecording(mediaRecorder)
-                        isRecording = false
-                        audioFilePath?.let { path ->
-                            Log.d(TAG, "Recording stopped. File path: $path")
-                            val fileUri = Uri.fromFile(File(path)).toString()
-                            Log.d(TAG, "Navigating with file URI: $fileUri")
-                            navController.navigate(
-                                Screen.PostCapture.createRoute(
-                                    imageUri = existingImageUri,
-                                    audioUri = fileUri,
-                                    userText = existingUserText
-                                )
-                            ) {
-                                popUpTo(Screen.Gallery.route)
-                            }
-                        } ?: run {
-                            errorMessage = "Failed to save audio: file path is null."
-                            Log.e(TAG, "audioFilePath is null after stopping recording.")
-                            navController.popBackStack()
-                        }
-                    } else {
-                        errorMessage = null
-                        startRecording(context, mediaRecorder) { path ->
-                            audioFilePath = path
-                            isRecording = true
-                        }
-                    }
-                },
-                modifier = Modifier.size(72.dp),
-                containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            // Controls
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                    contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
-                    modifier = Modifier.size(36.dp)
+                // Record Button
+                Box(
+                    modifier = Modifier
+                        .size(88.dp)
+                        .scale(pulseScale)
+                        .clip(CircleShape)
+                        .background(
+                            if (isRecording) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                            else Color.Transparent
+                        )
                 )
+                
+                FloatingActionButton(
+                    onClick = {
+                        if (hasPermission) {
+                            if (isRecording) {
+                                viewModel.stopRecording()
+                            } else {
+                                viewModel.startRecording()
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(72.dp),
+                    shape = CircleShape,
+                    containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    contentColor = if (isRecording) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(
+                        imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                        contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
-private fun startRecording(context: Context, mediaRecorder: MediaRecorder, onStart: (String) -> Unit) {
-    val fileName = "AUD_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.m4a"
-    val filePath = File(context.externalCacheDir, fileName).absolutePath
-    Log.d(TAG, "Starting recording. Attempting to save to: $filePath")
+@Composable
+fun AudioVisualizer(
+    amplitudes: List<Float>,
+    modifier: Modifier = Modifier
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+        val barWidth = width / (amplitudes.size * 2f) // Spacing = barWidth
+        val gap = barWidth
+        
+        val startX = (width - (amplitudes.size * (barWidth + gap))) / 2f
 
-    try {
-        mediaRecorder.apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setOutputFile(filePath)
-            prepare()
-            start()
+        amplitudes.forEachIndexed { index, amplitude ->
+            // Animate height based on amplitude
+            // Min height 4dp so it's always visible
+            val barHeight = (height * amplitude).coerceAtLeast(10f)
+            
+            val x = startX + index * (barWidth + gap)
+            val y = (height - barHeight) / 2f
+            
+            drawRoundRect(
+                color = primaryColor.copy(alpha = 0.6f + (amplitude * 0.4f)), // Opacity changes with loudness
+                topLeft = Offset(x, y),
+                size = Size(barWidth, barHeight),
+                cornerRadius = CornerRadius(8f, 8f)
+            )
         }
-        Log.d(TAG, "Recording started successfully.")
-        onStart(filePath)
-    } catch (e: IOException) {
-        Log.e(TAG, "startRecording failed with IOException", e)
-        e.printStackTrace()
-    } catch (e: IllegalStateException) {
-        Log.e(TAG, "startRecording failed with IllegalStateException", e)
-        e.printStackTrace()
-    }
-}
-
-private fun stopRecording(mediaRecorder: MediaRecorder) {
-    try {
-        mediaRecorder.stop()
-        mediaRecorder.reset()
-        Log.d(TAG, "MediaRecorder stopped and reset successfully.")
-    } catch (e: IllegalStateException) {
-        Log.e(TAG, "stopRecording failed with IllegalStateException", e)
-        e.printStackTrace()
-    } catch (e: RuntimeException) {
-        Log.e(TAG, "stopRecording failed with RuntimeException", e)
-        e.printStackTrace()
     }
 }
