@@ -80,6 +80,15 @@ class ScreenshotObserver @Inject constructor(
                             .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                             .build()
                         workManager.enqueue(workRequest)
+                        
+                        // Show Toast feedback
+                        handler.post {
+                            android.widget.Toast.makeText(
+                                context,
+                                "Screenshot saved to MemGallery!",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             }
