@@ -24,6 +24,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val NOTIFICATION_FILTER = stringPreferencesKey("notification_filter") // "ALL", "EVENTS", "TODOS"
         val SHOW_IN_SHARE_SHEET = booleanPreferencesKey("show_in_share_sheet")
+        val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
     }
 
     val autoIndexScreenshotsFlow: Flow<Boolean> = context.dataStore.data
@@ -86,6 +87,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setShowInShareSheet(enabled: Boolean) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.SHOW_IN_SHARE_SHEET] = enabled
+        }
+    }
+
+    // Onboarding
+    val isOnboardingCompletedFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.IS_ONBOARDING_COMPLETED] ?: false
+        }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.IS_ONBOARDING_COMPLETED] = completed
         }
     }
 }

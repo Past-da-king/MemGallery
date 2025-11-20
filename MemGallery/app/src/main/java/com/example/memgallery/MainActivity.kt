@@ -38,10 +38,14 @@ class MainActivity : ComponentActivity() {
             // Extract shared data and shortcuts
             val sharedData = extractSharedData(intent)
             val shortcutAction = intent.getStringExtra("shortcut_action")
+            
+            // Check onboarding status
+            val isOnboardingCompleted = settingsRepository.isOnboardingCompletedFlow.first()
 
             setContent {
                 MemGalleryTheme {
                     AppNavigation(
+                        isOnboardingCompleted = isOnboardingCompleted,
                         sharedImageUri = sharedData?.imageUri,
                         sharedText = sharedData?.text,
                         shortcutAction = shortcutAction

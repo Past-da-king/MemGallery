@@ -31,16 +31,18 @@ class ActionNotificationHandler @Inject constructor(
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Notifications for events and to-dos from your memories"
-        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for events and to-dos from your memories"
+            }
 
-        val notificationManager = context.getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
+            val notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 
     suspend fun notifyAction(action: ActionDto, memoryId: Int) {
@@ -80,6 +82,17 @@ class ActionNotificationHandler @Inject constructor(
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                // Permission not granted, skip notification
+                return
+            }
+        }
 
         NotificationManagerCompat.from(context).notify(memoryId, notification)
     }

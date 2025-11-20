@@ -134,4 +134,19 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setShowInShareSheet(enabled)
         }
     }
+
+    // Onboarding State
+    val isOnboardingCompleted: StateFlow<Boolean> = settingsRepository.isOnboardingCompletedFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    // Onboarding Actions
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            settingsRepository.setOnboardingCompleted(true)
+        }
+    }
 }

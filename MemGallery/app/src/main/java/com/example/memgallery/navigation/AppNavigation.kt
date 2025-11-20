@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.example.memgallery.ui.screens.*
 
 sealed class Screen(val route: String) {
+    object Onboarding : Screen("onboarding")
     object Gallery : Screen("gallery")
     object Settings : Screen("settings")
 
@@ -45,11 +46,13 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun AppNavigation(
+    isOnboardingCompleted: Boolean = true,
     sharedImageUri: String? = null,
     sharedText: String? = null,
     shortcutAction: String? = null
 ) {
     val navController = rememberNavController()
+    val startDestination = if (isOnboardingCompleted) Screen.Gallery.route else Screen.Onboarding.route
 
     // Handle share intents - navigate to PostCaptureScreen
     LaunchedEffect(sharedImageUri, sharedText) {
@@ -85,7 +88,10 @@ fun AppNavigation(
         }
     }
 
-    NavHost(navController = navController, startDestination = Screen.Gallery.route) {
+    NavHost(navController = navController, startDestination = startDestination) {
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(navController = navController)
+        }
         composable(Screen.Gallery.route) {
             GalleryScreen(navController = navController, openAddSheet = shortcutAction == "add_memory")
         }
