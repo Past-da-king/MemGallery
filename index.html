@@ -6,23 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MemGallery - Your External Brain</title>
     <meta name="description"
-        content="MemGallery is an AI-powered Android application that acts as your personal memory assistant. Capture, process, and recall everything.">
+        content="MemGallery is an AI-powered memory assistant. Capture, process, and recall everything with Gemini AI.">
+    <link rel="icon" type="image/png" href="images/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            /* Material 3 Dark Theme Colors from Color.kt */
-            --md-sys-color-primary: #D0BCFF;
-            --md-sys-color-on-primary: #381E72;
-            --md-sys-color-primary-container: #4F378B;
-            --md-sys-color-on-primary-container: #EADDFF;
-            --md-sys-color-secondary: #CCC2DC;
-            --md-sys-color-on-secondary: #332D41;
-            --md-sys-color-background: #191022;
-            --md-sys-color-on-background: #E6E1E5;
-            --md-sys-color-surface: #191022;
-            --md-sys-color-on-surface: #E6E1E5;
-            --md-sys-color-surface-variant: #49454F;
-            --md-sys-color-on-surface-variant: #CAC4D0;
-            --md-sys-color-outline: #938F99;
+            --primary: #D0BCFF;
+            --primary-glow: rgba(208, 188, 255, 0.5);
+            --secondary: #CCC2DC;
+            --background: #0F0A16;
+            /* Darker than app for web depth */
+            --surface: rgba(25, 16, 34, 0.6);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text-main: #E6E1E5;
+            --text-muted: #CAC4D0;
+            --accent-gradient: linear-gradient(135deg, #D0BCFF 0%, #8C25F4 100%);
         }
 
         * {
@@ -32,232 +34,353 @@
         }
 
         body {
-            font-family: 'Roboto', 'Segoe UI', sans-serif;
-            background-color: var(--md-sys-color-background);
-            color: var(--md-sys-color-on-background);
-            line-height: 1.5;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(140, 37, 244, 0.08) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(208, 188, 255, 0.05) 0%, transparent 25%);
         }
 
-        /* Material 3 Top App Bar */
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 5px var(--primary-glow);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--primary-glow);
+            }
+
+            100% {
+                box-shadow: 0 0 5px var(--primary-glow);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .delay-1 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.3s;
+        }
+
+        /* Header */
         header {
-            background-color: var(--md-sys-color-surface);
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
+            position: fixed;
             top: 0;
-            z-index: 100;
-            /* Surface 2 elevation tint */
-            background-image: linear-gradient(rgba(208, 188, 255, 0.08), rgba(208, 188, 255, 0.08));
+            width: 100%;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(12px);
+            background: rgba(15, 10, 22, 0.7);
+            border-bottom: 1px solid var(--surface-border);
         }
 
-        .logo-container {
+        .logo {
             display: flex;
             align-items: center;
             gap: 12px;
             text-decoration: none;
-            color: var(--md-sys-color-on-surface);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
         }
 
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+        .logo img {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
         }
 
-        .logo-text {
-            font-size: 1.375rem;
-            /* Title Large */
-            font-weight: 400;
-        }
-
-        .github-link {
-            color: var(--md-sys-color-on-surface-variant);
-            text-decoration: none;
-            padding: 8px 16px;
+        .github-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--surface-border);
+            padding: 0.6rem 1.2rem;
             border-radius: 100px;
-            transition: background-color 0.2s;
+            color: var(--text-main);
+            text-decoration: none;
             font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .github-link:hover {
-            background-color: rgba(230, 225, 229, 0.08);
-            color: var(--md-sys-color-on-surface);
+        .github-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary);
         }
 
         /* Hero Section */
         .hero {
-            padding: 4rem 1.5rem;
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 24px;
+            text-align: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
         }
 
-        .app-icon-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 24px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        .hero-icon {
+            width: 140px;
+            height: 140px;
+            border-radius: 32px;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: float 6s ease-in-out infinite;
         }
 
         .hero h1 {
-            font-size: 3.5rem;
-            /* Display Large */
-            font-weight: 400;
+            font-family: 'Outfit', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
             line-height: 1.1;
-            color: var(--md-sys-color-on-background);
+            margin-bottom: 1.5rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            max-width: 900px;
         }
 
         .hero p {
-            font-size: 1.375rem;
-            /* Headline Small */
-            color: var(--md-sys-color-on-surface-variant);
+            font-size: 1.25rem;
+            color: var(--text-muted);
             max-width: 600px;
+            margin-bottom: 3rem;
         }
 
-        /* FAB / CTA Button */
-        .cta-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background-color: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            padding: 16px 32px;
+        .cta-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .primary-btn {
+            background: var(--accent-gradient);
+            color: #000;
+            /* High contrast on bright gradient */
+            padding: 1rem 2.5rem;
             border-radius: 16px;
             text-decoration: none;
-            font-size: 1rem;
-            font-weight: 500;
-            margin-top: 16px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 20px rgba(140, 37, 244, 0.3);
         }
 
-        .cta-button:hover {
+        .primary-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(140, 37, 244, 0.4);
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            padding: 1rem 2.5rem;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: 1px solid var(--surface-border);
+            transition: all 0.3s ease;
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            background-color: #5F44A3;
-            /* Slightly lighter container */
         }
 
         /* Features Grid */
         .features {
-            padding: 2rem 1.5rem 4rem;
             max-width: 1200px;
             margin: 0 auto;
-            width: 100%;
-        }
-
-        .features-grid {
+            padding: 4rem 2rem;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
         }
 
         .feature-card {
-            background-color: var(--md-sys-color-surface-variant);
-            /* Surface Variant */
-            color: var(--md-sys-color-on-surface-variant);
-            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            padding: 2.5rem;
             border-radius: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .feature-icon {
-            font-size: 2rem;
-            color: var(--md-sys-color-primary);
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            background: rgba(208, 188, 255, 0.1);
+            padding: 1rem;
+            border-radius: 16px;
+            color: var(--primary);
         }
 
         .feature-title {
-            font-size: 1.375rem;
-            /* Title Large */
-            color: var(--md-sys-color-on-surface);
-            font-weight: 400;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
         }
 
         .feature-desc {
+            color: var(--text-muted);
             font-size: 1rem;
-            /* Body Large */
-            line-height: 1.5;
         }
 
+        /* Footer */
         footer {
-            margin-top: auto;
-            padding: 2rem;
             text-align: center;
-            color: var(--md-sys-color-on-surface-variant);
-            font-size: 0.875rem;
-            border-top: 1px solid var(--md-sys-color-outline);
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--surface-border);
+            margin-top: 4rem;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.5rem;
             }
 
             .hero {
-                padding: 2rem 1rem;
+                padding-top: 6rem;
+            }
+
+            header {
+                padding: 1rem;
             }
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <a href="#" class="logo-container">
-            <img src="images/icon.png" alt="MemGallery Icon" class="logo-icon">
-            <span class="logo-text">MemGallery</span>
+    <header class="animate-fade-in">
+        <a href="#" class="logo">
+            <img src="images/icon.png" alt="Logo">
+            MemGallery
         </a>
-        <a href="https://github.com/YOUR_USERNAME/MemGallery" class="github-link">GitHub</a>
+        <a href="https://github.com/Past-da-king/MemGallery" class="github-btn">
+            <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
+                <path
+                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+        </a>
     </header>
 
     <section class="hero">
-        <img src="images/icon.png" alt="MemGallery Icon" class="app-icon-large">
-        <h1>Your External Brain</h1>
-        <p>Capture, process, and recall everything with AI. The memory assistant that never forgets.</p>
-        <a href="https://github.com/YOUR_USERNAME/MemGallery/releases" class="cta-button">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor">
-                <path
-                    d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
-            </svg>
-            Download Alpha v0.0.3
-        </a>
+        <img src="images/icon.png" alt="MemGallery Icon" class="hero-icon animate-fade-in">
+        <h1 class="animate-fade-in delay-1">Your External Brain<br>Powered by AI</h1>
+        <p class="animate-fade-in delay-2">Capture screenshots, voice notes, and photos. Let Gemini AI organize,
+            analyze, and remember everything for you.</p>
+
+        <div class="cta-group animate-fade-in delay-3">
+            <a href="https://github.com/Past-da-king/MemGallery/releases" class="primary-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
+                    fill="currentColor">
+                    <path
+                        d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+                </svg>
+                Download Alpha v0.0.3
+            </a>
+            <a href="https://github.com/Past-da-king/MemGallery" class="secondary-btn">View Source</a>
+        </div>
     </section>
 
-    <section class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📸</div>
-                <h3 class="feature-title">Smart Capture</h3>
-                <p class="feature-desc">Automatically detects screenshots and allows quick capture of photos and audio.
-                </p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🧠</div>
-                <h3 class="feature-title">AI Powered</h3>
-                <p class="feature-desc">Uses Gemini 2.5 Flash to analyze content, extract text, and understand context.
-                </p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔍</div>
-                <h3 class="feature-title">Semantic Search</h3>
-                <p class="feature-desc">Find memories by describing them naturally, not just by keywords.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3 class="feature-title">Private & Secure</h3>
-                <p class="feature-desc">Your memories are stored locally. AI processing is secure and private.</p>
-            </div>
+    <section class="features animate-fade-in delay-3">
+        <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <h3 class="feature-title">Smart Capture</h3>
+            <p class="feature-desc">Background service automatically detects screenshots. Quickly capture voice notes
+                and photos with one tap.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <h3 class="feature-title">Gemini AI</h3>
+            <p class="feature-desc">Powered by Google's Gemini 2.5 Flash. It sees, hears, and understands your memories
+                to extract meaning.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3 class="feature-title">Semantic Search</h3>
+            <p class="feature-desc">Forget keywords. Search by description: "The recipe mom sent me" or "That blue shirt
+                I liked".</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 class="feature-title">Actionable Insights</h3>
+            <p class="feature-desc">AI detects dates, locations, and tasks, offering one-click actions to add to
+                calendar or maps.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3 class="feature-title">Private by Design</h3>
+            <p class="feature-desc">Your data lives on your device. Local database storage with secure AI processing.
+            </p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎨</div>
+            <h3 class="feature-title">Material You</h3>
+            <p class="feature-desc">Beautiful, modern Android UI that adapts to your device's theme and supports dark
+                mode.</p>
         </div>
     </section>
 
