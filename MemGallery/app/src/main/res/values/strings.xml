@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">MemGallery</string>
+    
+    <!-- Shortcuts -->
+    <string name="shortcut_add">Add</string>
+    <string name="shortcut_add_memory">Add Memory</string>
+    <string name="shortcut_audio">Audio</string>
+    <string name="shortcut_record_audio">Record Audio</string>
+    <string name="shortcut_note">Note</string>
+    <string name="shortcut_create_note">Create Note</string>
+    
+    <!-- Process Text -->
+    <string name="process_text_label">Save to MemGallery</string>
 </resources>

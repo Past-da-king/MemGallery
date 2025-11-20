@@ -41,6 +41,29 @@ class SettingsViewModel @Inject constructor(
     private val _apiKey = MutableStateFlow("")
     val apiKey: StateFlow<String> = _apiKey.asStateFlow()
 
+    // Notification Preferences
+    val notificationsEnabled: StateFlow<Boolean> = settingsRepository.notificationsEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    val notificationFilter: StateFlow<String> = settingsRepository.notificationFilterFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "ALL"
+        )
+
+    // Share Sheet Preference
+    val showInShareSheet: StateFlow<Boolean> = settingsRepository.showInShareSheetFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
     init {
         viewModelScope.launch {
             val key = settingsRepository.apiKeyFlow.first()
@@ -89,6 +112,26 @@ class SettingsViewModel @Inject constructor(
             geminiService.disable()
             _apiKey.value = ""
             _apiKeyUiState.value = ApiKeyUiState.Idle
+        }
+    }
+
+    // Notification Actions
+    fun toggleNotifications(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setNotificationsEnabled(enabled)
+        }
+    }
+
+    fun setNotificationFilter(filter: String) {
+        viewModelScope.launch {
+            settingsRepository.setNotificationFilter(filter)
+        }
+    }
+
+    // Share Sheet Actions
+    fun setShowInShareSheet(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowInShareSheet(enabled)
         }
     }
 }

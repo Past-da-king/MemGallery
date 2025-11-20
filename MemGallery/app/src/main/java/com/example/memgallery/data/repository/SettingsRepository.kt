@@ -21,6 +21,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     private object PreferencesKeys {
         val AUTO_INDEX_SCREENSHOTS = booleanPreferencesKey("auto_index_screenshots")
         val API_KEY = stringPreferencesKey("api_key")
+        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val NOTIFICATION_FILTER = stringPreferencesKey("notification_filter") // "ALL", "EVENTS", "TODOS"
+        val SHOW_IN_SHARE_SHEET = booleanPreferencesKey("show_in_share_sheet")
     }
 
     val autoIndexScreenshotsFlow: Flow<Boolean> = context.dataStore.data
@@ -48,6 +51,41 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun clearApiKey() {
         context.dataStore.edit { settings ->
             settings.remove(PreferencesKeys.API_KEY)
+        }
+    }
+
+    // Notification Preferences
+    val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true
+        }
+
+    val notificationFilterFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.NOTIFICATION_FILTER] ?: "ALL"
+        }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setNotificationFilter(filter: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.NOTIFICATION_FILTER] = filter
+        }
+    }
+
+    // Share Sheet Preferences
+    val showInShareSheetFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SHOW_IN_SHARE_SHEET] ?: true
+        }
+
+    suspend fun setShowInShareSheet(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.SHOW_IN_SHARE_SHEET] = enabled
         }
     }
 }

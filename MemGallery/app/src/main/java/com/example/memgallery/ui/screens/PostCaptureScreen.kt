@@ -94,7 +94,15 @@ fun PostCaptureScreen(
         if (!isEditMode) {
             if (initialImageUri != null) creationViewModel.setDraftImageUri(initialImageUri)
             if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
-            if (initialUserText != null) creationViewModel.setDraftUserText(initialUserText)
+            if (initialUserText != null) {
+                // URL decode the text to handle special characters
+                val decodedText = try {
+                    java.net.URLDecoder.decode(initialUserText, "UTF-8")
+                } catch (e: Exception) {
+                    initialUserText
+                }
+                creationViewModel.setDraftUserText(decodedText)
+            }
         }
     }
 

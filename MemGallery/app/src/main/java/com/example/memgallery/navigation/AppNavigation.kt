@@ -2,6 +2,7 @@ package com.example.memgallery.navigation
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,11 +44,50 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    sharedImageUri: String? = null,
+    sharedText: String? = null,
+    shortcutAction: String? = null
+) {
     val navController = rememberNavController()
+
+    // Handle share intents - navigate to PostCaptureScreen
+    LaunchedEffect(sharedImageUri, sharedText) {
+        if (sharedImageUri != null || sharedText != null) {
+            // URL encode the text to handle special characters
+            val encodedText = sharedText?.let { 
+                java.net.URLEncoder.encode(it, "UTF-8") 
+            }
+            
+            navController.navigate(
+                Screen.PostCapture.createRoute(
+                    imageUri = sharedImageUri,
+                    audioUri = null,
+                    userText = encodedText
+                )
+            ) {
+                popUpTo(Screen.Gallery.route) { inclusive = false }
+            }
+        }
+    }
+
+    // Handle shortcuts
+    LaunchedEffect(shortcutAction) {
+        when (shortcutAction) {
+            "record_audio" -> {
+                navController.navigate(Screen.AudioCapture.createRoute(null, null, null))
+            }
+            "text_note" -> {
+                navController.navigate(Screen.TextInput.createRoute(null, null, null))
+            }
+            // "add_memory" will need to trigger bottom sheet in GalleryScreen
+            // This is handled differently as it's not a separate screen
+        }
+    }
+
     NavHost(navController = navController, startDestination = Screen.Gallery.route) {
         composable(Screen.Gallery.route) {
-            GalleryScreen(navController = navController)
+            GalleryScreen(navController = navController, openAddSheet = shortcutAction == "add_memory")
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)

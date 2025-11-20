@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +36,9 @@ fun SettingsScreen(
     val autoIndexScreenshots by viewModel.autoIndexScreenshots.collectAsState()
     val apiKey by viewModel.apiKey.collectAsState()
     val apiKeyUiState by viewModel.apiKeyUiState.collectAsState()
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val notificationFilter by viewModel.notificationFilter.collectAsState()
+    val showInShareSheet by viewModel.showInShareSheet.collectAsState()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -135,6 +139,95 @@ fun SettingsScreen(
                             }
                         }
                     )
+                }
+            }
+
+            HorizontalDivider()
+
+            // Notifications Section
+            SettingsSection(title = "Notifications") {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Master Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Enable Notifications",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = "Get notified about actions from memories",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = notificationsEnabled,
+                            onCheckedChange = { viewModel.toggleNotifications(it) }
+                        )
+                    }
+
+                    // Filter Options (Only show if notifications enabled)
+                    if (notificationsEnabled) {
+                        HorizontalDivider()
+
+                        Text(
+                            "Notify me for:",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+
+                        val filters = listOf(
+                            "ALL" to "All Actions",
+                            "EVENTS" to "Events Only",
+                            "TODOS" to "To-Dos Only"
+                        )
+
+                        filters.forEach { (value, label) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.setNotificationFilter(value) }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = notificationFilter == value,
+                                    onClick = { viewModel.setNotificationFilter(value) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(label, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+
+                    // Share Sheet Toggle
+                    HorizontalDivider()
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Show in Share Menu",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = "Allow sharing content from other apps to MemGallery",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = showInShareSheet,
+                            onCheckedChange = { viewModel.setShowInShareSheet(it) }
+                        )
+                    }
                 }
             }
         }

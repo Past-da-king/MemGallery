@@ -27,7 +27,8 @@ class MemoryProcessingWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val memoryRepository: MemoryRepository,
-    private val memoryDao: MemoryDao
+    private val memoryDao: MemoryDao,
+    private val actionNotificationHandler: ActionNotificationHandler
 ) : CoroutineWorker(appContext, workerParams) {
 
     companion object {
@@ -81,7 +82,10 @@ class MemoryProcessingWorker @AssistedInject constructor(
                 Log.d(TAG, "Memory ${memory.id} successfully processed")
                 val analysis = result.getOrNull()
                 if (analysis?.actions?.isNotEmpty() == true) {
-                    sendActionNotification(memory.id, analysis.actions)
+                    // Trigger notifications for each action
+                    analysis.actions.forEach { action ->
+                        actionNotificationHandler.notifyAction(action, memory.id)
+                    }
                 }
             } else {
                 val e = result.exceptionOrNull()

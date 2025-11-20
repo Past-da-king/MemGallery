@@ -58,7 +58,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun GalleryScreen(
     navController: NavController,
-    viewModel: GalleryViewModel = hiltViewModel()
+    viewModel: GalleryViewModel = hiltViewModel(),
+    openAddSheet: Boolean = false
 ) {
     val memories by viewModel.memories.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
@@ -112,6 +113,13 @@ fun GalleryScreen(
             isSearchBarVisible = false
         } else if (gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0) {
              isSearchBarVisible = true
+        }
+    }
+
+    // Handle shortcut to open add sheet
+    LaunchedEffect(openAddSheet) {
+        if (openAddSheet) {
+            showBottomSheet = true
         }
     }
 
