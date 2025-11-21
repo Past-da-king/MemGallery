@@ -25,6 +25,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val NOTIFICATION_FILTER = stringPreferencesKey("notification_filter") // "ALL", "EVENTS", "TODOS"
         val SHOW_IN_SHARE_SHEET = booleanPreferencesKey("show_in_share_sheet")
         val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
+        val TASK_SCREEN_ENABLED = booleanPreferencesKey("task_screen_enabled")
     }
 
     val autoIndexScreenshotsFlow: Flow<Boolean> = context.dataStore.data
@@ -99,6 +100,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.IS_ONBOARDING_COMPLETED] = completed
+        }
+    }
+
+    // Task Screen
+    val taskScreenEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.TASK_SCREEN_ENABLED] ?: true
+        }
+
+    suspend fun setTaskScreenEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.TASK_SCREEN_ENABLED] = enabled
         }
     }
 }

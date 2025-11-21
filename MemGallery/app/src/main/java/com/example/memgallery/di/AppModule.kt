@@ -24,7 +24,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "memgallery_db"
-        ).fallbackToDestructiveMigration().build()
+        ).build()
     }
 
     @Provides
@@ -40,4 +40,9 @@ object AppModule {
     }
 
 
+    @Provides
+    @Singleton
+    fun provideTaskDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.TaskDao {
+        return appDatabase.taskDao()
+    }
 }

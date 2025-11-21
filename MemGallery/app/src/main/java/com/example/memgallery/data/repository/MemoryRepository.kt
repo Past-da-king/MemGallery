@@ -23,6 +23,7 @@ private const val TAG = "MemoryRepository"
 class MemoryRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val memoryDao: MemoryDao,
+    private val taskDao: com.example.memgallery.data.local.dao.TaskDao,
     private val geminiService: GeminiService,
     private val fileUtils: FileUtils,
     private val settingsRepository: SettingsRepository
@@ -117,6 +118,25 @@ class MemoryRepository @Inject constructor(
                 )
                 memoryDao.updateMemory(updatedMemory)
                 Log.d(TAG, "Memory $memoryId updated with AI analysis.")
+
+                // Extract and save tasks
+                aiAnalysis.actions?.let { actions ->
+                    val tasks = actions.map { action ->
+                        com.example.memgallery.data.local.entity.TaskEntity(
+                            memoryId = memoryId,
+                            title = action.description.take(50), // Use first 50 chars as title
+                            description = action.description,
+                            dueDate = action.date,
+                            dueTime = action.time,
+                            priority = "MEDIUM", // Default
+                            status = "PENDING",
+                            type = action.type ?: "TODO"
+                        )
+                    }
+                    taskDao.insertTasks(tasks)
+                    Log.d(TAG, "Inserted ${tasks.size} tasks for memory $memoryId")
+                }
+
             } ?: run {
                 Log.e(TAG, "Memory with ID $memoryId not found for AI processing.")
                 throw IllegalStateException("Memory with ID $memoryId not found for AI processing.")

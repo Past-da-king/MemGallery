@@ -149,4 +149,19 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setOnboardingCompleted(true)
         }
     }
+
+    // Task Screen State
+    val taskScreenEnabled: StateFlow<Boolean> = settingsRepository.taskScreenEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    // Task Screen Actions
+    fun setTaskScreenEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setTaskScreenEnabled(enabled)
+        }
+    }
 }

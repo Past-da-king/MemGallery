@@ -39,6 +39,7 @@ fun SettingsScreen(
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val notificationFilter by viewModel.notificationFilter.collectAsState()
     val showInShareSheet by viewModel.showInShareSheet.collectAsState()
+    val taskScreenEnabled by viewModel.taskScreenEnabled.collectAsState()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -191,7 +192,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { viewModel.setNotificationFilter(value) }
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
@@ -228,6 +229,33 @@ fun SettingsScreen(
                             onCheckedChange = { viewModel.setShowInShareSheet(it) }
                         )
                     }
+                }
+            }
+
+            HorizontalDivider()
+
+            // Task Manager Section
+            SettingsSection(title = "Task Manager") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Enable Task Screen",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Show the task manager screen in the app",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = taskScreenEnabled,
+                        onCheckedChange = { viewModel.setTaskScreenEnabled(it) }
+                    )
                 }
             }
         }

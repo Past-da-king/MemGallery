@@ -93,7 +93,7 @@ fun AppNavigation(
             OnboardingScreen(navController = navController)
         }
         composable(Screen.Gallery.route) {
-            GalleryScreen(navController = navController, openAddSheet = shortcutAction == "add_memory")
+            HomeScreen(navController = navController, openAddSheet = shortcutAction == "add_memory")
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)

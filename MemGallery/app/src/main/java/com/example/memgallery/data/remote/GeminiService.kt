@@ -149,6 +149,9 @@ class GeminiService @Inject constructor(
                 promptBuilder.append("Incorporate the following user's note into your analysis: \"$userText\". ")
             }
 
+            val currentDateTime = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+            promptBuilder.append("The current date and time is $currentDateTime. Use this context to determine if events are past or future. ")
+
             promptBuilder.append("\n\nBased on all the provided content, generate the final JSON response.")
             parts.add(0, Part.fromText(promptBuilder.toString()))
 
