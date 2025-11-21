@@ -133,7 +133,7 @@ MemGallery transforms your Android device into an intelligent memory system that
 2. Download the latest `MemGallery-v*.*.*.apk` file
 3. Open the APK on your Android device
 ./gradlew installDebug
-```
+
 
 **Minimum Requirements:**
 - Android 7.0 (API 24) or higher
