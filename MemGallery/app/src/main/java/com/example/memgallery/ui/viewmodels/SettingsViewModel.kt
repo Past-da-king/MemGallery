@@ -164,4 +164,57 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setTaskScreenEnabled(enabled)
         }
     }
+
+    // Theme Settings
+    val dynamicThemingEnabled: StateFlow<Boolean> = settingsRepository.dynamicThemingEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    fun setDynamicThemingEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDynamicThemingEnabled(enabled)
+        }
+    }
+
+    val appThemeMode: StateFlow<String> = settingsRepository.appThemeModeFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "SYSTEM"
+        )
+
+    fun setAppThemeMode(mode: String) {
+        viewModelScope.launch {
+            settingsRepository.setAppThemeMode(mode)
+        }
+    }
+
+    val amoledModeEnabled: StateFlow<Boolean> = settingsRepository.amoledModeEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    fun setAmoledModeEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAmoledModeEnabled(enabled)
+        }
+    }
+
+    val selectedColor: StateFlow<Int> = settingsRepository.selectedColorFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = -1
+        )
+
+    fun setSelectedColor(color: Int) {
+        viewModelScope.launch {
+            settingsRepository.setSelectedColor(color)
+        }
+    }
 }

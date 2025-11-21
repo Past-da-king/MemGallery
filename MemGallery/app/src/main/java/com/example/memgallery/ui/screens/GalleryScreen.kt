@@ -120,8 +120,8 @@ fun GalleryScreen(
             if (!selectionModeActive) {
                 FloatingActionButton(
                     onClick = { showBottomSheet = true },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Memory")
                 }
@@ -366,7 +366,8 @@ fun GalleryScreen(
         if (showBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
                 AddContentSheet(
                     navController = navController,

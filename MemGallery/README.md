@@ -267,7 +267,7 @@ Just take a screenshot normally. MemGallery will detect it automatically!
 - **Content Observation**: ContentObserver for screenshot detection
 
 ### AI & ML
-- **AI Model**: Google Gemini 1.5 Flash
+- **AI Model**: Google Gemini 2.5 Flash
 - **API**: Generative AI SDK
 - **Capabilities**: Multimodal understanding (text + images)
 

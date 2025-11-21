@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.navigation.AppNavigation
 import com.example.memgallery.ui.theme.MemGalleryTheme
@@ -43,7 +45,17 @@ class MainActivity : ComponentActivity() {
             val isOnboardingCompleted = settingsRepository.isOnboardingCompletedFlow.first()
 
             setContent {
-                MemGalleryTheme {
+                val dynamicTheming by settingsRepository.dynamicThemingEnabledFlow.collectAsState(initial = true)
+                val appThemeMode by settingsRepository.appThemeModeFlow.collectAsState(initial = "SYSTEM")
+                val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
+                val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)
+
+                MemGalleryTheme(
+                    dynamicColor = dynamicTheming,
+                    appThemeMode = appThemeMode,
+                    amoledMode = amoledMode,
+                    customColor = selectedColor
+                ) {
                     AppNavigation(
                         isOnboardingCompleted = isOnboardingCompleted,
                         sharedImageUri = sharedData?.imageUri,

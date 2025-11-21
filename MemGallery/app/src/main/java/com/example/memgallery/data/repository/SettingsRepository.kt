@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -26,6 +27,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val SHOW_IN_SHARE_SHEET = booleanPreferencesKey("show_in_share_sheet")
         val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
         val TASK_SCREEN_ENABLED = booleanPreferencesKey("task_screen_enabled")
+        val DYNAMIC_THEMING_ENABLED = booleanPreferencesKey("dynamic_theming_enabled")
+        val APP_THEME_MODE = stringPreferencesKey("app_theme_mode") // "LIGHT", "DARK", "SYSTEM"
+        val AMOLED_MODE_ENABLED = booleanPreferencesKey("amoled_mode_enabled")
+        val SELECTED_COLOR = intPreferencesKey("selected_color")
     }
 
     val autoIndexScreenshotsFlow: Flow<Boolean> = context.dataStore.data
@@ -112,6 +117,51 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setTaskScreenEnabled(enabled: Boolean) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.TASK_SCREEN_ENABLED] = enabled
+        }
+    }
+
+    // Theme Preferences
+    val dynamicThemingEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.DYNAMIC_THEMING_ENABLED] ?: true
+        }
+
+    suspend fun setDynamicThemingEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.DYNAMIC_THEMING_ENABLED] = enabled
+        }
+    }
+
+    val appThemeModeFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.APP_THEME_MODE] ?: "SYSTEM"
+        }
+
+    suspend fun setAppThemeMode(mode: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.APP_THEME_MODE] = mode
+        }
+    }
+
+    val amoledModeEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.AMOLED_MODE_ENABLED] ?: false
+        }
+
+    suspend fun setAmoledModeEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.AMOLED_MODE_ENABLED] = enabled
+        }
+    }
+
+    val selectedColorFlow: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SELECTED_COLOR] ?: -1 // -1 indicates no custom color selected (use default)
+        }
+
+    suspend fun setSelectedColor(color: Int) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.SELECTED_COLOR] = color
         }
     }
 }

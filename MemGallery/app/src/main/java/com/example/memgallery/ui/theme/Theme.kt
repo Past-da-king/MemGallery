@@ -43,28 +43,84 @@ fun MemGalleryTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    appThemeMode: String = "SYSTEM",
+    amoledMode: Boolean = false,
+    customColor: Int = -1,
     content: @Composable () -> Unit
 ) {
+    val useDarkTheme = when (appThemeMode) {
+        "LIGHT" -> false
+        "DARK" -> true
+        else -> darkTheme
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
-        darkTheme -> DarkColorScheme
+        customColor != -1 -> {
+            val seedColor = androidx.compose.ui.graphics.Color(customColor)
+            if (useDarkTheme) {
+                darkColorScheme(
+                    primary = seedColor,
+                    onPrimary = androidx.compose.ui.graphics.Color.Black,
+                    primaryContainer = seedColor.copy(alpha = 0.3f),
+                    onPrimaryContainer = androidx.compose.ui.graphics.Color.White, // High contrast for dark mode
+                    secondary = seedColor,
+                    onSecondary = androidx.compose.ui.graphics.Color.Black,
+                    secondaryContainer = seedColor.copy(alpha = 0.3f),
+                    onSecondaryContainer = androidx.compose.ui.graphics.Color.White,
+                    tertiary = seedColor,
+                    onTertiary = androidx.compose.ui.graphics.Color.Black,
+                    tertiaryContainer = seedColor.copy(alpha = 0.3f),
+                    onTertiaryContainer = androidx.compose.ui.graphics.Color.White
+                )
+            } else {
+                lightColorScheme(
+                    primary = seedColor,
+                    onPrimary = androidx.compose.ui.graphics.Color.White,
+                    primaryContainer = seedColor.copy(alpha = 0.2f), // Slightly more visible container
+                    onPrimaryContainer = androidx.compose.ui.graphics.Color.Black, // High contrast for light mode
+                    secondary = seedColor,
+                    onSecondary = androidx.compose.ui.graphics.Color.White,
+                    secondaryContainer = seedColor.copy(alpha = 0.2f),
+                    onSecondaryContainer = androidx.compose.ui.graphics.Color.Black,
+                    tertiary = seedColor,
+                    onTertiary = androidx.compose.ui.graphics.Color.White,
+                    tertiaryContainer = seedColor.copy(alpha = 0.2f),
+                    onTertiaryContainer = androidx.compose.ui.graphics.Color.Black
+                )
+            }
+        }
+        useDarkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+
+    val finalColorScheme = if (amoledMode && useDarkTheme) {
+        colorScheme.copy(
+            background = androidx.compose.ui.graphics.Color.Black,
+            surface = androidx.compose.ui.graphics.Color.Black,
+            surfaceContainer = androidx.compose.ui.graphics.Color.Black,
+            surfaceContainerLow = androidx.compose.ui.graphics.Color.Black,
+            surfaceContainerLowest = androidx.compose.ui.graphics.Color.Black,
+            surfaceContainerHigh = androidx.compose.ui.graphics.Color(0xFF121212) // Slightly lighter for cards
+        )
+    } else {
+        colorScheme
+    }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = android.graphics.Color.TRANSPARENT
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !useDarkTheme
         }
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = finalColorScheme,
         typography = Typography,
         content = content
     )

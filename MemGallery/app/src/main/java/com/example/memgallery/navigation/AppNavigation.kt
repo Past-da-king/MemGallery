@@ -1,6 +1,10 @@
 package com.example.memgallery.navigation
 
 import android.net.Uri
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
@@ -95,7 +99,21 @@ fun AppNavigation(
         composable(Screen.Gallery.route) {
             HomeScreen(navController = navController, openAddSheet = shortcutAction == "add_memory")
         }
-        composable(Screen.Settings.route) {
+        composable(
+            route = Screen.Settings.route,
+            enterTransition = {
+                slideInHorizontally(initialOffsetX = { it }) + fadeIn()
+            },
+            exitTransition = {
+                slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
+            },
+            popEnterTransition = {
+                slideInHorizontally(initialOffsetX = { -it }) + fadeIn()
+            },
+            popExitTransition = {
+                slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+            }
+        ) {
             SettingsScreen(navController = navController)
         }
         composable(
