@@ -26,7 +26,8 @@ class MemoryRepository @Inject constructor(
     private val taskDao: com.example.memgallery.data.local.dao.TaskDao,
     private val geminiService: GeminiService,
     private val fileUtils: FileUtils,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val urlMetadataExtractor: com.example.memgallery.utils.UrlMetadataExtractor
 ) {
     private val workManager = WorkManager.getInstance(context)
 
@@ -41,16 +42,49 @@ class MemoryRepository @Inject constructor(
     suspend fun savePendingMemory(
         imageUri: String?,
         audioUri: String?,
-        userText: String?
+        userText: String?,
+        bookmarkUrl: String? = null
     ): Result<Long> {
-        Log.d(TAG, "savePendingMemory called with imageUri: $imageUri, audioUri: $audioUri, userText: $userText")
+        Log.d(TAG, "savePendingMemory called with imageUri: $imageUri, audioUri: $audioUri, userText: $userText, bookmarkUrl: $bookmarkUrl")
+
+        // Extract URL metadata if bookmarkUrl is present
+        var bookmarkTitle: String? = null
+        var bookmarkDescription: String? = null
+        var bookmarkImageUrl: String? = null
+        var bookmarkFaviconUrl: String? = null
+
+        if (bookmarkUrl != null) {
+            val metadata = urlMetadataExtractor.extract(bookmarkUrl)
+            bookmarkTitle = metadata.title
+            bookmarkDescription = metadata.description
+            
+            // Download bookmark image if available
+            if (metadata.imageUrl != null) {
+                val downloadedUri = fileUtils.downloadImageFromUrl(metadata.imageUrl)
+                if (downloadedUri != null) {
+                    bookmarkImageUrl = downloadedUri.toString()
+                    Log.d(TAG, "Bookmark image downloaded to: $bookmarkImageUrl")
+                } else {
+                    bookmarkImageUrl = metadata.imageUrl // Fallback to remote URL if download fails
+                }
+            }
+            
+            bookmarkFaviconUrl = metadata.faviconUrl
+            Log.d(TAG, "Extracted metadata: $metadata")
+        }
 
         // Create permanent copies for storage
-        val permanentImageUri = imageUri?.let {
+        var permanentImageUri = imageUri?.let {
             Log.d(TAG, "Copying image to internal storage from: $it")
             val newUri = fileUtils.copyFileToInternalStorage(Uri.parse(it), "image")
             Log.d(TAG, "Image copied to: $newUri")
             newUri?.toString()
+        }
+
+        // If no main image provided but we have a bookmark image, use it as the main image
+        if (permanentImageUri == null && bookmarkImageUrl != null) {
+             permanentImageUri = bookmarkImageUrl
+             Log.d(TAG, "Using bookmark image as main image: $permanentImageUri")
         }
 
         val permanentAudioUri = audioUri?.let {
@@ -64,6 +98,11 @@ class MemoryRepository @Inject constructor(
             userText = userText,
             imageUri = permanentImageUri,
             audioFilePath = permanentAudioUri,
+            bookmarkUrl = bookmarkUrl,
+            bookmarkTitle = bookmarkTitle,
+            bookmarkDescription = bookmarkDescription,
+            bookmarkImageUrl = bookmarkImageUrl,
+            bookmarkFaviconUrl = bookmarkFaviconUrl,
             aiTitle = null, // Will be filled by AI
             aiSummary = null, // Will be filled by AI
             aiTags = null, // Will be filled by AI
@@ -83,7 +122,11 @@ class MemoryRepository @Inject constructor(
         memoryId: Int,
         imageUri: String?,
         audioUri: String?,
-        userText: String?
+        userText: String?,
+        bookmarkUrl: String? = null,
+        bookmarkTitle: String? = null,
+        bookmarkDescription: String? = null,
+        bookmarkImageUrl: String? = null
     ): Result<com.example.memgallery.data.remote.dto.AiAnalysisDto> {
         Log.d(TAG, "processMemoryWithAI started for memoryId: $memoryId")
         if (!geminiService.isEnabled()) {
@@ -98,7 +141,15 @@ class MemoryRepository @Inject constructor(
             }
         }
 
-        val analysisResult = geminiService.processMemory(imageUri, audioUri, userText)
+        val analysisResult = geminiService.processMemory(
+            imageUri, 
+            audioUri, 
+            userText,
+            bookmarkUrl,
+            bookmarkTitle,
+            bookmarkDescription,
+            bookmarkImageUrl
+        )
 
         analysisResult.onFailure {
             Log.e(TAG, "AI processing failed for memoryId: $memoryId", it)

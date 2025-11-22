@@ -59,6 +59,7 @@ class GalleryViewModel @Inject constructor(
             "Images" -> filteredBySearch.filter { it.imageUri != null }
             "Notes" -> filteredBySearch.filter { !it.userText.isNullOrBlank() }
             "Audio" -> filteredBySearch.filter { it.audioFilePath != null }
+            "Bookmarks" -> filteredBySearch.filter { it.bookmarkUrl != null }
             "All" -> filteredBySearch
             else -> filteredBySearch // Should not happen with defined filters
         }

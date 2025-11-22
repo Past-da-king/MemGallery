@@ -12,6 +12,13 @@ import com.example.memgallery.data.repository.SettingsRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import androidx.activity.compose.setContent
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import com.example.memgallery.ui.theme.MemGalleryTheme
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -34,14 +41,46 @@ class ShareActivity : ComponentActivity() {
                 return@launch
             }
 
-            when (intent?.action) {
-                Intent.ACTION_SEND -> handleShare()
-                else -> finish()
+            if (intent?.action == Intent.ACTION_SEND) {
+                setContent {
+                    MemGalleryTheme {
+                        ShareDialog(
+                            onQuickSave = { handleShare(quickSave = true) },
+                            onEdit = { handleShare(quickSave = false) },
+                            onDismiss = { finish() }
+                        )
+                    }
+                }
+            } else {
+                finish()
             }
         }
     }
 
-    private fun handleShare() {
+    @Composable
+    fun ShareDialog(
+        onQuickSave: () -> Unit,
+        onEdit: () -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Save to MemGallery") },
+            text = { Text("Choose how you want to save this memory.") },
+            confirmButton = {
+                Button(onClick = onQuickSave) {
+                    Text("Quick Save")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = onEdit) {
+                    Text("Edit")
+                }
+            }
+        )
+    }
+
+    private fun handleShare(quickSave: Boolean) {
         lifecycleScope.launch {
             try {
                 val imageUri = if (intent.type?.startsWith("image/") == true) {
@@ -50,20 +89,40 @@ class ShareActivity : ComponentActivity() {
 
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT)
 
-                // Save to database (will auto-trigger processing via MemoryProcessingWorker)
-                memoryRepository.savePendingMemory(
-                    imageUri = imageUri,
-                    audioUri = null,
-                    userText = text
-                )
+                if (quickSave) {
+                    // Extract URL from text if present
+                    val urlRegex = "(https?://\\S+)".toRegex()
+                    val bookmarkUrl = text?.let { urlRegex.find(it)?.value }
 
-                runOnUiThread {
-                    Toast.makeText(this@ShareActivity, "Saved to MemGallery!", Toast.LENGTH_SHORT).show()
+                    // Save to database
+                    memoryRepository.savePendingMemory(
+                        imageUri = imageUri,
+                        audioUri = null,
+                        userText = text,
+                        bookmarkUrl = bookmarkUrl
+                    )
+
+                    runOnUiThread {
+                        Toast.makeText(this@ShareActivity, "Saved to MemGallery!", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                } else {
+                    // Forward to MainActivity for editing
+                    val mainIntent = Intent(this@ShareActivity, MainActivity::class.java).apply {
+                        action = Intent.ACTION_SEND
+                        type = intent.type
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        if (imageUri != null) {
+                            putExtra(Intent.EXTRA_STREAM, Uri.parse(imageUri))
+                        }
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    startActivity(mainIntent)
                     finish()
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@ShareActivity, "Failed to save", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ShareActivity, "Failed to process", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             }

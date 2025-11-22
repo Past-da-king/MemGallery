@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -104,6 +105,7 @@ fun MemoryDetailContent(
     var showFullscreenImage by remember { mutableStateOf(false) }
     var fullscreenImageUri by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     Box(modifier = modifier.fillMaxSize()) {
         // Hero Image
@@ -182,6 +184,42 @@ fun MemoryDetailContent(
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    // Bookmark Details
+                    if (memory.bookmarkUrl != null) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            onClick = {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(memory.bookmarkUrl))
+                                androidx.core.content.ContextCompat.startActivity(context, intent, null)
+                            }
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Bookmark", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                if (!memory.bookmarkTitle.isNullOrBlank()) {
+                                    Text(memory.bookmarkTitle, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                                
+                                if (!memory.bookmarkDescription.isNullOrBlank()) {
+                                    Text(memory.bookmarkDescription, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                
+                                Text(memory.bookmarkUrl, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
 
                     // AI Summary
                     if (!memory.aiSummary.isNullOrBlank()) {

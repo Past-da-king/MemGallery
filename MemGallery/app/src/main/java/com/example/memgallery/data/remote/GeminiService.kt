@@ -92,7 +92,11 @@ class GeminiService @Inject constructor(
     suspend fun processMemory(
         imageUri: String?,
         audioUri: String?,
-        userText: String?
+        userText: String?,
+        bookmarkUrl: String?,
+        bookmarkTitle: String?,
+        bookmarkDescription: String?,
+        bookmarkImageUrl: String?
     ): Result<AiAnalysisDto> = withContext(Dispatchers.IO) {
         Log.d(TAG, "processMemory started")
         val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client is not initialized."))
@@ -129,6 +133,20 @@ class GeminiService @Inject constructor(
                 }
                 parts.add(Part.fromBytes(resizedImageBytes, mimeType))
                 promptBuilder.append("Analyze the provided image in detail. ")
+            }
+
+            // Handle Bookmark Image (Remote URL)
+            if (bookmarkImageUrl != null && imageUri == null) {
+                 // Note: For now, we are not downloading the remote image to send to Gemini as bytes.
+                 // We are relying on the text description and metadata.
+                 // Future improvement: Download the image from bookmarkImageUrl and send it as bytes.
+                 promptBuilder.append("The user bookmarked a page with this preview image URL: $bookmarkImageUrl. ")
+            }
+            
+            if (bookmarkUrl != null) {
+                promptBuilder.append("Analyze this bookmarked webpage: $bookmarkUrl. ")
+                if (!bookmarkTitle.isNullOrBlank()) promptBuilder.append("Title: $bookmarkTitle. ")
+                if (!bookmarkDescription.isNullOrBlank()) promptBuilder.append("Description: $bookmarkDescription. ")
             }
 
             if (audioUri != null) {

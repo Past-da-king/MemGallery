@@ -5,13 +5,13 @@
     <shortcut
         android:shortcutId="add_memory"
         android:enabled="true"
-        android:icon="@drawable/ic_launcher_foreground"
+        android:icon="@drawable/ic_shortcut_add"
         android:shortcutShortLabel="@string/shortcut_add"
         android:shortcutLongLabel="@string/shortcut_add_memory">
         <intent
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.example.memgallery"
-            android:targetClass="com.example.memgallery.MainActivity">
+            android:targetClass="com.example.memgallery.ShortcutOverlayActivity">
             <extra android:name="shortcut_action" android:value="add_memory" />
         </intent>
         <categories android:name="android.shortcut.conversation" />
@@ -21,7 +21,7 @@
     <shortcut
         android:shortcutId="record_audio"
         android:enabled="true"
-        android:icon="@drawable/ic_launcher_foreground"
+        android:icon="@drawable/ic_shortcut_audio"
         android:shortcutShortLabel="@string/shortcut_audio"
         android:shortcutLongLabel="@string/shortcut_record_audio">
         <intent
@@ -36,7 +36,7 @@
     <shortcut
         android:shortcutId="text_note"
         android:enabled="true"
-        android:icon="@drawable/ic_launcher_foreground"
+        android:icon="@drawable/ic_shortcut_note"
         android:shortcutShortLabel="@string/shortcut_note"
         android:shortcutLongLabel="@string/shortcut_create_note">
         <intent

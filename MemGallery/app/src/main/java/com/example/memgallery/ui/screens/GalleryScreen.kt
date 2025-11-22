@@ -16,6 +16,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -339,7 +340,7 @@ fun GalleryScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             modifier = Modifier.padding(top = 12.dp)
                         ) {
-                            val filters = listOf("All", "Images", "Notes", "Audio")
+                            val filters = listOf("All", "Images", "Notes", "Audio", "Bookmarks")
                             items(filters) { filter ->
                                     val isSelected = selectedFilter == filter
                                     FilterChip(
@@ -623,6 +624,10 @@ private fun AddContentSheet(
             Triple("Record Audio", Icons.Default.Mic) {
                 onHideSheet()
                 navController.navigate(Screen.AudioCapture.createRoute())
+            },
+            Triple("Save Bookmark", Icons.Default.Bookmark) {
+                onHideSheet()
+                navController.navigate(Screen.BookmarkInput.createRoute())
             }
         )
 

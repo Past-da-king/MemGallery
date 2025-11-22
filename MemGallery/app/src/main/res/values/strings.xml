@@ -11,4 +11,8 @@
     
     <!-- Process Text -->
     <string name="process_text_label">Save to MemGallery</string>
+    
+    <!-- Share Targets -->
+    <string name="share_quick_save">Quick Save</string>
+    <string name="share_open_in_app">Open in App</string>
 </resources>

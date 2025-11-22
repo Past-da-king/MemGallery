@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Main icon: Download/Save icon -->
+    <item>
+        <vector
+            android:width="48dp"
+            android:height="48dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#4CAF50"
+                android:pathData="M19,12v7H5v-7H3v7c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2v-7h-2zM13,12.67l2.59,-2.58L17,11.5l-5,5 -5,-5 1.41,-1.41L11,12.67V3h2z"/>
+        </vector>
+    </item>
+    
+    <!-- Small overlay: MemGallery app icon in bottom-right corner -->
+    <item
+        android:width="20dp"
+        android:height="20dp"
+        android:gravity="bottom|end">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/>
+            <size android:width="20dp" android:height="20dp"/>
+        </shape>
+    </item>
+    <item
+        android:width="18dp"
+        android:height="18dp"
+        android:gravity="bottom|end">
+        <vector
+            android:width="18dp"
+            android:height="18dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#6200EE"
+                android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,5c1.66,0 3,1.34 3,3s-1.34,3 -3,3 -3,-1.34 -3,-3 1.34,-3 3,-3zM12,19.2c-2.5,0 -4.71,-1.28 -6,-3.22 0.03,-1.99 4,-3.08 6,-3.08 1.99,0 5.97,1.09 6,3.08 -1.29,1.94 -3.5,3.22 -6,3.22z"/>
+        </vector>
+    </item>
+</layer-list>

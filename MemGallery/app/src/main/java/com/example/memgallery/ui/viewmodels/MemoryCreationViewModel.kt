@@ -19,7 +19,9 @@ sealed interface MemoryCreationUiState {
 
 @HiltViewModel
 class MemoryCreationViewModel @Inject constructor(
-    private val memoryRepository: MemoryRepository
+    private val memoryRepository: MemoryRepository,
+    private val urlMetadataExtractor: com.example.memgallery.utils.UrlMetadataExtractor,
+    private val fileUtils: com.example.memgallery.utils.FileUtils
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MemoryCreationUiState>(MemoryCreationUiState.Idle)
@@ -34,6 +36,9 @@ class MemoryCreationViewModel @Inject constructor(
     private val _draftUserText = MutableStateFlow<String?>(null)
     val draftUserText: StateFlow<String?> = _draftUserText.asStateFlow()
 
+    private val _draftBookmarkUrl = MutableStateFlow<String?>(null)
+    val draftBookmarkUrl: StateFlow<String?> = _draftBookmarkUrl.asStateFlow()
+
     fun setDraftImageUri(uri: String?) {
         _draftImageUri.value = uri
     }
@@ -46,12 +51,32 @@ class MemoryCreationViewModel @Inject constructor(
         _draftUserText.value = text
     }
 
+    fun setDraftBookmarkUrl(url: String?) {
+        _draftBookmarkUrl.value = url
+        if (!url.isNullOrBlank()) {
+            viewModelScope.launch {
+                try {
+                    val metadata = urlMetadataExtractor.extract(url)
+                    if (metadata.imageUrl != null && _draftImageUri.value == null) {
+                        val localUri = fileUtils.downloadImageFromUrl(metadata.imageUrl)
+                        if (localUri != null) {
+                            _draftImageUri.value = localUri.toString()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
     fun createMemory() {
         val imageUri = _draftImageUri.value
         val audioUri = _draftAudioUri.value
         val userText = _draftUserText.value
+        val bookmarkUrl = _draftBookmarkUrl.value
 
-        if (imageUri == null && audioUri == null && userText.isNullOrBlank()) {
+        if (imageUri == null && audioUri == null && userText.isNullOrBlank() && bookmarkUrl.isNullOrBlank()) {
             _uiState.value = MemoryCreationUiState.Error("At least one input is required.")
             return
         }
@@ -62,7 +87,8 @@ class MemoryCreationViewModel @Inject constructor(
             val result = memoryRepository.savePendingMemory(
                 imageUri = imageUri,
                 audioUri = audioUri,
-                userText = userText
+                userText = userText,
+                bookmarkUrl = bookmarkUrl
             )
 
             result.onSuccess { newId ->
@@ -78,5 +104,6 @@ class MemoryCreationViewModel @Inject constructor(
         _draftImageUri.value = null
         _draftAudioUri.value = null
         _draftUserText.value = null
+        _draftBookmarkUrl.value = null
     }
 }

@@ -40,6 +40,7 @@ fun PostCaptureScreen(
     initialImageUri: String? = null,
     initialAudioUri: String? = null,
     initialUserText: String? = null,
+    initialBookmarkUrl: String? = null,
     memoryId: Int? = null,
     creationViewModel: MemoryCreationViewModel = hiltViewModel(),
     updateViewModel: MemoryUpdateViewModel = hiltViewModel()
@@ -50,11 +51,14 @@ fun PostCaptureScreen(
     val draftImageUri by creationViewModel.draftImageUri.collectAsState()
     val draftAudioUri by creationViewModel.draftAudioUri.collectAsState()
     val draftUserText by creationViewModel.draftUserText.collectAsState()
+    val draftBookmarkUrl by creationViewModel.draftBookmarkUrl.collectAsState()
     val uiState by creationViewModel.uiState.collectAsState()
 
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
     var showAddImageSheet by remember { mutableStateOf(false) }
+    var showUrlDialog by remember { mutableStateOf(false) }
+    var tempUrl by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -86,14 +90,16 @@ fun PostCaptureScreen(
             creationViewModel.setDraftImageUri(memory!!.imageUri)
             creationViewModel.setDraftAudioUri(memory!!.audioFilePath)
             creationViewModel.setDraftUserText(memory!!.userText)
+            creationViewModel.setDraftBookmarkUrl(memory!!.bookmarkUrl)
         }
     }
 
     // Set initial draft values from navigation arguments
-    LaunchedEffect(initialImageUri, initialAudioUri, initialUserText) {
+    LaunchedEffect(initialImageUri, initialAudioUri, initialUserText, initialBookmarkUrl) {
         if (!isEditMode) {
             if (initialImageUri != null) creationViewModel.setDraftImageUri(initialImageUri)
             if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
+            if (initialBookmarkUrl != null) creationViewModel.setDraftBookmarkUrl(initialBookmarkUrl)
             if (initialUserText != null) {
                 // URL decode the text to handle special characters
                 val decodedText = try {
@@ -193,6 +199,13 @@ fun PostCaptureScreen(
                         Text(draftUserText!!, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
+                if (draftBookmarkUrl != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Icon(Icons.Default.Link, contentDescription = "URL Added")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(draftBookmarkUrl!!, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -207,22 +220,32 @@ fun PostCaptureScreen(
                     onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     enabled = draftAudioUri == null
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Add Audio", modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Audio")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Audio")
                 }
                 Button(
                     onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Icon(Icons.Default.EditNote, contentDescription = "Add Text", modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Text")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Text")
+                }
+                Button(
+                    onClick = { showUrlDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Icon(Icons.Default.Link, contentDescription = "Add URL", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("URL")
                 }
             }
 
@@ -235,7 +258,8 @@ fun PostCaptureScreen(
                         val updatedMemory = memory!!.copy(
                             userText = draftUserText,
                             imageUri = draftImageUri,
-                            audioFilePath = draftAudioUri
+                            audioFilePath = draftAudioUri,
+                            bookmarkUrl = draftBookmarkUrl
                         )
                         updateViewModel.updateMemory(updatedMemory)
                         navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
@@ -279,6 +303,35 @@ fun PostCaptureScreen(
                     }
                 )
             }
+        }
+        
+        if (showUrlDialog) {
+            AlertDialog(
+                onDismissRequest = { showUrlDialog = false },
+                title = { Text("Add URL") },
+                text = {
+                    OutlinedTextField(
+                        value = tempUrl,
+                        onValueChange = { tempUrl = it },
+                        label = { Text("Enter URL") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        creationViewModel.setDraftBookmarkUrl(tempUrl)
+                        showUrlDialog = false
+                        tempUrl = ""
+                    }) {
+                        Text("Add")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUrlDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

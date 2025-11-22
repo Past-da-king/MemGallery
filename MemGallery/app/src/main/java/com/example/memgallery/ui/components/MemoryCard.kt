@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.filled.HourglassEmpty
@@ -63,9 +64,9 @@ fun MemoryCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Image or Placeholder
-            if (memory.imageUri != null) {
+            if (memory.imageUri != null || memory.bookmarkImageUrl != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(model = memory.imageUri),
+                    painter = rememberAsyncImagePainter(model = memory.imageUri ?: memory.bookmarkImageUrl),
                     contentDescription = memory.aiTitle ?: "Memory",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -132,7 +133,7 @@ fun MemoryCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (memory.imageUri != null) {
+                    if (memory.imageUri != null || memory.bookmarkImageUrl != null) {
                         Icon(
                             imageVector = Icons.Outlined.PhotoCamera,
                             contentDescription = "Image",
@@ -152,6 +153,14 @@ fun MemoryCard(
                         Icon(
                             imageVector = Icons.Outlined.EditNote,
                             contentDescription = "Text",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    if (memory.bookmarkUrl != null) {
+                        Icon(
+                            imageVector = Icons.Outlined.Bookmark,
+                            contentDescription = "Bookmark",
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )

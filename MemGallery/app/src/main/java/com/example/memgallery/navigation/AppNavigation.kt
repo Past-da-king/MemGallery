@@ -33,9 +33,9 @@ sealed class Screen(val route: String) {
         }
     }
 
-    object PostCapture : Screen("post_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null): String {
-            return "post_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}"
+    object PostCapture : Screen("post_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
+            return "post_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
         }
     }
 
@@ -46,6 +46,10 @@ sealed class Screen(val route: String) {
     object Detail : Screen("detail/{memoryId}") {
         fun createRoute(memoryId: Int) = "detail/$memoryId"
     }
+
+    object BookmarkInput : Screen("bookmark_input") {
+        fun createRoute() = "bookmark_input"
+    }
 }
 
 @Composable
@@ -53,10 +57,20 @@ fun AppNavigation(
     isOnboardingCompleted: Boolean = true,
     sharedImageUri: String? = null,
     sharedText: String? = null,
-    shortcutAction: String? = null
+    shortcutAction: String? = null,
+    navigateToRoute: String? = null
 ) {
     val navController = rememberNavController()
     val startDestination = if (isOnboardingCompleted) Screen.Gallery.route else Screen.Onboarding.route
+
+    // Handle direct navigation
+    LaunchedEffect(navigateToRoute) {
+        if (navigateToRoute != null) {
+            navController.navigate(navigateToRoute) {
+                popUpTo(Screen.Gallery.route) { inclusive = false }
+            }
+        }
+    }
 
     // Handle share intents - navigate to PostCaptureScreen
     LaunchedEffect(sharedImageUri, sharedText) {
@@ -66,11 +80,16 @@ fun AppNavigation(
                 java.net.URLEncoder.encode(it, "UTF-8") 
             }
             
+            // Extract URL from text if present
+            val urlRegex = "(https?://\\S+)".toRegex()
+            val bookmarkUrl = sharedText?.let { urlRegex.find(it)?.value }
+            
             navController.navigate(
                 Screen.PostCapture.createRoute(
                     imageUri = sharedImageUri,
                     audioUri = null,
-                    userText = encodedText
+                    userText = encodedText,
+                    bookmarkUrl = bookmarkUrl
                 )
             ) {
                 popUpTo(Screen.Gallery.route) { inclusive = false }
@@ -161,17 +180,20 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
-                navArgument("userText") { type = NavType.StringType; nullable = true }
+                navArgument("userText") { type = NavType.StringType; nullable = true },
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
+            val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
             PostCaptureScreen(
                 navController = navController,
                 initialImageUri = imageUri,
                 initialAudioUri = audioUri,
-                initialUserText = userText
+                initialUserText = userText,
+                initialBookmarkUrl = bookmarkUrl
             )
         }
         composable(
@@ -190,6 +212,9 @@ fun AppNavigation(
         ) { backStackEntry ->
             val memoryId = backStackEntry.arguments?.getInt("memoryId") ?: 0
             MemoryDetailScreen(navController = navController, memoryId = memoryId)
+        }
+        composable(Screen.BookmarkInput.route) {
+            BookmarkInputScreen(navController = navController)
         }
     }
 }

@@ -14,6 +14,8 @@ import javax.inject.Singleton
 
 import androidx.core.content.FileProvider
 import java.util.Objects
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private const val TAG = "FileUtils"
 
@@ -121,6 +123,34 @@ class FileUtils @Inject constructor(@ApplicationContext private val context: Con
         } catch (e: Exception) {
             Log.e(TAG, "Failed to delete file: $uri", e)
             false
+        }
+    }
+    suspend fun downloadImageFromUrl(imageUrl: String): Uri? {
+        Log.d(TAG, "Attempting to download image from URL: $imageUrl")
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = java.net.URL(imageUrl)
+                val connection = url.openConnection()
+                connection.connect()
+                val inputStream = connection.getInputStream()
+
+                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                val fileName = "DOWNLOAD_$timeStamp.jpg"
+                val file = File(context.filesDir, fileName)
+                val outputStream = FileOutputStream(file)
+
+                inputStream.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                val newFileUri = Uri.fromFile(file)
+                Log.d(TAG, "Image downloaded successfully. New URI: $newFileUri")
+                newFileUri
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to download image from URL: $imageUrl", e)
+                null
+            }
         }
     }
 }

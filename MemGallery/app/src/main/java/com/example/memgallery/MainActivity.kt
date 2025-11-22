@@ -60,7 +60,8 @@ class MainActivity : ComponentActivity() {
                         isOnboardingCompleted = isOnboardingCompleted,
                         sharedImageUri = sharedData?.imageUri,
                         sharedText = sharedData?.text,
-                        shortcutAction = shortcutAction
+                        shortcutAction = shortcutAction,
+                        navigateToRoute = intent.getStringExtra("navigate_to")
                     )
                 }
             }

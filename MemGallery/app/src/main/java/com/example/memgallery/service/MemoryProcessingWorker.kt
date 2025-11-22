@@ -75,7 +75,11 @@ class MemoryProcessingWorker @AssistedInject constructor(
                 memoryId = memory.id,
                 imageUri = memory.imageUri,
                 audioUri = memory.audioFilePath,
-                userText = memory.userText
+                userText = memory.userText,
+                bookmarkUrl = memory.bookmarkUrl,
+                bookmarkTitle = memory.bookmarkTitle,
+                bookmarkDescription = memory.bookmarkDescription,
+                bookmarkImageUrl = memory.bookmarkImageUrl
             )
 
             if (result.isSuccess) {

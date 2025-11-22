@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -51,34 +52,48 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Share Image Intent -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="image/*" />
-            </intent-filter>
-
-            <!-- Share Text Intent -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-
             <!-- Shortcuts Reference -->
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- Share Activity (Background) -->
+        <!-- Quick Save Activity (Background) -->
         <activity
-            android:name=".ShareActivity"
-            android:exported="true"
+            android:name=".QuickSaveActivity"
+            android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:taskAffinity="">
-            
+        </activity>
+
+        <!-- Open in App Activity -->
+        <activity
+            android:name=".OpenInAppActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity="">
+        </activity>
+
+        <!-- Shortcut Overlay Activity (for Add shortcut) -->
+        <activity
+            android:name=".ShortcutOverlayActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="">
+        </activity>
+
+        <!-- Activity Alias: Quick Save (for share sheet) -->
+        <activity-alias
+            android:name=".ShareQuickSave"
+            android:targetActivity=".QuickSaveActivity"
+            android:exported="true"
+            android:label="@string/share_quick_save"
+            android:icon="@drawable/ic_share_quick_save">
+
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -90,7 +105,28 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- Activity Alias: Open in App (for share sheet) -->
+        <activity-alias
+            android:name=".ShareOpenInApp"
+            android:targetActivity=".OpenInAppActivity"
+            android:exported="true"
+            android:label="@string/share_open_in_app"
+            android:icon="@drawable/ic_share_open_app">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Process Text Activity (Text Selection) -->
         <activity
@@ -126,6 +162,11 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+
+        <service
+            android:name=".service.OverlayService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
 
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

@@ -24,7 +24,9 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "memgallery_db"
-        ).build()
+        )
+        .addMigrations(AppDatabase.MIGRATION_8_9)
+        .build()
     }
 
     @Provides

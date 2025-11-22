@@ -12,6 +12,13 @@ data class MemoryEntity(
     val userText: String?,
     val imageUri: String?, // Stores the local content URI of the image
     val audioFilePath: String?, // Stores the local file path of the recording
+    
+    // Bookmark Data
+    val bookmarkUrl: String? = null,
+    val bookmarkTitle: String? = null,
+    val bookmarkDescription: String? = null,
+    val bookmarkImageUrl: String? = null,
+    val bookmarkFaviconUrl: String? = null,
 
     // AI-generated data
     val aiTitle: String?,
