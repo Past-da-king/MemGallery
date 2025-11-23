@@ -26,6 +26,18 @@
 </p>
 
 ---
+## 📱 App Showcase
+
+<p align="center">
+  <img src="images/banner1 (1).png" alt="MemGallery UI - Organize & Actionable" width="100%"/>
+</p>
+
+<p align="center">
+  <img src="images/banner1 (2).png" alt="MemGallery UI - Seamless Workflow" width="100%"/>
+</p>
+
+---
+
 
 ## 🎯 What is MemGallery?
 
