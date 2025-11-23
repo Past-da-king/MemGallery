@@ -240,11 +240,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val key = settingsRepository.apiKeyFlow.first()
-            if (!key.isNullOrBlank()) {
-                _apiKey.value = key
-                geminiService.initialize(key)
-            }
+            _apiKey.value = settingsRepository.apiKeyFlow.first() ?: ""
             _userSystemPrompt.value = settingsRepository.userSystemPromptFlow.first()
         }
     }

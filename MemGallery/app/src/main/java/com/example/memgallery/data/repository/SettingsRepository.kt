@@ -8,9 +8,14 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,9 +24,18 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 @Singleton
 class SettingsRepository @Inject constructor(@ApplicationContext private val context: Context) {
 
+    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val encryptedPrefs = EncryptedSharedPreferences.create(
+        "secure_settings",
+        masterKeyAlias,
+        context,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
     private object PreferencesKeys {
+        val API_KEY_PLAINTEXT = stringPreferencesKey("api_key") // Old key for migration
         val AUTO_INDEX_SCREENSHOTS = booleanPreferencesKey("auto_index_screenshots")
-        val API_KEY = stringPreferencesKey("api_key")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val NOTIFICATION_FILTER = stringPreferencesKey("notification_filter") // "ALL", "EVENTS", "TODOS"
         val SHOW_IN_SHARE_SHEET = booleanPreferencesKey("show_in_share_sheet")
@@ -35,6 +49,42 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val USER_SYSTEM_PROMPT = stringPreferencesKey("user_system_prompt")
     }
 
+    init {
+        // Run blocking is acceptable here as it's a one-time operation during app init
+        // and needs to complete before the repository is used.
+        runBlocking {
+            migrateApiKeyIfNeeded()
+        }
+    }
+
+    private suspend fun migrateApiKeyIfNeeded() {
+        val oldApiKey = context.dataStore.data.map { it[PreferencesKeys.API_KEY_PLAINTEXT] }.first()
+        if (!oldApiKey.isNullOrBlank()) {
+            saveApiKey(oldApiKey) // Save to new encrypted prefs
+            context.dataStore.edit { settings ->
+                settings.remove(PreferencesKeys.API_KEY_PLAINTEXT) // Remove old plaintext key
+            }
+        }
+    }
+    
+    val apiKeyFlow: Flow<String?> = flow {
+        emit(encryptedPrefs.getString("api_key_secure", null))
+    }
+
+    suspend fun saveApiKey(apiKey: String) {
+        with(encryptedPrefs.edit()) {
+            putString("api_key_secure", apiKey)
+            apply()
+        }
+    }
+
+    suspend fun clearApiKey() {
+        with(encryptedPrefs.edit()) {
+            remove("api_key_secure")
+            apply()
+        }
+    }
+
     val autoIndexScreenshotsFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.AUTO_INDEX_SCREENSHOTS] ?: false
@@ -43,23 +93,6 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setAutoIndexScreenshots(enabled: Boolean) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.AUTO_INDEX_SCREENSHOTS] = enabled
-        }
-    }
-
-    val apiKeyFlow: Flow<String?> = context.dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.API_KEY]
-        }
-
-    suspend fun saveApiKey(apiKey: String) {
-        context.dataStore.edit { settings ->
-            settings[PreferencesKeys.API_KEY] = apiKey
-        }
-    }
-
-    suspend fun clearApiKey() {
-        context.dataStore.edit { settings ->
-            settings.remove(PreferencesKeys.API_KEY)
         }
     }
 
