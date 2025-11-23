@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -40,6 +41,9 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class OverlayService : Service() {
+
+    @javax.inject.Inject
+    lateinit var settingsRepository: com.example.memgallery.data.repository.SettingsRepository
 
     private lateinit var windowManager: WindowManager
     private var overlayView: ComposeView? = null
@@ -80,7 +84,17 @@ class OverlayService : Service() {
             setViewTreeSavedStateRegistryOwner(lifecycleOwner)
 
             setContent {
-                MemGalleryTheme {
+                val dynamicTheming by settingsRepository.dynamicThemingEnabledFlow.collectAsState(initial = true)
+                val appThemeMode by settingsRepository.appThemeModeFlow.collectAsState(initial = "SYSTEM")
+                val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
+                val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)
+
+                MemGalleryTheme(
+                    dynamicColor = dynamicTheming,
+                    appThemeMode = appThemeMode,
+                    amoledMode = amoledMode,
+                    customColor = selectedColor
+                ) {
                     OverlayContent(
                         onDismiss = { stopSelf() },
                         onNavigate = { route ->
@@ -116,17 +130,16 @@ private fun OverlayContent(
     onDismiss: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
-    var isVisible by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    // Trigger animation on mount
-    LaunchedEffect(Unit) {
-        isVisible = true
+    val visibleState = remember {
+        MutableTransitionState(false).apply {
+            targetState = true
+        }
     }
+    val scope = rememberCoroutineScope()
 
     fun dismiss() {
         scope.launch {
-            isVisible = false
+            visibleState.targetState = false
             // Wait for animation to finish before dismissing service
             kotlinx.coroutines.delay(300) 
             onDismiss()
@@ -138,7 +151,7 @@ private fun OverlayContent(
         contentAlignment = Alignment.BottomCenter
     ) {
         // Scrim
-        if (isVisible) {
+        if (visibleState.currentState || visibleState.targetState) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -153,7 +166,7 @@ private fun OverlayContent(
 
         // Sheet
         androidx.compose.animation.AnimatedVisibility(
-            visible = isVisible,
+            visibleState = visibleState,
             enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
             exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
         ) {
@@ -182,7 +195,7 @@ private fun OverlayContent(
                     .windowInsetsPadding(WindowInsets.ime), // Handle keyboard
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+                tonalElevation = 0.dp
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -199,7 +212,7 @@ private fun OverlayContent(
                     
                     AddContentSheetContent(
                         onNavigate = { route ->
-                            isVisible = false
+                            visibleState.targetState = false
                             onNavigate(route)
                         },
                         onHideSheet = { dismiss() }

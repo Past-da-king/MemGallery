@@ -1,12 +1,12 @@
 package com.example.memgallery
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import com.example.memgallery.service.OverlayService
 
-class ShortcutOverlayActivity : ComponentActivity() {
+class ShortcutOverlayActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +25,7 @@ class ShortcutOverlayActivity : ComponentActivity() {
             startActivity(mainIntent)
         }
         
-        // Finish this activity immediately
+        // Finish immediately without animation
         finish()
         overridePendingTransition(0, 0)
     }

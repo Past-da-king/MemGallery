@@ -21,15 +21,15 @@ sealed class Screen(val route: String) {
 
     object CameraCapture : Screen("camera_capture")
 
-    object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null): String {
-            return "text_input?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}"
+    object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
+            return "text_input?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
         }
     }
 
-    object AudioCapture : Screen("audio_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null): String {
-            return "audio_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}"
+    object AudioCapture : Screen("audio_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
+            return "audio_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
         }
     }
 
@@ -101,10 +101,10 @@ fun AppNavigation(
     LaunchedEffect(shortcutAction) {
         when (shortcutAction) {
             "record_audio" -> {
-                navController.navigate(Screen.AudioCapture.createRoute(null, null, null))
+                navController.navigate(Screen.AudioCapture.createRoute(null, null, null, null))
             }
             "text_note" -> {
-                navController.navigate(Screen.TextInput.createRoute(null, null, null))
+                navController.navigate(Screen.TextInput.createRoute(null, null, null, null))
             }
             // "add_memory" will need to trigger bottom sheet in GalleryScreen
             // This is handled differently as it's not a separate screen
@@ -140,17 +140,20 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
-                navArgument("userText") { type = NavType.StringType; nullable = true }
+                navArgument("userText") { type = NavType.StringType; nullable = true },
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
+            val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
             TextInputScreen(
                 navController = navController,
                 existingImageUri = imageUri,
                 existingAudioUri = audioUri,
-                existingUserText = userText
+                existingUserText = userText,
+                existingBookmarkUrl = bookmarkUrl
             )
         }
 
@@ -162,17 +165,20 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
-                navArgument("userText") { type = NavType.StringType; nullable = true }
+                navArgument("userText") { type = NavType.StringType; nullable = true },
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
+            val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
             AudioCaptureScreen(
                 navController = navController,
                 existingImageUri = imageUri,
                 existingAudioUri = audioUri,
-                existingUserText = userText
+                existingUserText = userText,
+                existingBookmarkUrl = bookmarkUrl
             )
         }
         composable(

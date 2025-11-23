@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -57,7 +58,7 @@ fun PostCaptureScreen(
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
     var showAddImageSheet by remember { mutableStateOf(false) }
-    var showUrlDialog by remember { mutableStateOf(false) }
+    var showUrlSheet by remember { mutableStateOf(false) }
     var tempUrl by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -217,7 +218,7 @@ fun PostCaptureScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText)) },
+                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -228,7 +229,7 @@ fun PostCaptureScreen(
                     Text("Audio")
                 }
                 Button(
-                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText)) },
+                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
@@ -238,7 +239,7 @@ fun PostCaptureScreen(
                     Text("Text")
                 }
                 Button(
-                    onClick = { showUrlDialog = true },
+                    onClick = { showUrlSheet = true },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
@@ -305,33 +306,74 @@ fun PostCaptureScreen(
             }
         }
         
-        if (showUrlDialog) {
-            AlertDialog(
-                onDismissRequest = { showUrlDialog = false },
-                title = { Text("Add URL") },
-                text = {
+        if (showUrlSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showUrlSheet = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .navigationBarsPadding() // Handle safe area
+                        .imePadding() // Handle keyboard
+                ) {
+                    Text(
+                        text = "Add Link",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Paste a URL to save",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+
                     OutlinedTextField(
                         value = tempUrl,
                         onValueChange = { tempUrl = it },
-                        label = { Text("Enter URL") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("https://example.com") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        ),
+                        leadingIcon = {
+                            Icon(Icons.Default.Link, contentDescription = null)
+                        }
                     )
-                },
-                confirmButton = {
-                    Button(onClick = {
-                        creationViewModel.setDraftBookmarkUrl(tempUrl)
-                        showUrlDialog = false
-                        tempUrl = ""
-                    }) {
-                        Text("Add")
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = {
+                            creationViewModel.setDraftBookmarkUrl(tempUrl)
+                            showUrlSheet = false
+                            tempUrl = ""
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            text = "Add Link",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showUrlDialog = false }) {
-                        Text("Cancel")
-                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
-            )
+            }
         }
     }
 }

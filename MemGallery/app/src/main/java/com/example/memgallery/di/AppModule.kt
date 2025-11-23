@@ -25,7 +25,7 @@ object AppModule {
             AppDatabase::class.java,
             "memgallery_db"
         )
-        .addMigrations(AppDatabase.MIGRATION_8_9)
+        .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10)
         .build()
     }
 

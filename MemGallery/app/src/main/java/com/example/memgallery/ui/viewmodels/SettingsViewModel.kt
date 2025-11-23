@@ -64,15 +64,62 @@ class SettingsViewModel @Inject constructor(
             initialValue = true
         )
 
-    init {
-        viewModelScope.launch {
-            val key = settingsRepository.apiKeyFlow.first()
-            if (!key.isNullOrBlank()) {
-                _apiKey.value = key
-                geminiService.initialize(key)
-            }
-        }
-    }
+    // Onboarding State
+    val isOnboardingCompleted: StateFlow<Boolean> = settingsRepository.isOnboardingCompletedFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    // Task Screen State
+    val taskScreenEnabled: StateFlow<Boolean> = settingsRepository.taskScreenEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    // Highlights State
+    val showHighlights: StateFlow<Boolean> = settingsRepository.showHighlightsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    // User System Prompt State
+    private val _userSystemPrompt = MutableStateFlow("")
+    val userSystemPrompt: StateFlow<String> = _userSystemPrompt.asStateFlow()
+
+    // Theme Settings
+    val dynamicThemingEnabled: StateFlow<Boolean> = settingsRepository.dynamicThemingEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    val appThemeMode: StateFlow<String> = settingsRepository.appThemeModeFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "SYSTEM"
+        )
+
+    val amoledModeEnabled: StateFlow<Boolean> = settingsRepository.amoledModeEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    val selectedColor: StateFlow<Int> = settingsRepository.selectedColorFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = -1
+        )
 
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
@@ -135,28 +182,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // Onboarding State
-    val isOnboardingCompleted: StateFlow<Boolean> = settingsRepository.isOnboardingCompletedFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
-
     // Onboarding Actions
     fun completeOnboarding() {
         viewModelScope.launch {
             settingsRepository.setOnboardingCompleted(true)
         }
     }
-
-    // Task Screen State
-    val taskScreenEnabled: StateFlow<Boolean> = settingsRepository.taskScreenEnabledFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = true
-        )
 
     // Task Screen Actions
     fun setTaskScreenEnabled(enabled: Boolean) {
@@ -165,13 +196,23 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // Theme Settings
-    val dynamicThemingEnabled: StateFlow<Boolean> = settingsRepository.dynamicThemingEnabledFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = true
-        )
+    // Highlights Actions
+    fun setShowHighlights(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowHighlights(enabled)
+        }
+    }
+
+    // User System Prompt Actions
+    fun onUserSystemPromptChange(prompt: String) {
+        _userSystemPrompt.value = prompt
+    }
+
+    fun saveUserSystemPrompt() {
+        viewModelScope.launch {
+            settingsRepository.saveUserSystemPrompt(_userSystemPrompt.value)
+        }
+    }
 
     fun setDynamicThemingEnabled(enabled: Boolean) {
         viewModelScope.launch {
@@ -179,25 +220,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    val appThemeMode: StateFlow<String> = settingsRepository.appThemeModeFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "SYSTEM"
-        )
-
     fun setAppThemeMode(mode: String) {
         viewModelScope.launch {
             settingsRepository.setAppThemeMode(mode)
         }
     }
-
-    val amoledModeEnabled: StateFlow<Boolean> = settingsRepository.amoledModeEnabledFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
 
     fun setAmoledModeEnabled(enabled: Boolean) {
         viewModelScope.launch {
@@ -205,16 +232,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    val selectedColor: StateFlow<Int> = settingsRepository.selectedColorFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = -1
-        )
-
     fun setSelectedColor(color: Int) {
         viewModelScope.launch {
             settingsRepository.setSelectedColor(color)
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            val key = settingsRepository.apiKeyFlow.first()
+            if (!key.isNullOrBlank()) {
+                _apiKey.value = key
+                geminiService.initialize(key)
+            }
+            _userSystemPrompt.value = settingsRepository.userSystemPromptFlow.first()
         }
     }
 }

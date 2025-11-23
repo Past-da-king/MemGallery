@@ -20,7 +20,8 @@ fun TextInputScreen(
     navController: NavController,
     existingImageUri: String? = null,
     existingAudioUri: String? = null,
-    existingUserText: String? = null
+    existingUserText: String? = null,
+    existingBookmarkUrl: String? = null
 ) {
     var text by remember { mutableStateOf(existingUserText ?: "") }
 
@@ -53,7 +54,8 @@ fun TextInputScreen(
                             Screen.PostCapture.createRoute(
                                 imageUri = existingImageUri,
                                 audioUri = existingAudioUri,
-                                userText = encodedText
+                                userText = encodedText,
+                                bookmarkUrl = existingBookmarkUrl
                             )
                         ) {
                             popUpTo(Screen.Gallery.route) { inclusive = false }

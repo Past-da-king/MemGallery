@@ -9,7 +9,7 @@ import com.example.memgallery.data.local.dao.TaskDao
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.local.entity.TaskEntity
 
-@Database(entities = [MemoryEntity::class, TaskEntity::class], version = 9, exportSchema = false)
+@Database(entities = [MemoryEntity::class, TaskEntity::class], version = 10, exportSchema = false)
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
@@ -23,6 +23,21 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE memories ADD COLUMN bookmarkDescription TEXT")
                 database.execSQL("ALTER TABLE memories ADD COLUMN bookmarkImageUrl TEXT")
                 database.execSQL("ALTER TABLE memories ADD COLUMN bookmarkFaviconUrl TEXT")
+            }
+        }
+        val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                try {
+                    database.execSQL("ALTER TABLE tasks ADD COLUMN creationTimestamp INTEGER NOT NULL DEFAULT 0")
+                } catch (e: android.database.sqlite.SQLiteException) {
+                    if (e.message?.contains("duplicate column name") == true) {
+                        // Column already exists, migration is not needed. Safely ignore.
+                        android.util.Log.w("Migration_9_10", "Column 'creationTimestamp' already exists. Skipping.")
+                    } else {
+                        // Re-throw other exceptions.
+                        throw e
+                    }
+                }
             }
         }
     }

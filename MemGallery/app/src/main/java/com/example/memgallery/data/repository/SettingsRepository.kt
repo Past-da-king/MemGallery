@@ -31,6 +31,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val APP_THEME_MODE = stringPreferencesKey("app_theme_mode") // "LIGHT", "DARK", "SYSTEM"
         val AMOLED_MODE_ENABLED = booleanPreferencesKey("amoled_mode_enabled")
         val SELECTED_COLOR = intPreferencesKey("selected_color")
+        val SHOW_HIGHLIGHTS = booleanPreferencesKey("show_highlights")
+        val USER_SYSTEM_PROMPT = stringPreferencesKey("user_system_prompt")
     }
 
     val autoIndexScreenshotsFlow: Flow<Boolean> = context.dataStore.data
@@ -119,6 +121,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             settings[PreferencesKeys.TASK_SCREEN_ENABLED] = enabled
         }
     }
+    
+    // Highlights
+    val showHighlightsFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SHOW_HIGHLIGHTS] ?: true
+        }
+
+    suspend fun setShowHighlights(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.SHOW_HIGHLIGHTS] = enabled
+        }
+    }
 
     // Theme Preferences
     val dynamicThemingEnabledFlow: Flow<Boolean> = context.dataStore.data
@@ -162,6 +176,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setSelectedColor(color: Int) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.SELECTED_COLOR] = color
+        }
+    }
+
+    // User System Prompt
+    val userSystemPromptFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.USER_SYSTEM_PROMPT] ?: ""
+        }
+
+    suspend fun saveUserSystemPrompt(prompt: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.USER_SYSTEM_PROMPT] = prompt
         }
     }
 }

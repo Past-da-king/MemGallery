@@ -43,6 +43,7 @@ fun AudioCaptureScreen(
     existingImageUri: String?,
     existingAudioUri: String?,
     existingUserText: String?,
+    existingBookmarkUrl: String?,
     viewModel: AudioCaptureViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -76,7 +77,8 @@ fun AudioCaptureScreen(
                 Screen.PostCapture.createRoute(
                     imageUri = existingImageUri,
                     audioUri = fileUri,
-                    userText = existingUserText
+                    userText = existingUserText,
+                    bookmarkUrl = existingBookmarkUrl
                 )
             ) {
                 popUpTo(Screen.Gallery.route)

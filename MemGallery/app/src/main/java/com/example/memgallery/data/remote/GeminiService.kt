@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import com.example.memgallery.data.remote.dto.AiAnalysisDto
+import com.example.memgallery.data.repository.SettingsRepository
 import com.google.genai.Client
 import com.google.genai.types.Content
 import com.google.genai.types.GenerateContentResponse
@@ -15,6 +16,7 @@ import com.google.genai.types.GenerateContentConfig
 import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -26,17 +28,10 @@ private const val TAG = "GeminiService"
 @Singleton
 class GeminiService @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val gson: Gson
+    private val gson: Gson,
+    private val settingsRepository: SettingsRepository
 ) {
     private var client: Client? = null
-
-    private lateinit var systemInstructionContent: Content
-
-    init {
-        val rawResource = context.resources.openRawResource(com.example.memgallery.R.raw.gemini_system_instructions)
-        val systemInstructionText = rawResource.bufferedReader().use { it.readText() }
-        systemInstructionContent = Content.fromParts(Part.fromText(systemInstructionText))
-    }
 
     private val responseSchema = Schema.fromJson("""
         {
@@ -102,6 +97,19 @@ class GeminiService @Inject constructor(
         val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client is not initialized."))
 
         try {
+            // Build system prompt dynamically
+            val baseSystemInstruction = context.resources.openRawResource(com.example.memgallery.R.raw.gemini_system_instructions)
+                .bufferedReader().use { it.readText() }
+            val userSystemPrompt = settingsRepository.userSystemPromptFlow.first()
+            
+            val finalSystemInstruction = if (userSystemPrompt.isNotBlank()) {
+                "$baseSystemInstruction\n\n---\n\nThese are user preferences that take precedence over the base instructions in case of conflict:\n\n$userSystemPrompt"
+            } else {
+                baseSystemInstruction
+            }
+
+            val systemInstructionContent = Content.fromParts(Part.fromText(finalSystemInstruction))
+
             val promptBuilder = StringBuilder()
 
             val config = com.google.genai.types.GenerateContentConfig.builder()

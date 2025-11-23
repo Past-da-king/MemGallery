@@ -80,11 +80,13 @@
         <activity
             android:name=".ShortcutOverlayActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:theme="@style/Theme.MemGallery.Transparent"
             android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
+            android:noHistory="true"
             android:taskAffinity="">
         </activity>
+
+
 
         <!-- Activity Alias: Quick Save (for share sheet) -->
         <activity-alias
@@ -142,6 +144,20 @@
             </intent-filter>
         </activity>
 
+        <!-- Share Calendar Event Activity -->
+        <activity
+            android:name=".ShareCalendarActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/calendar" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -167,6 +183,18 @@
             android:name=".service.OverlayService"
             android:exported="false"
             android:foregroundServiceType="shortService" />
+
+        <!-- Quick Settings Tile Service -->
+        <service
+            android:name=".service.AddMemoryTileService"
+            android:exported="true"
+            android:label="Add Memory"
+            android:icon="@drawable/svgviewer_output"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

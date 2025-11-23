@@ -17,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
-    private val memoryRepository: MemoryRepository
+    private val memoryRepository: MemoryRepository,
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository
 ) : ViewModel() {
 
     private val _searchText = MutableStateFlow("")
@@ -129,11 +130,17 @@ class GalleryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _memories.collect { allMemories ->
-                if (allMemories.isNotEmpty()) {
+            combine(
+                _memories,
+                settingsRepository.showHighlightsFlow
+            ) { allMemories, showHighlights ->
+                if (showHighlights && allMemories.isNotEmpty()) {
                     updateHighlight(allMemories)
+                } else {
+                    _highlightTag.value = null
+                    _highlightMemories.value = emptyList()
                 }
-            }
+            }.collect {}
         }
     }
 

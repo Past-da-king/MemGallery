@@ -1,19 +1,18 @@
 package com.example.memgallery.ui.screens
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -31,16 +31,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
@@ -54,7 +54,6 @@ fun OnboardingScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { 4 })
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -309,6 +308,7 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
 @Composable
 fun PermissionsPage() {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     
     // Permission Launchers
     val permissionsToRequest = mutableListOf<String>()
@@ -321,9 +321,41 @@ fun PermissionsPage() {
     permissionsToRequest.add(Manifest.permission.CAMERA)
     permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
 
+    var hasNotificationPermission by remember { mutableStateOf(false) }
+    var hasCameraPermission by remember { mutableStateOf(false) }
+    var hasAudioPermission by remember { mutableStateOf(false) }
+    var hasMediaPermission by remember { mutableStateOf(false) }
+    var hasOverlayPermission by remember { mutableStateOf(false) }
+
+    val checkPermissions = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            hasNotificationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            hasMediaPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+        } else {
+            hasNotificationPermission = true
+            hasMediaPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+        hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        hasAudioPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        hasOverlayPermission = Settings.canDrawOverlays(context)
+    }
+
+    // Observer lifecycle to check permissions when returning from settings
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                checkPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { /* Handle results if needed, UI updates automatically via check */ }
+        onResult = { checkPermissions() }
     )
 
     Column(
@@ -355,7 +387,7 @@ fun PermissionsPage() {
             icon = Icons.Default.Notifications,
             title = "Notifications",
             desc = "For AI insights and reminders",
-            permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.POST_NOTIFICATIONS else ""
+            isGranted = hasNotificationPermission
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -364,7 +396,7 @@ fun PermissionsPage() {
             icon = Icons.Default.CameraAlt,
             title = "Camera",
             desc = "To capture visual memories",
-            permission = Manifest.permission.CAMERA
+            isGranted = hasCameraPermission
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -373,7 +405,7 @@ fun PermissionsPage() {
             icon = Icons.Default.Mic,
             title = "Microphone",
             desc = "To record audio notes",
-            permission = Manifest.permission.RECORD_AUDIO
+            isGranted = hasAudioPermission
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -382,7 +414,22 @@ fun PermissionsPage() {
             icon = Icons.Default.PhotoLibrary,
             title = "Media",
             desc = "To auto-index screenshots",
-            permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
+            isGranted = hasMediaPermission
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PermissionItem(
+            icon = Icons.Default.Layers,
+            title = "Quick Capture",
+            desc = "Instant capture from anywhere",
+            isGranted = hasOverlayPermission,
+            onClick = {
+                if (!hasOverlayPermission) {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                    context.startActivity(intent)
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -390,9 +437,24 @@ fun PermissionsPage() {
         Button(
             onClick = { launcher.launch(permissionsToRequest.toTypedArray()) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            enabled = !hasNotificationPermission || !hasCameraPermission || !hasAudioPermission || !hasMediaPermission
         ) {
-            Text("Grant All Permissions")
+            Text(if (!hasNotificationPermission || !hasCameraPermission || !hasAudioPermission || !hasMediaPermission) "Grant Standard Permissions" else "Standard Permissions Granted")
+        }
+        
+        if (!hasOverlayPermission) {
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Enable Quick Capture Overlay")
+            }
         }
     }
 }
@@ -402,22 +464,13 @@ fun PermissionItem(
     icon: ImageVector,
     title: String,
     desc: String,
-    permission: String
+    isGranted: Boolean,
+    onClick: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    var isGranted by remember { mutableStateOf(false) }
-
-    // Check permission status periodically or on resume (simplified here)
-    LaunchedEffect(Unit) {
-        if (permission.isNotEmpty()) {
-            isGranted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-        } else {
-            isGranted = true // Pre-Tiramisu notifications don't need runtime permission
-        }
-    }
-
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isGranted, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -446,6 +499,13 @@ fun PermissionItem(
                 contentDescription = "Granted",
                 tint = MaterialTheme.colorScheme.primary
             )
+        } else if (onClick != {}) {
+             Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = "Enable",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
@@ -468,7 +528,7 @@ fun HowItWorksPage(onGetStarted: () -> Unit) {
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        StepItem(number = "1", title = "Capture", desc = "Take photos, record audio, or share content from other apps.")
+        StepItem(number = "1", title = "Capture", desc = "Take photos, record audio, save web bookmarks, or share content from other apps.")
         Spacer(modifier = Modifier.height(24.dp))
         StepItem(number = "2", title = "Process", desc = "AI analyzes your memories to make them searchable.")
         Spacer(modifier = Modifier.height(24.dp))

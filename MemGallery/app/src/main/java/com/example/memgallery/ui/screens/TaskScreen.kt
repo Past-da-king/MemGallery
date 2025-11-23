@@ -398,7 +398,7 @@ fun EventCard(event: TaskEntity, onClick: () -> Unit) {
                 .padding(top = 8.dp)
         ) {
             Text(
-                text = event.dueTime ?: "All Day",
+                text = event.dueTime ?: "",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -554,7 +554,7 @@ fun TaskDetailContent(task: TaskEntity, onEdit: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${task.dueDate ?: ""} ${task.dueTime ?: ""}".trim(),
+                    text = listOfNotNull(task.dueDate, task.dueTime).joinToString(" ").trim(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
