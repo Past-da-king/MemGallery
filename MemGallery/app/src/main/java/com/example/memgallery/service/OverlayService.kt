@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,6 +87,30 @@ class OverlayService : Service() {
         return START_NOT_STICKY
     }
 
+    private fun handlePostCapture(newItemUri: String? = null, newItemId: Long? = null) {
+        serviceScope.launch {
+            val behavior = settingsRepository.postCaptureBehaviorFlow.first()
+            if (behavior == "FOREGROUND") {
+                val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    if (newItemId != null) {
+                        putExtra("navigate_to", Screen.Detail.createRoute(newItemId.toInt()))
+                    } else {
+                        // If we don't have ID immediately (pending), just go to gallery
+                        putExtra("navigate_to", Screen.Gallery.route)
+                    }
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                startActivity(intent)
+            } else {
+                // Background - show toast
+                launch(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(applicationContext, "Saved to MemGallery", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     private fun saveTask(title: String, description: String, date: java.time.LocalDate, time: String?, type: String, isRecurring: Boolean, rule: String?) {
         serviceScope.launch {
             val newTask = TaskEntity(
@@ -99,38 +124,45 @@ class OverlayService : Service() {
                 status = "PENDING"
             )
             taskDao.insertTask(newTask)
+            handlePostCapture() // Task saving logic usually keeps user in flow, but respecting setting is fine
         }
     }
 
     private fun saveUrl(url: String) {
         serviceScope.launch {
-            memoryRepository.savePendingMemory(
+            val result = memoryRepository.savePendingMemory(
                 imageUri = null,
                 audioUri = null,
                 userText = null,
                 bookmarkUrl = url
             )
+            val id = result.getOrNull()
+            handlePostCapture(newItemId = id)
         }
     }
 
     private fun saveText(text: String) {
         serviceScope.launch {
-            memoryRepository.savePendingMemory(
+            val result = memoryRepository.savePendingMemory(
                 imageUri = null,
                 audioUri = null,
                 userText = text
             )
+            val id = result.getOrNull()
+            handlePostCapture(newItemId = id)
         }
     }
 
     private fun saveAudio(path: String) {
         serviceScope.launch {
             val uri = Uri.fromFile(java.io.File(path)).toString()
-            memoryRepository.savePendingMemory(
+            val result = memoryRepository.savePendingMemory(
                 imageUri = null,
                 audioUri = uri,
                 userText = null
             )
+            val id = result.getOrNull()
+            handlePostCapture(newItemId = id)
         }
     }
 
@@ -156,6 +188,9 @@ class OverlayService : Service() {
                 val appThemeMode by settingsRepository.appThemeModeFlow.collectAsState(initial = "SYSTEM")
                 val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
                 val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)
+                
+                // Settings for Audio
+                val audioAutoStart by settingsRepository.audioAutoStartFlow.collectAsState(initial = true)
 
                 MemGalleryTheme(
                     dynamicColor = dynamicTheming,
@@ -166,6 +201,7 @@ class OverlayService : Service() {
                     if (overlayAudioRecorder != null) {
                         OverlayContent(
                             mode = currentMode,
+                            audioAutoStart = audioAutoStart,
                             onDismiss = { stopSelf() },
                             onNavigate = { route ->
                                 val mainIntent = Intent(context, MainActivity::class.java).apply {
@@ -307,6 +343,7 @@ class OverlayAudioRecorder(private val context: android.content.Context, private
 @Composable
 private fun OverlayContent(
     mode: String,
+    audioAutoStart: Boolean,
     onDismiss: () -> Unit,
     onNavigate: (String) -> Unit,
     onSaveTask: (String, String, java.time.LocalDate, String?, String, Boolean, String?) -> Unit,
@@ -325,7 +362,6 @@ private fun OverlayContent(
     fun dismiss() {
         scope.launch {
             visibleState.targetState = false
-            // Wait for animation to finish before dismissing service
             delay(300) 
             onDismiss()
         }
@@ -453,7 +489,8 @@ private fun OverlayContent(
                                 recordedFilePath = audioRecorder.recordedFilePath,
                                 error = audioRecorder.error,
                                 onStartRecording = { audioRecorder.startRecording() },
-                                onStopRecording = { audioRecorder.stopRecording() }
+                                onStopRecording = { audioRecorder.stopRecording() },
+                                autoStart = audioAutoStart
                             )
                         }
                         "QUICK_TEXT" -> {

@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
@@ -17,8 +18,10 @@ import androidx.core.app.NotificationCompat
 import com.example.memgallery.MainActivity
 import com.example.memgallery.R
 import com.example.memgallery.data.repository.SettingsRepository
+import com.example.memgallery.navigation.Screen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.math.abs
@@ -30,8 +33,11 @@ class EdgeGestureService : Service() {
     lateinit var settingsRepository: SettingsRepository
 
     private lateinit var windowManager: WindowManager
-    private var gestureView: View? = null
-    private var layoutParams: WindowManager.LayoutParams? = null
+    
+    // Views for Left and Right handles
+    private var leftView: View? = null
+    private var rightView: View? = null
+    
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private var startX = 0f
@@ -49,7 +55,7 @@ class EdgeGestureService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         startForegroundService()
-        setupEdgeView()
+        setupEdgeViews()
     }
 
     private fun startForegroundService() {
@@ -69,58 +75,122 @@ class EdgeGestureService : Service() {
         startForeground(2002, notification)
     }
 
-    private fun setupEdgeView() {
+    private fun setupEdgeViews() {
         serviceScope.launch {
-            val side = settingsRepository.edgeGestureSideFlow.first()
-            val gravity = if (side == "LEFT") Gravity.LEFT or Gravity.CENTER_VERTICAL else Gravity.RIGHT or Gravity.CENTER_VERTICAL
-            
-            // Width: 60px touch area
-            // Height: 30% of screen (User asked for 33.3% or less)
-            val width = 60
-            val height = (resources.displayMetrics.heightPixels * 0.30).toInt()
+            // Combine returns Array<Any?> when > 5 flows
+            combine(
+                settingsRepository.edgeGestureSideFlow,
+                settingsRepository.edgeGesturePositionYFlow,
+                settingsRepository.edgeGestureHeightPercentFlow,
+                settingsRepository.edgeGestureWidthFlow,
+                settingsRepository.edgeGestureDualHandlesFlow,
+                settingsRepository.edgeGestureVisibleFlow
+            ) { args ->
+                val side = args[0] as String
+                val posY = args[1] as Int
+                val heightPercent = args[2] as Int
+                val widthDp = args[3] as Int
+                val dual = args[4] as Boolean
+                val visible = args[5] as Boolean
+                
+                updateViews(side, posY, heightPercent, widthDp, dual, visible)
+            }.collect {}
+        }
+    }
 
-            layoutParams = WindowManager.LayoutParams(
-                width,
-                height,
+    private fun updateViews(side: String, posY: Int, heightPercent: Int, widthDp: Int, dual: Boolean, visible: Boolean) {
+        val displayMetrics = resources.displayMetrics
+        val screenHeight = displayMetrics.heightPixels
+        val density = displayMetrics.density
+
+        val widthPx = (widthDp * density).toInt()
+        val heightPx = (screenHeight * (heightPercent / 100f)).toInt()
+        
+        // Vertical Position calculation
+        // posY is 0 (top) to 100 (bottom). 
+        // Gravity.TOP starts at 0. So y = (screenHeight - heightPx) * (posY / 100)
+        val yOffset = ((screenHeight - heightPx) * (posY / 100f)).toInt()
+
+        val bgDrawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 20f * density // Rounded pill
+            setColor(Color.parseColor("#40888888")) // Default Grey with alpha
+        }
+        
+        if (!visible) {
+            bgDrawable.setColor(Color.TRANSPARENT)
+        }
+
+        // Helper to create/update view
+        fun updateView(isLeft: Boolean, currentView: View?): View {
+            val gravity = if (isLeft) Gravity.LEFT or Gravity.TOP else Gravity.RIGHT or Gravity.TOP
+            
+            val params = WindowManager.LayoutParams(
+                widthPx,
+                heightPx,
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 this.gravity = gravity
+                this.y = yOffset
             }
 
-            gestureView = View(this@EdgeGestureService).apply {
-                // Visual indicator: Semi-transparent pill
-                setBackgroundColor(Color.parseColor("#40888888")) // Grey with alpha
-                
-                // Touch Listener
-                setOnTouchListener { _, event ->
-                    handleTouch(event)
-                    true // Consume event
+            val view = currentView ?: View(this@EdgeGestureService).apply {
+                setOnTouchListener { v, event ->
+                    handleTouch(v, event, visible)
+                    true
                 }
             }
+            
+            view.background = bgDrawable
 
-            try {
-                windowManager.addView(gestureView, layoutParams)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                stopSelf()
+            if (view.parent != null) {
+                windowManager.updateViewLayout(view, params)
+            } else {
+                try {
+                    windowManager.addView(view, params)
+                } catch (e: Exception) { e.printStackTrace() }
             }
+            return view
+        }
+
+        // Handle Left View
+        if (dual || side == "LEFT") {
+            leftView = updateView(true, leftView)
+        } else {
+            leftView?.let { 
+                if (it.parent != null) windowManager.removeView(it) 
+            }
+            leftView = null
+        }
+
+        // Handle Right View
+        if (dual || side == "RIGHT") {
+            rightView = updateView(false, rightView)
+        } else {
+            rightView?.let { 
+                if (it.parent != null) windowManager.removeView(it) 
+            }
+            rightView = null
         }
     }
 
-    private fun handleTouch(event: MotionEvent) {
+    private fun handleTouch(view: View, event: MotionEvent, isVisible: Boolean) {
+        val baseColor = if (isVisible) Color.parseColor("#40888888") else Color.TRANSPARENT
+        val activeColor = Color.parseColor("#808C25F4") // Primary color alpha
+
+        val bg = view.background as? GradientDrawable ?: return
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 startX = event.rawX
                 startY = event.rawY
                 startTime = System.currentTimeMillis()
-                // Visual feedback
-                gestureView?.setBackgroundColor(Color.parseColor("#808C25F4")) // Primary color alpha
+                if (isVisible) bg.setColor(activeColor)
             }
             MotionEvent.ACTION_UP -> {
-                // Reset visual
-                gestureView?.setBackgroundColor(Color.parseColor("#40888888"))
+                if (isVisible) bg.setColor(baseColor)
 
                 val endX = event.rawX
                 val endY = event.rawY
@@ -147,7 +217,7 @@ class EdgeGestureService : Service() {
                 }
             }
             MotionEvent.ACTION_CANCEL -> {
-                gestureView?.setBackgroundColor(Color.parseColor("#40888888"))
+                if (isVisible) bg.setColor(baseColor)
             }
         }
     }
@@ -168,12 +238,21 @@ class EdgeGestureService : Service() {
     private fun executeAction(actionType: String) {
         // This maps the settings action to the OverlayService mode
         when (actionType) {
-            "QUICK_CAPTURE" -> startOverlayService("ADD_MEMORY") // Previously "Quick Capture" triggered add memory sheet
+            "QUICK_CAPTURE" -> startOverlayService("ADD_MEMORY")
             "ADD_TASK" -> startOverlayService("ADD_TASK")
             "ADD_URL" -> startOverlayService("ADD_URL")
             "ADD_MEMORY" -> startOverlayService("ADD_MEMORY")
-            "QUICK_AUDIO" -> startOverlayService("QUICK_AUDIO") // Added
-            "QUICK_TEXT" -> startOverlayService("QUICK_TEXT") // Added
+            "QUICK_AUDIO" -> startOverlayService("QUICK_AUDIO")
+            "QUICK_TEXT" -> startOverlayService("QUICK_TEXT")
+            "CAMERA" -> {
+                // Launch App Camera
+                val appCameraIntent = Intent(this, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra("navigate_to", Screen.CameraCapture.route)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                startActivity(appCameraIntent)
+            }
             "NONE" -> {}
         }
     }
@@ -189,12 +268,7 @@ class EdgeGestureService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-        if (gestureView != null) {
-            try {
-                windowManager.removeView(gestureView)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        leftView?.let { if (it.parent != null) windowManager.removeView(it) }
+        rightView?.let { if (it.parent != null) windowManager.removeView(it) }
     }
 }

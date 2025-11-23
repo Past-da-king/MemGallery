@@ -38,7 +38,8 @@ fun QuickAudioSheet(
     recordedFilePath: String?,
     error: String?,
     onStartRecording: () -> Unit,
-    onStopRecording: () -> Unit
+    onStopRecording: () -> Unit,
+    autoStart: Boolean = true
 ) {
     val context = LocalContext.current
 
@@ -52,19 +53,10 @@ fun QuickAudioSheet(
         )
     }
 
-    // Effect to auto-start recording if permission granted
-    LaunchedEffect(hasPermission) {
-        if (hasPermission && !isRecording) {
+    // Effect to auto-start recording if permission granted AND autoStart is true
+    LaunchedEffect(hasPermission, autoStart) {
+        if (hasPermission && autoStart && !isRecording && recordedFilePath == null) {
             onStartRecording()
-        }
-    }
-
-    // Effect for completion
-    LaunchedEffect(recordedFilePath) {
-        if (recordedFilePath != null) {
-            // Wait a beat for animation
-            delay(500)
-            onRecordingSaved(recordedFilePath)
         }
     }
 
@@ -193,11 +185,21 @@ fun QuickAudioSheet(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = if (isRecording) "Tap to stop" else "Tap to record",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            
+            if (recordedFilePath != null && !isRecording) {
+                 Button(
+                    onClick = { onRecordingSaved(recordedFilePath) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Send Audio Note")
+                }
+            } else {
+                 Text(
+                    text = if (isRecording) "Tap to stop" else "Tap to record",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

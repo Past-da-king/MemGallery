@@ -47,10 +47,19 @@ fun AdvancedSettingsScreen(
     val swipeDownAction by viewModel.edgeGestureActionSwipeDown.collectAsState()
     val doubleTapAction by viewModel.edgeGestureActionDoubleTap.collectAsState()
 
+    // New State
+    val positionY by viewModel.edgeGesturePositionY.collectAsState()
+    val heightPercent by viewModel.edgeGestureHeightPercent.collectAsState()
+    val widthDp by viewModel.edgeGestureWidth.collectAsState()
+    val dualHandles by viewModel.edgeGestureDualHandles.collectAsState()
+    val isVisible by viewModel.edgeGestureVisible.collectAsState()
+    val audioAutoStart by viewModel.audioAutoStart.collectAsState()
+    val postCaptureBehavior by viewModel.postCaptureBehavior.collectAsState()
+
     // Permission Handling
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
-    LaunchedEffect(edgeGestureEnabled) {
+    LaunchedEffect(edgeGestureEnabled, edgeGestureSide, positionY, heightPercent, widthDp, dualHandles, isVisible) {
         if (edgeGestureEnabled && hasOverlayPermission) {
             startEdgeGestureService(context)
         } else {
@@ -121,7 +130,52 @@ fun AdvancedSettingsScreen(
                 }
             }
 
-            // 2. Edge Gesture Section
+            // 2. Behavior Configuration Section
+            SettingsCard(
+                icon = Icons.Default.Tune,
+                title = "Behavior",
+                description = "Customize app interactions"
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SettingToggleItem(
+                        icon = Icons.Default.Mic,
+                        title = "Audio Auto-Start",
+                        description = "Start recording immediately when sheet opens",
+                        checked = audioAutoStart,
+                        onCheckedChange = viewModel::setAudioAutoStart
+                    )
+
+                    HorizontalDivider()
+
+                    Text("Post-Capture Action", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Choose what happens after capturing a note, audio, or link.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = postCaptureBehavior == "FOREGROUND",
+                            onClick = { viewModel.setPostCaptureBehavior("FOREGROUND") },
+                            label = { Text("Open App") },
+                            leadingIcon = if (postCaptureBehavior == "FOREGROUND") {
+                                { Icon(Icons.Default.Check, contentDescription = null) }
+                            } else null
+                        )
+                        FilterChip(
+                            selected = postCaptureBehavior == "BACKGROUND",
+                            onClick = { viewModel.setPostCaptureBehavior("BACKGROUND") },
+                            label = { Text("Stay in Background") },
+                            leadingIcon = if (postCaptureBehavior == "BACKGROUND") {
+                                { Icon(Icons.Default.Check, contentDescription = null) }
+                            } else null
+                        )
+                    }
+                }
+            }
+
+            // 3. Edge Gesture Section
             SettingsCard(
                 icon = Icons.Default.Swipe,
                 title = "Edge Gesture",
@@ -132,7 +186,7 @@ fun AdvancedSettingsScreen(
                     SettingToggleItem(
                         icon = Icons.Default.PowerSettingsNew,
                         title = "Enable Edge Gesture",
-                        description = "Show a small handle on the screen edge",
+                        description = "Show a handle on the screen edge",
                         checked = edgeGestureEnabled,
                         onCheckedChange = { enabled ->
                             if (enabled && !Settings.canDrawOverlays(context)) {
@@ -163,21 +217,62 @@ fun AdvancedSettingsScreen(
 
                     HorizontalDivider()
 
-                    // Side Selection
-                    Text("Position", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        val options = listOf("Left Edge", "Right Edge")
-                        val values = listOf("LEFT", "RIGHT")
-                        values.forEachIndexed { index, value ->
-                            SegmentedButton(
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                                onClick = { viewModel.setEdgeGestureSide(value) },
-                                selected = edgeGestureSide == value
-                            ) {
-                                Text(options[index])
+                    // Appearance
+                    Text("Appearance & Position", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    
+                    SettingToggleItem(
+                        icon = Icons.Default.Visibility,
+                        title = "Visible Handle",
+                        description = "Show the visual indicator",
+                        checked = isVisible,
+                        onCheckedChange = viewModel::setEdgeGestureVisible
+                    )
+
+                    if (!dualHandles) {
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            val options = listOf("Left Edge", "Right Edge")
+                            val values = listOf("LEFT", "RIGHT")
+                            values.forEachIndexed { index, value ->
+                                SegmentedButton(
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                    onClick = { viewModel.setEdgeGestureSide(value) },
+                                    selected = edgeGestureSide == value
+                                ) {
+                                    Text(options[index])
+                                }
                             }
                         }
                     }
+
+                    SettingToggleItem(
+                        icon = Icons.Default.CompareArrows,
+                        title = "Dual Handles",
+                        description = "Show handles on both sides",
+                        checked = dualHandles,
+                        onCheckedChange = viewModel::setEdgeGestureDualHandles
+                    )
+
+                    // Sliders
+                    Text("Vertical Position: $positionY%", style = MaterialTheme.typography.bodyMedium)
+                    Slider(
+                        value = positionY.toFloat(),
+                        onValueChange = { viewModel.setEdgeGesturePositionY(it.toInt()) },
+                        valueRange = 0f..100f
+                    )
+
+                    Text("Height: $heightPercent%", style = MaterialTheme.typography.bodyMedium)
+                    Slider(
+                        value = heightPercent.toFloat(),
+                        onValueChange = { viewModel.setEdgeGestureHeightPercent(it.toInt()) },
+                        valueRange = 10f..100f
+                    )
+
+                    Text("Thickness: ${widthDp}dp", style = MaterialTheme.typography.bodyMedium)
+                    Slider(
+                        value = widthDp.toFloat(),
+                        onValueChange = { viewModel.setEdgeGestureWidth(it.toInt()) },
+                        valueRange = 10f..60f
+                    )
 
                     HorizontalDivider()
 
@@ -201,13 +296,6 @@ fun AdvancedSettingsScreen(
                         selectedAction = doubleTapAction,
                         onActionSelected = viewModel::setEdgeGestureActionDoubleTap
                     )
-                    
-                    Text(
-                        "The gesture handle is small (max 33% height) and positioned on the selected edge.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
                 }
             }
         }
@@ -229,7 +317,8 @@ fun ActionDropdown(
         "ADD_URL" to "Add URL Sheet",
         "ADD_MEMORY" to "Add Memory Sheet",
         "QUICK_AUDIO" to "Quick Audio",
-        "QUICK_TEXT" to "Quick Text"
+        "QUICK_TEXT" to "Quick Text",
+        "CAMERA" to "Open Camera"
     )
 
     ExposedDropdownMenuBox(

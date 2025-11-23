@@ -157,6 +157,29 @@ class SettingsViewModel @Inject constructor(
             initialValue = "NONE"
         )
 
+    // New Edge Gesture Appearance Settings
+    val edgeGesturePositionY: StateFlow<Int> = settingsRepository.edgeGesturePositionYFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = 50)
+
+    val edgeGestureHeightPercent: StateFlow<Int> = settingsRepository.edgeGestureHeightPercentFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = 30)
+
+    val edgeGestureWidth: StateFlow<Int> = settingsRepository.edgeGestureWidthFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = 20)
+
+    val edgeGestureDualHandles: StateFlow<Boolean> = settingsRepository.edgeGestureDualHandlesFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    val edgeGestureVisible: StateFlow<Boolean> = settingsRepository.edgeGestureVisibleFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
+
+    // New Behavior Settings
+    val audioAutoStart: StateFlow<Boolean> = settingsRepository.audioAutoStartFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
+
+    val postCaptureBehavior: StateFlow<String> = settingsRepository.postCaptureBehaviorFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "FOREGROUND")
+
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setAutoIndexScreenshots(enabled)
@@ -302,6 +325,35 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.setEdgeGestureActionDoubleTap(action)
         }
+    }
+
+    // New Setters
+    fun setEdgeGesturePositionY(percent: Int) {
+        viewModelScope.launch { settingsRepository.setEdgeGesturePositionY(percent) }
+    }
+
+    fun setEdgeGestureHeightPercent(percent: Int) {
+        viewModelScope.launch { settingsRepository.setEdgeGestureHeightPercent(percent) }
+    }
+
+    fun setEdgeGestureWidth(width: Int) {
+        viewModelScope.launch { settingsRepository.setEdgeGestureWidth(width) }
+    }
+
+    fun setEdgeGestureDualHandles(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setEdgeGestureDualHandles(enabled) }
+    }
+
+    fun setEdgeGestureVisible(visible: Boolean) {
+        viewModelScope.launch { settingsRepository.setEdgeGestureVisible(visible) }
+    }
+
+    fun setAudioAutoStart(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAudioAutoStart(enabled) }
+    }
+
+    fun setPostCaptureBehavior(behavior: String) {
+        viewModelScope.launch { settingsRepository.setPostCaptureBehavior(behavior) }
     }
 
     init {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -700,15 +702,15 @@ fun AppearanceSection(
                     Box(
                         modifier = Modifier
                             .size(48.dp) // Slightly larger touch target
-                            .clip(androidx.compose.foundation.shape.CircleShape)
-                            .background(androidx.compose.ui.graphics.Color(color))
+                            .clip(CircleShape)
+                            .background(Color(color))
                             .clickable { onSelectedColorChange(color) }
                             .then(
                                 if (isSelected) {
                                     Modifier.border(
                                         3.dp, // Thicker border for better visibility
                                         MaterialTheme.colorScheme.onSurface,
-                                        androidx.compose.foundation.shape.CircleShape
+                                        CircleShape
                                     )
                                 } else Modifier
                             ),
@@ -718,7 +720,7 @@ fun AppearanceSection(
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = null,
-                                tint = if (color == 0xFFFFFFFF.toInt()) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White, // Handle white color checkmark
+                                tint = if (color == 0xFFFFFFFF.toInt()) Color.Black else Color.White, // Handle white color checkmark
                                 modifier = Modifier.size(24.dp)
                             )
                         }
