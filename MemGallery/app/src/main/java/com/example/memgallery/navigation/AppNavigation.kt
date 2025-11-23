@@ -50,6 +50,18 @@ sealed class Screen(val route: String) {
     object BookmarkInput : Screen("bookmark_input") {
         fun createRoute() = "bookmark_input"
     }
+
+    object AdvancedSettings : Screen("advanced_settings")
+
+    // Add Task with Sheet trigger
+    object TaskManager : Screen("task_manager?openAddSheet={openAddSheet}") {
+        fun createRoute(openAddSheet: Boolean = false) = "task_manager?openAddSheet=$openAddSheet"
+    }
+    
+    // Post Capture with URL Sheet trigger
+    object PostCaptureUrl : Screen("post_capture_url?openUrlSheet={openUrlSheet}") {
+        fun createRoute(openUrlSheet: Boolean = false) = "post_capture_url?openUrlSheet=$openUrlSheet"
+    }
 }
 
 @Composable
@@ -67,7 +79,7 @@ fun AppNavigation(
     LaunchedEffect(navigateToRoute) {
         if (navigateToRoute != null) {
             navController.navigate(navigateToRoute) {
-                popUpTo(Screen.Gallery.route) { inclusive = false }
+                // popUpTo(Screen.Gallery.route) { inclusive = false }
             }
         }
     }
@@ -136,6 +148,15 @@ fun AppNavigation(
             SettingsScreen(navController = navController)
         }
         composable(
+            route = Screen.AdvancedSettings.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) {
+            AdvancedSettingsScreen(navController = navController)
+        }
+        composable(
             route = Screen.TextInput.route,
             arguments = listOf(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
@@ -202,6 +223,18 @@ fun AppNavigation(
                 initialBookmarkUrl = bookmarkUrl
             )
         }
+        // New route for opening URL sheet directly
+        composable(
+            route = Screen.PostCaptureUrl.route,
+            arguments = listOf(navArgument("openUrlSheet") { type = NavType.BoolType; defaultValue = false })
+        ) { backStackEntry ->
+            val openUrlSheet = backStackEntry.arguments?.getBoolean("openUrlSheet") ?: false
+            PostCaptureScreen(
+                navController = navController,
+                openUrlSheet = openUrlSheet
+            )
+        }
+
         composable(
             route = Screen.PostCaptureEdit.route,
             arguments = listOf(navArgument("memoryId") { type = NavType.IntType })
@@ -221,6 +254,15 @@ fun AppNavigation(
         }
         composable(Screen.BookmarkInput.route) {
             BookmarkInputScreen(navController = navController)
+        }
+        
+        // Task Manager specific route for direct access
+        composable(
+            route = Screen.TaskManager.route,
+            arguments = listOf(navArgument("openAddSheet") { type = NavType.BoolType; defaultValue = false })
+        ) { backStackEntry ->
+             val openAddSheet = backStackEntry.arguments?.getBoolean("openAddSheet") ?: false
+             HomeScreen(navController = navController, openAddTaskSheet = openAddSheet, forceTaskPage = true)
         }
     }
 }

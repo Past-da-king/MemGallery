@@ -43,6 +43,7 @@ fun PostCaptureScreen(
     initialUserText: String? = null,
     initialBookmarkUrl: String? = null,
     memoryId: Int? = null,
+    openUrlSheet: Boolean = false,
     creationViewModel: MemoryCreationViewModel = hiltViewModel(),
     updateViewModel: MemoryUpdateViewModel = hiltViewModel()
 ) {
@@ -62,6 +63,12 @@ fun PostCaptureScreen(
     var tempUrl by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(openUrlSheet) {
+        if (openUrlSheet) {
+            showUrlSheet = true
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()

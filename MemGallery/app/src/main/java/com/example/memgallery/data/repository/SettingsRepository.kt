@@ -47,6 +47,13 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val SELECTED_COLOR = intPreferencesKey("selected_color")
         val SHOW_HIGHLIGHTS = booleanPreferencesKey("show_highlights")
         val USER_SYSTEM_PROMPT = stringPreferencesKey("user_system_prompt")
+        
+        // Edge Gesture
+        val EDGE_GESTURE_ENABLED = booleanPreferencesKey("edge_gesture_enabled")
+        val EDGE_GESTURE_SIDE = stringPreferencesKey("edge_gesture_side") // "LEFT", "RIGHT"
+        val EDGE_GESTURE_ACTION_SWIPE_UP = stringPreferencesKey("edge_gesture_action_swipe_up")
+        val EDGE_GESTURE_ACTION_SWIPE_DOWN = stringPreferencesKey("edge_gesture_action_swipe_down")
+        val EDGE_GESTURE_ACTION_DOUBLE_TAP = stringPreferencesKey("edge_gesture_action_double_tap")
     }
 
     init {
@@ -221,6 +228,62 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun saveUserSystemPrompt(prompt: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.USER_SYSTEM_PROMPT] = prompt
+        }
+    }
+
+    // Edge Gesture
+    val edgeGestureEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ENABLED] ?: false
+        }
+
+    val edgeGestureSideFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_SIDE] ?: "RIGHT"
+        }
+
+    val edgeGestureActionSwipeUpFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_UP] ?: "NONE"
+        }
+
+    val edgeGestureActionSwipeDownFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_DOWN] ?: "NONE"
+        }
+
+    val edgeGestureActionDoubleTapFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ACTION_DOUBLE_TAP] ?: "NONE"
+        }
+
+    suspend fun setEdgeGestureEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setEdgeGestureSide(side: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_SIDE] = side
+        }
+    }
+
+    suspend fun setEdgeGestureActionSwipeUp(action: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_UP] = action
+        }
+    }
+
+    suspend fun setEdgeGestureActionSwipeDown(action: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_DOWN] = action
+        }
+    }
+
+    suspend fun setEdgeGestureActionDoubleTap(action: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ACTION_DOUBLE_TAP] = action
         }
     }
 }

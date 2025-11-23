@@ -195,6 +195,12 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+        
+        <!-- Edge Gesture Service -->
+        <service
+            android:name=".service.EdgeGestureService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
 
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

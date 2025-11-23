@@ -55,7 +55,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskScreen(
-    viewModel: TaskViewModel = hiltViewModel()
+    viewModel: TaskViewModel = hiltViewModel(),
+    openAddSheet: Boolean = false
 ) {
     val tasks by viewModel.tasksForDisplay.collectAsState()
     val activeTasks by viewModel.activeTasks.collectAsState()
@@ -68,6 +69,12 @@ fun TaskScreen(
     var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
     var isAddSheetOpen by remember { mutableStateOf(false) }
     var isCalendarExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(openAddSheet) {
+        if (openAddSheet) {
+            isAddSheetOpen = true
+        }
+    }
     
     // Expansion states for lists
     var isEventsExpanded by remember { mutableStateOf(false) }

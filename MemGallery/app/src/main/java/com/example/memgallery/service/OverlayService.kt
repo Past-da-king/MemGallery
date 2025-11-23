@@ -6,19 +6,15 @@ import android.graphics.PixelFormat
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,28 +22,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.memgallery.MainActivity
+import com.example.memgallery.data.local.dao.TaskDao
+import com.example.memgallery.data.local.entity.TaskEntity
+import com.example.memgallery.data.repository.MemoryRepository
+import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.navigation.Screen
+import com.example.memgallery.ui.components.sheets.*
 import com.example.memgallery.ui.theme.MemGalleryTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import javax.inject.Inject
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 
 @AndroidEntryPoint
 class OverlayService : Service() {
 
-    @javax.inject.Inject
-    lateinit var settingsRepository: com.example.memgallery.data.repository.SettingsRepository
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var memoryRepository: MemoryRepository
+
+    @Inject
+    lateinit var taskDao: TaskDao
 
     private lateinit var windowManager: WindowManager
     private var overlayView: ComposeView? = null
     private lateinit var lifecycleOwner: OverlayLifecycleOwner
+    private val serviceScope = MainScope()
+    
+    private var currentMode by mutableStateOf("ADD_MEMORY")
+    private var overlayAudioRecorder: OverlayAudioRecorder? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -56,14 +72,66 @@ class OverlayService : Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         lifecycleOwner = OverlayLifecycleOwner()
         lifecycleOwner.onCreate()
+        overlayAudioRecorder = OverlayAudioRecorder(this, serviceScope)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val mode = intent?.getStringExtra("mode") ?: "ADD_MEMORY"
+        currentMode = mode
+        
         if (overlayView == null) {
             showOverlay()
         }
         lifecycleOwner.onResume()
         return START_NOT_STICKY
+    }
+
+    private fun saveTask(title: String, description: String, date: java.time.LocalDate, time: String?, type: String, isRecurring: Boolean, rule: String?) {
+        serviceScope.launch {
+            val newTask = TaskEntity(
+                title = title,
+                description = description,
+                dueDate = date.toString(),
+                dueTime = time,
+                type = type,
+                isRecurring = isRecurring,
+                recurrenceRule = rule,
+                status = "PENDING"
+            )
+            taskDao.insertTask(newTask)
+        }
+    }
+
+    private fun saveUrl(url: String) {
+        serviceScope.launch {
+            memoryRepository.savePendingMemory(
+                imageUri = null,
+                audioUri = null,
+                userText = null,
+                bookmarkUrl = url
+            )
+        }
+    }
+
+    private fun saveText(text: String) {
+        serviceScope.launch {
+            memoryRepository.savePendingMemory(
+                imageUri = null,
+                audioUri = null,
+                userText = text
+            )
+        }
+    }
+
+    private fun saveAudio(path: String) {
+        serviceScope.launch {
+            val uri = Uri.fromFile(java.io.File(path)).toString()
+            memoryRepository.savePendingMemory(
+                imageUri = null,
+                audioUri = uri,
+                userText = null
+            )
+        }
     }
 
     private fun showOverlay() {
@@ -95,18 +163,26 @@ class OverlayService : Service() {
                     amoledMode = amoledMode,
                     customColor = selectedColor
                 ) {
-                    OverlayContent(
-                        onDismiss = { stopSelf() },
-                        onNavigate = { route ->
-                            val mainIntent = Intent(context, MainActivity::class.java).apply {
-                                action = Intent.ACTION_VIEW
-                                putExtra("navigate_to", route)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                            }
-                            startActivity(mainIntent)
-                            stopSelf()
-                        }
-                    )
+                    if (overlayAudioRecorder != null) {
+                        OverlayContent(
+                            mode = currentMode,
+                            onDismiss = { stopSelf() },
+                            onNavigate = { route ->
+                                val mainIntent = Intent(context, MainActivity::class.java).apply {
+                                    action = Intent.ACTION_VIEW
+                                    putExtra("navigate_to", route)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                }
+                                startActivity(mainIntent)
+                                stopSelf()
+                            },
+                            onSaveTask = ::saveTask,
+                            onSaveUrl = ::saveUrl,
+                            onSaveText = ::saveText,
+                            onSaveAudio = ::saveAudio,
+                            audioRecorder = overlayAudioRecorder!!
+                        )
+                    }
                 }
             }
         }
@@ -118,6 +194,8 @@ class OverlayService : Service() {
         super.onDestroy()
         lifecycleOwner.onPause()
         lifecycleOwner.onDestroy()
+        serviceScope.cancel()
+        overlayAudioRecorder?.cleanup()
         if (overlayView != null) {
             windowManager.removeView(overlayView)
             overlayView = null
@@ -125,10 +203,117 @@ class OverlayService : Service() {
     }
 }
 
+class OverlayAudioRecorder(private val context: android.content.Context, private val scope: kotlinx.coroutines.CoroutineScope) {
+    private var mediaRecorder: android.media.MediaRecorder? = null
+    private var recordingJob: kotlinx.coroutines.Job? = null
+    private var outputFile: java.io.File? = null
+
+    var isRecording by mutableStateOf(false)
+        private set
+    var recordingTime by mutableLongStateOf(0L)
+        private set
+    var amplitudes by mutableStateOf(List(30) { 0f })
+        private set
+    var recordedFilePath by mutableStateOf<String?>(null)
+        private set
+    var error by mutableStateOf<String?>(null)
+        private set
+
+    fun startRecording() {
+        if (isRecording) return
+
+        val fileName = "AUD_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())}.m4a"
+        outputFile = java.io.File(context.externalCacheDir, fileName)
+
+        mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            android.media.MediaRecorder(context)
+        } else {
+            @Suppress("DEPRECATION")
+            android.media.MediaRecorder()
+        }.apply {
+            setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
+            setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(outputFile?.absolutePath)
+            try {
+                prepare()
+                start()
+                isRecording = true
+                error = null
+                startTimerAndPolling()
+            } catch (e: java.io.IOException) {
+                e.printStackTrace()
+                error = "Failed to start recording"
+            } catch (e: IllegalStateException) {
+                e.printStackTrace()
+                error = "Failed to start recording"
+            }
+        }
+    }
+
+    fun stopRecording() {
+        if (!isRecording) return
+
+        var success = false
+        try {
+            mediaRecorder?.stop()
+            mediaRecorder?.release()
+            success = true
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+            outputFile?.delete()
+            error = "Recording failed. Too short?"
+        } finally {
+            mediaRecorder = null
+            recordingJob?.cancel()
+            isRecording = false
+            
+            if (success && outputFile?.exists() == true) {
+                recordedFilePath = outputFile?.absolutePath
+            } else {
+                recordedFilePath = null
+                if (!success && error == null) error = "Recording failed."
+            }
+        }
+    }
+
+    private fun startTimerAndPolling() {
+        recordingJob = scope.launch {
+            val startTime = System.currentTimeMillis()
+            while (isRecording) {
+                val elapsedTime = System.currentTimeMillis() - startTime
+                recordingTime = elapsedTime / 1000
+
+                mediaRecorder?.maxAmplitude?.let { maxAmp ->
+                    val normalized = (maxAmp / 32767f).coerceIn(0f, 1f)
+                    val currentList = amplitudes.toMutableList()
+                    currentList.removeAt(0)
+                    currentList.add(normalized)
+                    amplitudes = currentList
+                }
+                delay(50)
+            }
+        }
+    }
+    
+    fun cleanup() {
+        if (isRecording) {
+            stopRecording()
+        }
+        mediaRecorder?.release()
+    }
+}
+
 @Composable
 private fun OverlayContent(
+    mode: String,
     onDismiss: () -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onSaveTask: (String, String, java.time.LocalDate, String?, String, Boolean, String?) -> Unit,
+    onSaveUrl: (String) -> Unit,
+    onSaveText: (String) -> Unit,
+    onSaveAudio: (String) -> Unit,
+    audioRecorder: OverlayAudioRecorder
 ) {
     val visibleState = remember {
         MutableTransitionState(false).apply {
@@ -141,7 +326,7 @@ private fun OverlayContent(
         scope.launch {
             visibleState.targetState = false
             // Wait for animation to finish before dismissing service
-            kotlinx.coroutines.delay(300) 
+            delay(300) 
             onDismiss()
         }
     }
@@ -210,105 +395,79 @@ private fun OverlayContent(
                             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     )
                     
-                    AddContentSheetContent(
-                        onNavigate = { route ->
-                            visibleState.targetState = false
-                            onNavigate(route)
-                        },
-                        onHideSheet = { dismiss() }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AddContentSheetContent(
-    onNavigate: (String) -> Unit,
-    onHideSheet: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp)
-            .navigationBarsPadding() // Add padding for navigation bar
-    ) {
-        Text(
-            "Create New",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        val items = listOf(
-            Triple("Text Note", Icons.Default.TextFields) {
-                onHideSheet()
-                onNavigate(Screen.TextInput.createRoute())
-            },
-            Triple("Upload Image", Icons.Default.Image) {
-                onHideSheet()
-                onNavigate(Screen.Gallery.route)
-            },
-            Triple("Take Photo", Icons.Default.PhotoCamera) {
-                onHideSheet()
-                onNavigate(Screen.CameraCapture.route)
-            },
-            Triple("Record Audio", Icons.Default.Mic) {
-                onHideSheet()
-                onNavigate(Screen.AudioCapture.createRoute())
-            },
-            Triple("Save Bookmark", Icons.Default.Bookmark) {
-                onHideSheet()
-                onNavigate(Screen.BookmarkInput.createRoute())
-            }
-        )
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items.forEach { (label, icon, action) ->
-                Card(
-                    onClick = action,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    // Content Switcher
+                    when (mode) {
+                        "ADD_MEMORY" -> {
+                            AddMemorySheet(
+                                onTextNote = { 
+                                    dismiss()
+                                    onNavigate(Screen.TextInput.createRoute())
+                                },
+                                onUploadImage = {
+                                    dismiss()
+                                    onNavigate(Screen.Gallery.route) 
+                                },
+                                onTakePhoto = {
+                                    dismiss()
+                                    onNavigate(Screen.CameraCapture.route)
+                                },
+                                onRecordAudio = {
+                                    dismiss()
+                                    onNavigate(Screen.AudioCapture.createRoute())
+                                },
+                                onSaveBookmark = {
+                                    dismiss()
+                                    onNavigate(Screen.BookmarkInput.createRoute())
+                                }
                             )
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        "ADD_TASK" -> {
+                            AddTaskSheet(
+                                taskToEdit = null,
+                                onDismiss = { dismiss() },
+                                onSave = { title, desc, date, time, type, recur, rule ->
+                                    onSaveTask(title, desc, date, time, type, recur, rule)
+                                    dismiss()
+                                }
+                            )
+                        }
+                        "ADD_URL" -> {
+                            AddUrlSheet(
+                                onDismiss = { dismiss() },
+                                onAddLink = { url ->
+                                    onSaveUrl(url)
+                                    dismiss()
+                                }
+                            )
+                        }
+                        "QUICK_AUDIO" -> {
+                            com.example.memgallery.ui.components.sheets.QuickAudioSheet(
+                                onDismiss = { dismiss() },
+                                onRecordingSaved = { path ->
+                                    onSaveAudio(path)
+                                    dismiss()
+                                },
+                                isRecording = audioRecorder.isRecording,
+                                recordingTime = audioRecorder.recordingTime,
+                                amplitudes = audioRecorder.amplitudes,
+                                recordedFilePath = audioRecorder.recordedFilePath,
+                                error = audioRecorder.error,
+                                onStartRecording = { audioRecorder.startRecording() },
+                                onStopRecording = { audioRecorder.stopRecording() }
+                            )
+                        }
+                        "QUICK_TEXT" -> {
+                            QuickTextSheet(
+                                onDismiss = { dismiss() },
+                                onSaveText = { text ->
+                                    onSaveText(text)
+                                    dismiss()
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }

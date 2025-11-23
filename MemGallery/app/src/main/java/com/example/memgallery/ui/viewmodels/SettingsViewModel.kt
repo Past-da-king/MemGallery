@@ -121,6 +121,42 @@ class SettingsViewModel @Inject constructor(
             initialValue = -1
         )
 
+    // Edge Gesture Settings
+    val edgeGestureEnabled: StateFlow<Boolean> = settingsRepository.edgeGestureEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    val edgeGestureSide: StateFlow<String> = settingsRepository.edgeGestureSideFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "RIGHT"
+        )
+
+    val edgeGestureActionSwipeUp: StateFlow<String> = settingsRepository.edgeGestureActionSwipeUpFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "NONE"
+        )
+
+    val edgeGestureActionSwipeDown: StateFlow<String> = settingsRepository.edgeGestureActionSwipeDownFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "NONE"
+        )
+
+    val edgeGestureActionDoubleTap: StateFlow<String> = settingsRepository.edgeGestureActionDoubleTapFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "NONE"
+        )
+
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setAutoIndexScreenshots(enabled)
@@ -235,6 +271,36 @@ class SettingsViewModel @Inject constructor(
     fun setSelectedColor(color: Int) {
         viewModelScope.launch {
             settingsRepository.setSelectedColor(color)
+        }
+    }
+
+    fun setEdgeGestureEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeGestureEnabled(enabled)
+        }
+    }
+
+    fun setEdgeGestureSide(side: String) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeGestureSide(side)
+        }
+    }
+
+    fun setEdgeGestureActionSwipeUp(action: String) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeGestureActionSwipeUp(action)
+        }
+    }
+
+    fun setEdgeGestureActionSwipeDown(action: String) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeGestureActionSwipeDown(action)
+        }
+    }
+
+    fun setEdgeGestureActionDoubleTap(action: String) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeGestureActionDoubleTap(action)
         }
     }
 
