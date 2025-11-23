@@ -14,11 +14,6 @@ Thank you for your interest in contributing to MemGallery! We welcome contributi
     git checkout -b feature/amazing-feature
     ```
 
-## Development Workflow
-
--   **Code Style**: Please follow the existing code style (Kotlin coding conventions).
--   **Testing**: Ensure your changes don't break existing functionality. Run tests if available.
--   **Commits**: Write clear, descriptive commit messages.
 
 ## Submitting a Pull Request
 

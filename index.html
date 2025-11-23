@@ -11,20 +11,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <style>
         :root {
             --primary: #D0BCFF;
-            --primary-glow: rgba(208, 188, 255, 0.5);
-            --secondary: #CCC2DC;
-            --background: #0F0A16;
-            /* Darker than app for web depth */
-            --surface: rgba(25, 16, 34, 0.6);
-            --surface-border: rgba(255, 255, 255, 0.1);
-            --text-main: #E6E1E5;
-            --text-muted: #CAC4D0;
-            --accent-gradient: linear-gradient(135deg, #D0BCFF 0%, #8C25F4 100%);
+            --primary-glow: rgba(208, 188, 255, 0.4);
+            --accent: #8C25F4;
+            --accent-glow: rgba(140, 37, 244, 0.4);
+            --background: #050505;
+            --surface: rgba(20, 20, 20, 0.6);
+            --surface-highlight: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #FFFFFF;
+            --text-muted: #A0A0A0;
+            --gradient-main: linear-gradient(135deg, #FFF 0%, #A0A0A0 100%);
+            --gradient-accent: linear-gradient(135deg, #D0BCFF 0%, #8C25F4 100%);
         }
 
         * {
@@ -39,16 +41,54 @@
             color: var(--text-main);
             overflow-x: hidden;
             line-height: 1.6;
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(140, 37, 244, 0.08) 0%, transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(208, 188, 255, 0.05) 0%, transparent 25%);
+        }
+
+        /* Background Effects */
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(140, 37, 244, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: -1;
+            filter: blur(80px);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .bg-glow-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(50, 50, 100, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -100px;
+            right: -100px;
+            z-index: -1;
+            filter: blur(60px);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.8;
+                transform: translateX(-50%) scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: translateX(-50%) scale(1.1);
+            }
         }
 
         /* Animations */
-        @keyframes fadeIn {
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
 
             to {
@@ -57,37 +97,9 @@
             }
         }
 
-        @keyframes float {
-            0% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-
-            100% {
-                transform: translateY(0px);
-            }
-        }
-
-        @keyframes glow {
-            0% {
-                box-shadow: 0 0 5px var(--primary-glow);
-            }
-
-            50% {
-                box-shadow: 0 0 20px var(--primary-glow);
-            }
-
-            100% {
-                box-shadow: 0 0 5px var(--primary-glow);
-            }
-        }
-
-        .animate-fade-in {
-            animation: fadeIn 0.8s ease-out forwards;
+        .animate {
             opacity: 0;
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
 
         .delay-1 {
@@ -102,6 +114,10 @@
             animation-delay: 0.3s;
         }
 
+        .delay-4 {
+            animation-delay: 0.4s;
+        }
+
         /* Header */
         header {
             position: fixed;
@@ -111,10 +127,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(12px);
-            background: rgba(15, 10, 22, 0.7);
-            border-bottom: 1px solid var(--surface-border);
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(5, 5, 5, 0.5);
+            border-bottom: 1px solid var(--border);
         }
 
         .logo {
@@ -125,22 +141,24 @@
             color: var(--text-main);
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
         }
 
         .logo img {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
         }
 
-        .github-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--surface-border);
-            padding: 0.6rem 1.2rem;
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
             border-radius: 100px;
             color: var(--text-main);
             text-decoration: none;
+            font-size: 0.9rem;
             font-weight: 500;
             transition: all 0.3s ease;
             display: flex;
@@ -148,10 +166,9 @@
             gap: 8px;
         }
 
-        .github-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-            border-color: var(--primary);
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
         }
 
         /* Hero Section */
@@ -166,25 +183,35 @@
             position: relative;
         }
 
-        .hero-icon {
-            width: 140px;
-            height: 140px;
-            border-radius: 32px;
+        .hero-badge {
+            background: rgba(140, 37, 244, 0.1);
+            border: 1px solid rgba(140, 37, 244, 0.3);
+            color: #D0BCFF;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
             margin-bottom: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            animation: float 6s ease-in-out infinite;
+            display: inline-block;
         }
 
         .hero h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 4rem;
-            font-weight: 700;
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 800;
             line-height: 1.1;
             margin-bottom: 1.5rem;
-            background: var(--accent-gradient);
+            background: var(--gradient-main);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            max-width: 900px;
+            letter-spacing: -0.03em;
+            max-width: 1000px;
+        }
+
+        .hero h1 span {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .hero p {
@@ -197,91 +224,156 @@
         .cta-group {
             display: flex;
             gap: 1rem;
-            flex-wrap: wrap;
             justify-content: center;
+            margin-bottom: 6rem;
         }
 
         .primary-btn {
-            background: var(--accent-gradient);
-            color: #000;
-            /* High contrast on bright gradient */
-            padding: 1rem 2.5rem;
+            background: #FFFFFF;
+            color: #000000;
+            padding: 1rem 2rem;
             border-radius: 16px;
             text-decoration: none;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 10px 20px rgba(140, 37, 244, 0.3);
         }
 
         .primary-btn:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 15px 30px rgba(140, 37, 244, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(255, 255, 255, 0.2);
         }
 
-        .secondary-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-            padding: 1rem 2.5rem;
+        /* Showcase Section */
+        .showcase {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto 8rem;
+            padding: 0 2rem;
+            perspective: 1000px;
+        }
+
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .screenshot-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 10px;
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screenshot-card img {
+            width: 100%;
+            height: auto;
             border-radius: 16px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            border: 1px solid var(--surface-border);
-            transition: all 0.3s ease;
+            display: block;
         }
 
-        .secondary-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
+        .screenshot-card:nth-child(1) {
+            transform: translateY(40px) rotateY(10deg);
         }
 
-        /* Features Grid */
+        .screenshot-card:nth-child(2) {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 30px 60px rgba(140, 37, 244, 0.2);
+            border-color: rgba(140, 37, 244, 0.3);
+        }
+
+        .screenshot-card:nth-child(3) {
+            transform: translateY(40px) rotateY(-10deg);
+        }
+
+        .screenshot-card:hover {
+            transform: translateY(-10px) scale(1.05) rotateY(0);
+            z-index: 20;
+            border-color: var(--accent);
+        }
+
+        /* Bento Grid Features */
         .features {
             max-width: 1200px;
             margin: 0 auto;
             padding: 4rem 2rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
         }
 
-        .feature-card {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            padding: 2.5rem;
-            border-radius: 24px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .feature-icon {
+        .section-title {
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
             font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            display: inline-block;
-            background: rgba(208, 188, 255, 0.1);
-            padding: 1rem;
-            border-radius: 16px;
-            color: var(--primary);
+            margin-bottom: 4rem;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .feature-title {
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 300px);
+            gap: 1.5rem;
+        }
+
+        .bento-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bento-card:hover {
+            background: var(--surface-highlight);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .bento-card.large {
+            grid-column: span 2;
+        }
+
+        .bento-card.tall {
+            grid-row: span 2;
+        }
+
+        .bento-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+        }
+
+        .bento-title {
             font-family: 'Outfit', sans-serif;
             font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--text-main);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #FFF;
         }
 
-        .feature-desc {
+        .bento-desc {
             color: var(--text-muted);
             font-size: 1rem;
         }
@@ -291,96 +383,148 @@
             text-align: center;
             padding: 4rem 2rem;
             color: var(--text-muted);
-            border-top: 1px solid var(--surface-border);
+            border-top: 1px solid var(--border);
             margin-top: 4rem;
+            background: rgba(5, 5, 5, 0.8);
         }
 
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
+        @media (max-width: 1024px) {
+            .showcase-grid {
+                grid-template-columns: 1fr;
+                gap: 3rem;
             }
 
-            .hero {
-                padding-top: 6rem;
+            .screenshot-card:nth-child(1),
+            .screenshot-card:nth-child(2),
+            .screenshot-card:nth-child(3) {
+                transform: none;
             }
 
-            header {
-                padding: 1rem;
+            .bento-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+
+            .bento-card.large,
+            .bento-card.tall {
+                grid-column: span 1;
+                grid-row: span 1;
+                min-height: 300px;
             }
         }
     </style>
 </head>
 
 <body>
-    <header class="animate-fade-in">
+    <div class="bg-glow"></div>
+    <div class="bg-glow-2"></div>
+
+    <header class="animate">
         <a href="#" class="logo">
             <img src="images/icon.png" alt="Logo">
             MemGallery
         </a>
-        <a href="https://github.com/Past-da-king/MemGallery" class="github-btn">
+        <a href="https://github.com/Past-da-king/MemGallery" class="nav-btn">
             <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
                 <path
                     d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
             </svg>
-            GitHub
+            Star on GitHub
         </a>
     </header>
 
     <section class="hero">
-        <img src="images/icon.png" alt="MemGallery Icon" class="hero-icon animate-fade-in">
-        <h1 class="animate-fade-in delay-1">Your External Brain<br>Powered by AI</h1>
-        <p class="animate-fade-in delay-2">Capture screenshots, voice notes, and photos. Let Gemini AI organize,
-            analyze, and remember everything for you.</p>
+        <div class="hero-badge animate delay-1">✨ Alpha v0.0.3 Available</div>
+        <h1 class="animate delay-2">Your External Brain<br><span>Powered by AI</span></h1>
+        <p class="animate delay-3">Capture screenshots, voice notes, and photos. Let Gemini AI organize, analyze, and
+            remember everything for you.</p>
 
-        <div class="cta-group animate-fade-in delay-3">
+        <div class="cta-group animate delay-4">
             <a href="https://github.com/Past-da-king/MemGallery/releases" class="primary-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
-                    fill="currentColor">
-                    <path
-                        d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+                Download APK
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download Alpha v0.0.3
             </a>
-            <a href="https://github.com/Past-da-king/MemGallery" class="secondary-btn">View Source</a>
         </div>
     </section>
 
-    <section class="features animate-fade-in delay-3">
-        <div class="feature-card">
-            <div class="feature-icon">📸</div>
-            <h3 class="feature-title">Smart Capture</h3>
-            <p class="feature-desc">Background service automatically detects screenshots. Quickly capture voice notes
-                and photos with one tap.</p>
+    <section class="showcase animate delay-4">
+        <div class="showcase-grid">
+            <div class="screenshot-card">
+                <img src="images/gallery.jpg" alt="Gallery Screen">
+            </div>
+            <div class="screenshot-card">
+                <img src="images/memdetail.jpg" alt="Memory Detail Screen">
+            </div>
+            <div class="screenshot-card">
+                <img src="images/tasks.jpg" alt="Tasks Screen">
+            </div>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon">🧠</div>
-            <h3 class="feature-title">Gemini AI</h3>
-            <p class="feature-desc">Powered by Google's Gemini 2.5 Flash. It sees, hears, and understands your memories
-                to extract meaning.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🔍</div>
-            <h3 class="feature-title">Semantic Search</h3>
-            <p class="feature-desc">Forget keywords. Search by description: "The recipe mom sent me" or "That blue shirt
-                I liked".</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3 class="feature-title">Actionable Insights</h3>
-            <p class="feature-desc">AI detects dates, locations, and tasks, offering one-click actions to add to
-                calendar or maps.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🔒</div>
-            <h3 class="feature-title">Private by Design</h3>
-            <p class="feature-desc">Your data lives on your device. Local database storage with secure AI processing.
-            </p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3 class="feature-title">Material You</h3>
-            <p class="feature-desc">Beautiful, modern Android UI that adapts to your device's theme and supports dark
-                mode.</p>
+    </section>
+
+    <section class="features">
+        <h2 class="section-title">Everything you need to remember</h2>
+        <div class="bento-grid">
+            <div class="bento-card large">
+                <div>
+                    <div class="bento-icon">🧠</div>
+                    <h3 class="bento-title">Gemini AI Integration</h3>
+                    <p class="bento-desc">Powered by Google's Gemini 2.5 Flash. It sees, hears, and understands your
+                        memories to extract meaning, titles, and summaries automatically.</p>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div>
+                    <div class="bento-icon">📸</div>
+                    <h3 class="bento-title">Smart Capture</h3>
+                    <p class="bento-desc">Background service automatically detects screenshots. Capture voice notes and
+                        photos instantly.</p>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div>
+                    <div class="bento-icon">🔍</div>
+                    <h3 class="bento-title">Semantic Search</h3>
+                    <p class="bento-desc">Forget keywords. Search by description: "The recipe mom sent me" or "That blue
+                        shirt I liked".</p>
+                </div>
+            </div>
+            <div class="bento-card large">
+                <div>
+                    <div class="bento-icon">⚡</div>
+                    <h3 class="bento-title">Actionable Insights</h3>
+                    <p class="bento-desc">AI detects dates, locations, and tasks from your content, offering one-click
+                        actions to add to your calendar or maps.</p>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div>
+                    <div class="bento-icon">🔒</div>
+                    <h3 class="bento-title">Private by Design</h3>
+                    <p class="bento-desc">Your data lives on your device. Local database storage with secure AI
+                        processing.</p>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div>
+                    <div class="bento-icon">🎨</div>
+                    <h3 class="bento-title">Material You</h3>
+                    <p class="bento-desc">Beautiful, modern Android UI that adapts to your device's theme and supports
+                        dark mode.</p>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div>
+                    <div class="bento-icon">📱</div>
+                    <h3 class="bento-title">Offline First</h3>
+                    <p class="bento-desc">Access your memories anytime, anywhere. AI processing syncs when you're back
+                        online.</p>
+                </div>
+            </div>
         </div>
     </section>
 

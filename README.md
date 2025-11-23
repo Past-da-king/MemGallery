@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/Past-da-king/MemGallery/releases">
-    <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.3-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.3">
+    <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.5-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.5">
   </a>
 </p>
 
@@ -29,7 +29,7 @@
 
 ## 🎯 What is MemGallery?
 
-**MemGallery** is an AI-powered Android application that acts as your personal memory assistant. It automatically captures, organizes, and makes searchable every piece of information you encounter—from screenshots to voice notes to shared content.
+**MemGallery** is an AI-powered Android application that acts as your personal memory assistant. It automatically captures, organizes, and makes searchable every piece of information you encounter—from screenshots to voice notes to web bookmarks.
 
 Think of it as **your second brain** that never forgets. MemGallery uses advanced AI (powered by **Google's Gemini 2.5 Flash**) to understand the content of your memories, extract actionable insights, and help you recall information instantly through intelligent search.
 
@@ -37,68 +37,51 @@ Think of it as **your second brain** that never forgets. MemGallery uses advance
 
 ## ✨ Features
 
-### 📷 **Multi-Modal Memory Capture**
-- **Screenshot Auto-Indexing**: Automatically detects and processes screenshots
+### 📷 **Multi-Modal Capture**
+- **Screenshot Auto-Indexing**: Automatically detects and processes new screenshots
+- **Web Bookmarks**: Save and analyze web links with smart summaries
 - **Camera Capture**: Take photos directly within the app
-- **Audio Recording**: Record voice notes and memos
-- **Text Input**: Quickly jot down thoughts
+- **Audio Recording**: Record voice notes with AI transcription
+- **Text Input**: Quickly jot down thoughts or save copied text
 - **Share Integration**: Save content from any app via Android's Share Sheet
-- **Text Selection**: Long-press any text → "Save to MemGallery"
 
-### 🤖 **AI-Powered Processing**
-- **Automatic Analysis**: Gemini AI analyzes images, audio, and text
-- **Smart Descriptions**: Generates detailed, searchable descriptions
-- **Action Detection**: Identifies events, to-dos, and reminders
-- **Contextual Understanding**: Extracts meaning and context from your memories
+### 🤖 **AI-Powered Intelligence**
+- **Contextual Analysis**: Gemini AI reads images, transcribes audio, and summarizes web pages
+- **Smart Tagging**: Automatically generates relevant tags for organization
+- **Action Detection**: Identifies events, to-dos, and reminders from your content
+- **Custom AI Persona**: Configure how the AI talks and analyzes your data
 
-### 🔍 **Intelligent Search & Organization**
-- **Semantic Search**: Find memories by describing what you're looking for
-- **Filter by Type**: Images, Notes, Audio
-- **Timeline View**: Browse memories chronologically
-- **Selection Mode**: Bulk select and delete memories
+### 🗓️ **Task Management**
+- **Integrated Task Manager**: View all AI-detected to-dos and events in one place
+- **Calendar View**: Browse your tasks and memories by date
+- **Smart Reminders**: Get notified about upcoming deadlines and events found in your memories
 
-### 🔔 **Smart Notifications**
-- **Action Alerts**: Get notified about detected events and to-dos
-- **Customizable Filters**: Choose notification types (All, Events, To-Dos)
-- **Processing Updates**: Real-time feedback when memories are being analyzed
+### 🔍 **Search & Organization**
+- **Semantic Search**: Find memories by describing them (e.g., "receipt for coffee", "notes from meeting")
+- **Smart Filters**: Quickly sort by Images, Notes, Audio, or Bookmarks
+- **Highlights**: Rediscover past memories with random highlights
 
-### ⚡ **Quick Access**
-- **App Shortcuts**: Long-press the app icon for instant actions:
-  - Add Memory
-  - Record Audio
-  - Create Text Note
-- **Background Sharing**: Silent save from other apps
-- **Instant Processing**: Expedited background workers ensure fast analysis
-
-### 🎨 **Premium Design**
-- **Material Design 3**: Modern, beautiful UI
-- **Dark Mode Support**: Easy on the eyes
-- **Smooth Animations**: Polished, responsive interactions
-- **Edge-to-Edge Display**: Immersive full-screen experience
+### 🎨 **Premium Customization**
+- **Material Design 3**: Beautiful, modern UI that adapts to your device
+- **Dynamic Theming**: Matches your system wallpaper colors (Android 12+)
+- **AMOLED Mode**: True black theme for battery saving on OLED screens
+- **Custom Accents**: Choose your preferred app color
 
 ---
 
 ## 🤔 Why MemGallery?
 
 ### The Problem
-We encounter hundreds of pieces of information daily—screenshots, conversations, ideas, reminders. Traditional photo galleries and note apps treat everything as disconnected files. Finding that screenshot from last week? Good luck scrolling through hundreds of images.
+We encounter hundreds of pieces of information daily—screenshots, conversations, articles, reminders. Traditional galleries and note apps treat these as disconnected files. Finding that one specific screenshot or link from last week is often a hassle.
 
 ### The Solution
 MemGallery transforms your Android device into an intelligent memory system that:
 
-1. **Never Forgets**: Automatically captures every screenshot without manual intervention
-2. **Understands Context**: AI reads and comprehends your content
-3. **Makes Everything Searchable**: Find anything by describing it in natural language
-4. **Extracts Actionable Items**: Automatically detects events, tasks, and important dates
-5. **Works in the Background**: No interruption to your workflow
-
-### Perfect For:
-- 📚 **Students**: Capture lecture slides, notes, and research
-- 💼 **Professionals**: Save important emails, documents, and conversations  
-- 🎯 **Project Managers**: Track tasks, deadlines, and meeting notes
-- 🧑‍💻 **Developers**: Screenshot code snippets, error messages, and documentation
-- 📝 **Content Creators**: Collect inspiration, references, and ideas
-- 🌟 **Anyone** who wants to remember everything effortlessly
+1. **Never Forgets**: Automatically captures screenshots and organizes web links
+2. **Understands Context**: AI reads and comprehends the content of your images and audio
+3. **Makes Everything Searchable**: Find anything using natural language
+4. **Extracts Actionable Items**: Automatically detects events and adds them to your task list
+5. **Works Offline-First**: Your data stays on your device until you choose to process it
 
 ---
 
@@ -106,22 +89,21 @@ MemGallery transforms your Android device into an intelligent memory system that
 
 ```
 1. CAPTURE
-   ├─ Take a screenshot (automatic detection)
-   ├─ Share content from any app
-   ├─ Record audio or take photo
-   └─ Type a quick note
+   ├─ Take a screenshot (auto-detected)
+   ├─ Share a link from Chrome
+   ├─ Record a voice note
+   └─ Snap a photo
 
-2. PROCESS (Automatic)
-   ├─ AI analyzes the content
-   ├─ Generates rich descriptions
-   ├─ Extracts actionable items
-   └─ Makes it searchable
+2. PROCESS (AI)
+   ├─ Gemini analyzes content
+   ├─ Generates title, summary & tags
+   ├─ Extracts events & to-dos
+   └─ Indexes for search
 
-3. RECALL
-   ├─ Search by describing what you need
-   ├─ Filter by type or date
-   ├─ Get notifications for actions
-   └─ Instantly access any memory
+3. RECALL & ACT
+   ├─ Search using natural language
+   ├─ View detected tasks in Calendar
+   └─ Receive smart notifications
 ```
 
 ---
@@ -130,10 +112,8 @@ MemGallery transforms your Android device into an intelligent memory system that
 
 ### Option 1: Download APK (Recommended)
 1. Go to the [Releases](../../releases) page
-2. Download the latest `MemGallery-v*.*.*.apk` file
+2. Download the latest `MemGallery-v*.apk` file
 3. Open the APK on your Android device
-./gradlew installDebug
-
 
 **Minimum Requirements:**
 - Android 7.0 (API 24) or higher
@@ -146,41 +126,19 @@ MemGallery transforms your Android device into an intelligent memory system that
 
 ### 1. Get a Google AI Studio API Key
 
-MemGallery requires a **Google Gemini API key** for AI processing. Don't worry—it's **completely free** for most users!
-
-#### Steps to Get Your API Key:
+MemGallery requires a **Google Gemini API key** for AI processing. It's free for most personal use cases.
 
 1. Visit [Google AI Studio](https://aistudio.google.com/)
 2. Sign in with your Google account
-3. Click **"Get API Key"** in the top-right corner
-4. Click **"Create API Key"**
-5. Select your Google Cloud project (or create a new one)
-6. Copy the generated API key
-
-#### Free Tier Limits:
-- ✅ 60 requests per minute
-- ✅ 1,500 requests per day
-- ✅ More than enough for personal use!
+3. Click **"Get API Key"** -> **"Create API Key"**
+4. Copy the key
 
 ### 2. Configure MemGallery
 
-On first launch, you'll go through a quick onboarding:
-
-1. **Welcome**: Learn what Mem Gallery does
-2. **API Key Setup**: Paste your Google AI Studio API key
-3. **Permissions**: Grant necessary permissions:
-   - 📸 Camera (for taking photos)
-   - 🎤 Microphone (for audio recording)
-   - 🖼️ Media (for screenshot auto-indexing)
-   - 🔔 Notifications (for action alerts)
-4. **How It Works**: Quick tutorial
-5. **Get Started**: Start capturing memories!
-
-### 3. Enable Screenshot Auto-Indexing (Optional)
-
-Go to **Settings** → Toggle **"Auto-Index Screenshots"** ON
-
-Now every screenshot you take will automatically be saved and processed!
+1. Launch MemGallery and complete the onboarding
+2. Paste your **API Key** when prompted
+3. Grant necessary permissions (Camera, Microphone, Notifications)
+4. (Optional) Enable **"Auto-Index Screenshots"** in Settings
 
 ---
 
@@ -188,99 +146,41 @@ Now every screenshot you take will automatically be saved and processed!
 
 ### Capturing Memories
 
-#### Screenshot (Automatic)
-Just take a screenshot normally. MemGallery will detect it automatically!
+- **Screenshots**: Take a screenshot as usual. MemGallery will detect and process it automatically.
+- **Web Bookmarks**: In your browser, tap **Share** -> **MemGallery** to save and analyze the link.
+- **Quick Capture**: Use the **+** button or long-press the app icon to add specific types (Audio, Text, Photo).
 
-#### Camera
-1. Open MemGallery
-2. Tap the **+ button**
-3. Select **Camera**
-4. Take a photo
+### Task Management
 
-#### Share from Other Apps
-1. In any app (browser, Twitter, etc.)
-2. Tap **Share**
-3. Select **MemGallery**
-4. Content is saved instantly
+- Navigate to the **Tasks** tab (if enabled in Settings).
+- View AI-detected tasks and events from your memories.
+- Use the **Calendar** view to see your schedule at a glance.
 
-#### Text Selection
-1. Select any text in any app
-2. Long-press the selection
-3. Tap **"Save to MemGallery"**
+### Customization
 
-#### Audio/Text Notes
-- Long-press the MemGallery app icon
-- Select **"Record Audio"** or **"Create Text Note"**
-
-### Searching Memories
-
-**Semantic Search**: Just describe what you're looking for!
-- "Screenshot about coffee shop meeting"
-- "Notes from yesterday's presentation"
-- "Image with Python code"
-
-**Filters**: Use filter chips to narrow down:
-- All | Images | Notes | Audio
-
-### Managing Memories
-
-- **View Details**: Tap any memory card
-- **Edit**: Tap the edit icon in detail view
-- **Delete**: Long-press to enter selection mode, then tap delete
-- **Bulk Actions**: Select multiple memories and delete at once
+- Go to **Settings** -> **Appearance** to toggle **AMOLED Mode** or change the **App Theme**.
+- Use **Advanced Settings** to provide a custom system prompt for the AI (e.g., "Be concise", "Focus on technical details").
 
 ---
 
 ## 🛠️ Technology Stack
 
-### Core
 - **Language**: Kotlin
-- **Min SDK**: 24 (Android 7.0)
-- **Target SDK**: 34 (Android 14)
-
-### Architecture
-- **Pattern**: MVVM (Model-View-ViewModel)
-- **DI**: Hilt/Dagger
-- **Async**: Coroutines + Flow
-
-### UI
-- **Framework**: Jetpack Compose
-- **Design**: Material Design 3
-- **Navigation**: Jetpack Navigation Compose
-- **Theming**: Dynamic Color (Material You)
-
-### Data & Storage
+- **UI**: Jetpack Compose (Material 3)
+- **Architecture**: MVVM + Clean Architecture
+- **DI**: Hilt
+- **AI**: Google Gemini 2.5 Flash via Google Gen AI SDK
 - **Database**: Room
-- **Preferences**: DataStore
-- **File Management**: MediaStore API
-
-### Background Processing
-- **Work Management**: WorkManager
-- **Foreground Services**: Expedited workers for screenshots
-- **Content Observation**: ContentObserver for screenshot detection
-
-### AI & ML
-- **AI Model**: Google Gemini 1.5 Flash
-- **API**: Generative AI SDK
-- **Capabilities**: Multimodal understanding (text + images)
-
-### Networking
-- **HTTP**: Retrofit + OkHttp
-- **Serialization**: Kotlinx Serialization
-
-### Utilities
-- **Image Loading**: Coil
-- **Permissions**: Accompanist Permissions
-- **Logging**: Android Logcat
+- **Background**: WorkManager & Foreground Services
+- **Web Parsing**: Jsoup
 
 ---
 
 ## 🔒 Privacy
 
-- **Local Storage**: All memories are stored locally on your device
-- **AI Processing**: Only the content you capture is sent to Google's Gemini API for analysis
-- **No Third-Party Analytics**: We don't track or collect your data
-- **API Key Security**: Your API key is stored securely using Android's DataStore
+- **Local Storage**: All memories and tasks are stored locally on your device.
+- **Secure AI**: Content is sent to Google's Gemini API only for analysis and is not used to train public models (enterprise-grade privacy).
+- **Encrypted Keys**: Your API key is stored securely using Android's EncryptedSharedPreferences.
 
 ---
 
@@ -290,36 +190,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 🐛 Bug Reports & Feature Requests
-
-Found a bug or have an idea? Please open an issue on GitHub!
-
----
-
-##  🙏 Acknowledgments
-
-- **Google Gemini AI**: For powering the intelligent analysis
-- **Material Design**: For the beautiful design system
-- **Jetpack Compose**: For making Android UI development enjoyable
-
----
-
 <p align="center">
   Made with ❤️ for people who want to remember everything
-</p>
-
-<p align="center">
-  <strong>MemGallery - Your external brain, always remembering</strong>
 </p>
