@@ -55,6 +55,7 @@ fun AdvancedSettingsScreen(
     val isVisible by viewModel.edgeGestureVisible.collectAsState()
     val audioAutoStart by viewModel.audioAutoStart.collectAsState()
     val postCaptureBehavior by viewModel.postCaptureBehavior.collectAsState()
+    val autoRemindersEnabled by viewModel.autoRemindersEnabled.collectAsState()
 
     // Permission Handling
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -137,6 +138,14 @@ fun AdvancedSettingsScreen(
                 description = "Customize app interactions"
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SettingToggleItem(
+                        icon = Icons.Default.Event,
+                        title = "Auto-Generate Reminders",
+                        description = "Allow AI to automatically create tasks and reminders from your memories",
+                        checked = autoRemindersEnabled,
+                        onCheckedChange = viewModel::setAutoRemindersEnabled
+                    )
+
                     SettingToggleItem(
                         icon = Icons.Default.Mic,
                         title = "Audio Auto-Start",

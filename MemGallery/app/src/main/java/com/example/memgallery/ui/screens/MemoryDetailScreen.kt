@@ -59,6 +59,11 @@ import io.noties.markwon.image.ImagesPlugin
 import com.example.memgallery.data.remote.dto.ActionDto
 import com.example.memgallery.utils.ActionHandler
 
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import androidx.compose.material.icons.filled.Add
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemoryDetailScreen(
@@ -85,7 +90,10 @@ fun MemoryDetailScreen(
                 memory = it,
                 onNavigateUp = { navController.navigateUp() },
                 onEdit = { navController.navigate("post_capture_edit/${it.id}") },
-                modifier = Modifier.padding(bottom = padding.calculateBottomPadding())
+                modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+                onCreateTask = { title, desc, date, time, type ->
+                    viewModel.createTask(it.id, title, desc, date, time, type)
+                }
             )
         } ?: run {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -100,12 +108,14 @@ fun MemoryDetailContent(
     memory: MemoryEntity,
     onNavigateUp: () -> Unit,
     onEdit: () -> Unit,
+    onCreateTask: (String, String, String?, String?, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showFullscreenImage by remember { mutableStateOf(false) }
     var fullscreenImageUri by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+    var showManualReminderDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         // Hero Image
@@ -292,9 +302,10 @@ fun MemoryDetailContent(
                     }
 
                     // Actions
+                    Text("Suggested Actions", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
                     if (!memory.aiActions.isNullOrEmpty()) {
-                        Text("Suggested Actions", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Spacer(modifier = Modifier.height(8.dp))
                         val context = LocalContext.current
                         memory.aiActions.forEach { action ->
                             ActionCard(action = action, onAction = {
@@ -302,8 +313,19 @@ fun MemoryDetailContent(
                             })
                             Spacer(modifier = Modifier.height(8.dp))
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
+
+                    // Manual Reminder Button
+                    OutlinedButton(
+                        onClick = { showManualReminderDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Manual Reminder", modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Manual Reminder")
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
                     
                     // Bottom padding for FAB
                     Spacer(modifier = Modifier.height(80.dp))
@@ -347,7 +369,110 @@ fun MemoryDetailContent(
                 creationTimestamp = memory.creationTimestamp
             )
         }
+        
+        if (showManualReminderDialog) {
+            ManualReminderDialog(
+                memoryTitle = memory.aiTitle ?: "Memory",
+                onDismiss = { showManualReminderDialog = false },
+                onConfirm = { description, date, time, type ->
+                    onCreateTask(memory.aiTitle ?: "Memory Task", description, date, time, type)
+                    showManualReminderDialog = false
+                }
+            )
+        }
     }
+}
+
+@Composable
+fun ManualReminderDialog(
+    memoryTitle: String,
+    onDismiss: () -> Unit,
+    onConfirm: (description: String, date: String?, time: String?, type: String) -> Unit
+) {
+    var description by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var reminderType by remember { mutableStateOf("REMINDER") }
+    val context = LocalContext.current
+    
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Reminder") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Date Picker Button
+                OutlinedButton(
+                    onClick = {
+                        val calendar = java.util.Calendar.getInstance()
+                        android.app.DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                selectedDate = LocalDate.of(year, month + 1, day)
+                            },
+                            calendar.get(java.util.Calendar.YEAR),
+                            calendar.get(java.util.Calendar.MONTH),
+                            calendar.get(java.util.Calendar.DAY_OF_MONTH)
+                        ).show()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(selectedDate?.toString() ?: "Select Date")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Time Picker Button
+                OutlinedButton(
+                    onClick = {
+                        val calendar = java.util.Calendar.getInstance()
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, hour, minute ->
+                                selectedTime = LocalTime.of(hour, minute)
+                            },
+                            calendar.get(java.util.Calendar.HOUR_OF_DAY),
+                            calendar.get(java.util.Calendar.MINUTE),
+                            true
+                        ).show()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(selectedTime?.toString() ?: "Select Time")
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(
+                        description, 
+                        selectedDate?.format(dateFormatter), 
+                        selectedTime?.format(timeFormatter), 
+                        reminderType
+                    )
+                },
+                enabled = description.isNotBlank()
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

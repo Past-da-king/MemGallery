@@ -183,20 +183,26 @@ class MemoryRepository @Inject constructor(
 
                 // Extract and save tasks
                 aiAnalysis.actions?.let { actions ->
-                    val tasks = actions.map { action ->
-                        com.example.memgallery.data.local.entity.TaskEntity(
-                            memoryId = memoryId,
-                            title = action.description.take(50), // Use first 50 chars as title
-                            description = action.description,
-                            dueDate = action.date,
-                            dueTime = action.time,
-                            priority = "MEDIUM", // Default
-                            status = "PENDING",
-                            type = action.type ?: "TODO"
-                        )
+                    val autoRemindersEnabled = settingsRepository.autoRemindersEnabledFlow.first()
+                    
+                    if (autoRemindersEnabled) {
+                        val tasks = actions.map { action ->
+                            com.example.memgallery.data.local.entity.TaskEntity(
+                                memoryId = memoryId,
+                                title = action.description.take(50), // Use first 50 chars as title
+                                description = action.description,
+                                dueDate = action.date,
+                                dueTime = action.time,
+                                priority = "MEDIUM", // Default
+                                status = "PENDING",
+                                type = action.type ?: "TODO"
+                            )
+                        }
+                        taskDao.insertTasks(tasks)
+                        Log.d(TAG, "Inserted ${tasks.size} tasks for memory $memoryId")
+                    } else {
+                        Log.d(TAG, "Auto-reminders disabled - skipping task creation")
                     }
-                    taskDao.insertTasks(tasks)
-                    Log.d(TAG, "Inserted ${tasks.size} tasks for memory $memoryId")
                 }
 
             } ?: run {
@@ -263,6 +269,10 @@ class MemoryRepository @Inject constructor(
             val updatedMemory = memory.copy(isHidden = hide)
             memoryDao.updateMemory(updatedMemory)
         }
+    }
+    
+    suspend fun createTask(task: com.example.memgallery.data.local.entity.TaskEntity): Long {
+        return taskDao.insertTask(task)
     }
 
     // TODO: This is a simplified version. The full AI processing should be triggered.

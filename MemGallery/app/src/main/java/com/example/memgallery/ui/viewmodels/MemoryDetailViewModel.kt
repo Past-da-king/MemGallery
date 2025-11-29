@@ -27,4 +27,27 @@ class MemoryDetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun createTask(
+        memoryId: Int,
+        title: String,
+        description: String,
+        date: String?,
+        time: String?,
+        type: String
+    ) {
+        viewModelScope.launch {
+            val task = com.example.memgallery.data.local.entity.TaskEntity(
+                memoryId = memoryId,
+                title = title,
+                description = description,
+                dueDate = date,
+                dueTime = time,
+                type = type,
+                status = "PENDING",
+                priority = "MEDIUM"
+            )
+            memoryRepository.createTask(task)
+        }
+    }
 }

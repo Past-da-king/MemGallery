@@ -180,9 +180,18 @@ class SettingsViewModel @Inject constructor(
     val postCaptureBehavior: StateFlow<String> = settingsRepository.postCaptureBehaviorFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "FOREGROUND")
 
+    val autoRemindersEnabled: StateFlow<Boolean> = settingsRepository.autoRemindersEnabledFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
+
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setAutoIndexScreenshots(enabled)
+        }
+    }
+
+    fun setAutoRemindersEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAutoRemindersEnabled(enabled)
         }
     }
 

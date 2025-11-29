@@ -287,12 +287,14 @@ fun GalleryScreen(
                             IconButton(
                                 onClick = { navController.navigate(Screen.Settings.route) },
                                 modifier = Modifier
+                                    .size(48.dp)
                                     .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
                             ) {
                                 Icon(
                                     Icons.Default.Settings,
                                     contentDescription = "Settings",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }

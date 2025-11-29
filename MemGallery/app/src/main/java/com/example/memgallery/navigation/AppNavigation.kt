@@ -21,21 +21,21 @@ sealed class Screen(val route: String) {
 
     object CameraCapture : Screen("camera_capture")
 
-    object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
-            return "text_input?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
+    object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}&memoryId={memoryId}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null, memoryId: Int? = null): String {
+            return "text_input?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}&memoryId=${memoryId ?: ""}"
         }
     }
 
-    object AudioCapture : Screen("audio_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
-            return "audio_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
+    object AudioCapture : Screen("audio_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}&memoryId={memoryId}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null, memoryId: Int? = null): String {
+            return "audio_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}&memoryId=${memoryId ?: ""}"
         }
     }
 
-    object PostCapture : Screen("post_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
-            return "post_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
+    object PostCapture : Screen("post_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}&memoryId={memoryId}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null, memoryId: Int? = null): String {
+            return "post_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}&memoryId=${memoryId ?: ""}"
         }
     }
 
@@ -162,19 +162,24 @@ fun AppNavigation(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
                 navArgument("userText") { type = NavType.StringType; nullable = true },
-                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true },
+                navArgument("memoryId") { type = NavType.StringType; nullable = true } // StringType because IntType nullable is tricky in nav, we'll parse
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
             val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
+            val memoryIdStr = backStackEntry.arguments?.getString("memoryId")
+            val memoryId = if (memoryIdStr.isNullOrEmpty()) null else memoryIdStr.toIntOrNull()
+
             TextInputScreen(
                 navController = navController,
                 existingImageUri = imageUri,
                 existingAudioUri = audioUri,
                 existingUserText = userText,
-                existingBookmarkUrl = bookmarkUrl
+                existingBookmarkUrl = bookmarkUrl,
+                memoryId = memoryId
             )
         }
 
@@ -187,19 +192,24 @@ fun AppNavigation(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
                 navArgument("userText") { type = NavType.StringType; nullable = true },
-                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true },
+                navArgument("memoryId") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
             val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
+            val memoryIdStr = backStackEntry.arguments?.getString("memoryId")
+            val memoryId = if (memoryIdStr.isNullOrEmpty()) null else memoryIdStr.toIntOrNull()
+
             AudioCaptureScreen(
                 navController = navController,
                 existingImageUri = imageUri,
                 existingAudioUri = audioUri,
                 existingUserText = userText,
-                existingBookmarkUrl = bookmarkUrl
+                existingBookmarkUrl = bookmarkUrl,
+                memoryId = memoryId
             )
         }
         composable(
@@ -208,19 +218,24 @@ fun AppNavigation(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
                 navArgument("userText") { type = NavType.StringType; nullable = true },
-                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true },
+                navArgument("memoryId") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
             val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
+            val memoryIdStr = backStackEntry.arguments?.getString("memoryId")
+            val memoryId = if (memoryIdStr.isNullOrEmpty()) null else memoryIdStr.toIntOrNull()
+
             PostCaptureScreen(
                 navController = navController,
                 initialImageUri = imageUri,
                 initialAudioUri = audioUri,
                 initialUserText = userText,
-                initialBookmarkUrl = bookmarkUrl
+                initialBookmarkUrl = bookmarkUrl,
+                memoryId = memoryId
             )
         }
         // New route for opening URL sheet directly
