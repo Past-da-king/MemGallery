@@ -47,6 +47,25 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val SELECTED_COLOR = intPreferencesKey("selected_color")
         val SHOW_HIGHLIGHTS = booleanPreferencesKey("show_highlights")
         val USER_SYSTEM_PROMPT = stringPreferencesKey("user_system_prompt")
+        
+        // Edge Gesture
+        val EDGE_GESTURE_ENABLED = booleanPreferencesKey("edge_gesture_enabled")
+        val EDGE_GESTURE_SIDE = stringPreferencesKey("edge_gesture_side") // "LEFT", "RIGHT"
+        val EDGE_GESTURE_ACTION_SWIPE_UP = stringPreferencesKey("edge_gesture_action_swipe_up")
+        val EDGE_GESTURE_ACTION_SWIPE_DOWN = stringPreferencesKey("edge_gesture_action_swipe_down")
+        val EDGE_GESTURE_ACTION_DOUBLE_TAP = stringPreferencesKey("edge_gesture_action_double_tap")
+        
+        // Edge Gesture Appearance
+        val EDGE_GESTURE_POSITION_Y = intPreferencesKey("edge_gesture_position_y") // 0-100 percentage
+        val EDGE_GESTURE_HEIGHT_PERCENT = intPreferencesKey("edge_gesture_height_percent") // 10-100
+        val EDGE_GESTURE_WIDTH = intPreferencesKey("edge_gesture_width") // dp
+        val EDGE_GESTURE_DUAL_HANDLES = booleanPreferencesKey("edge_gesture_dual_handles")
+        val EDGE_GESTURE_VISIBLE = booleanPreferencesKey("edge_gesture_visible")
+
+        // Behavior
+        val AUDIO_AUTO_START = booleanPreferencesKey("audio_auto_start")
+        val POST_CAPTURE_BEHAVIOR = stringPreferencesKey("post_capture_behavior") // "BACKGROUND", "FOREGROUND"
+        val AUTO_REMINDERS_ENABLED = booleanPreferencesKey("auto_reminders_enabled")
     }
 
     init {
@@ -221,6 +240,123 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun saveUserSystemPrompt(prompt: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.USER_SYSTEM_PROMPT] = prompt
+        }
+    }
+
+    // Edge Gesture - Flows
+    val edgeGestureEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ENABLED] ?: false
+        }
+
+    val edgeGestureSideFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_SIDE] ?: "RIGHT"
+        }
+
+    val edgeGestureActionSwipeUpFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_UP] ?: "NONE"
+        }
+
+    val edgeGestureActionSwipeDownFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_DOWN] ?: "NONE"
+        }
+
+    val edgeGestureActionDoubleTapFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EDGE_GESTURE_ACTION_DOUBLE_TAP] ?: "NONE"
+        }
+
+    val edgeGesturePositionYFlow: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.EDGE_GESTURE_POSITION_Y] ?: 50 } // Center default
+
+    val edgeGestureHeightPercentFlow: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.EDGE_GESTURE_HEIGHT_PERCENT] ?: 30 }
+
+    val edgeGestureWidthFlow: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.EDGE_GESTURE_WIDTH] ?: 20 }
+
+    val edgeGestureDualHandlesFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.EDGE_GESTURE_DUAL_HANDLES] ?: false }
+
+    val edgeGestureVisibleFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.EDGE_GESTURE_VISIBLE] ?: true }
+
+    val audioAutoStartFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.AUDIO_AUTO_START] ?: true }
+
+    val postCaptureBehaviorFlow: Flow<String> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.POST_CAPTURE_BEHAVIOR] ?: "FOREGROUND" }
+
+    // Edge Gesture - Setters
+    suspend fun setEdgeGestureEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setEdgeGestureSide(side: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_SIDE] = side
+        }
+    }
+
+    suspend fun setEdgeGestureActionSwipeUp(action: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_UP] = action
+        }
+    }
+
+    suspend fun setEdgeGestureActionSwipeDown(action: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ACTION_SWIPE_DOWN] = action
+        }
+    }
+
+    suspend fun setEdgeGestureActionDoubleTap(action: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EDGE_GESTURE_ACTION_DOUBLE_TAP] = action
+        }
+    }
+
+    suspend fun setEdgeGesturePositionY(percent: Int) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.EDGE_GESTURE_POSITION_Y] = percent }
+    }
+
+    suspend fun setEdgeGestureHeightPercent(percent: Int) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.EDGE_GESTURE_HEIGHT_PERCENT] = percent }
+    }
+
+    suspend fun setEdgeGestureWidth(widthDp: Int) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.EDGE_GESTURE_WIDTH] = widthDp }
+    }
+
+    suspend fun setEdgeGestureDualHandles(enabled: Boolean) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.EDGE_GESTURE_DUAL_HANDLES] = enabled }
+    }
+
+    suspend fun setEdgeGestureVisible(visible: Boolean) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.EDGE_GESTURE_VISIBLE] = visible }
+    }
+
+    suspend fun setAudioAutoStart(enabled: Boolean) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.AUDIO_AUTO_START] = enabled }
+    }
+
+    suspend fun setPostCaptureBehavior(behavior: String) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.POST_CAPTURE_BEHAVIOR] = behavior }
+    }
+
+    val autoRemindersEnabledFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.AUTO_REMINDERS_ENABLED] ?: true
+        }
+
+    suspend fun setAutoRemindersEnabled(enabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.AUTO_REMINDERS_ENABLED] = enabled
         }
     }
 }

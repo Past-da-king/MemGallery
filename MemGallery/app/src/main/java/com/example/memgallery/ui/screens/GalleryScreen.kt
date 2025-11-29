@@ -287,12 +287,14 @@ fun GalleryScreen(
                             IconButton(
                                 onClick = { navController.navigate(Screen.Settings.route) },
                                 modifier = Modifier
+                                    .size(48.dp)
                                     .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
                             ) {
                                 Icon(
                                     Icons.Default.Settings,
                                     contentDescription = "Settings",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
@@ -370,16 +372,27 @@ fun GalleryScreen(
                 sheetState = sheetState,
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
-                AddContentSheet(
-                    navController = navController,
-                    onHideSheet = {
-                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showBottomSheet = false
-                            }
-                        }
+                com.example.memgallery.ui.components.sheets.AddMemorySheet(
+                    onTextNote = {
+                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
+                        navController.navigate(Screen.TextInput.createRoute())
                     },
-                    imagePickerLauncher = imagePickerLauncher
+                    onUploadImage = {
+                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
+                        imagePickerLauncher.launch("image/*")
+                    },
+                    onTakePhoto = {
+                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
+                        navController.navigate(Screen.CameraCapture.route)
+                    },
+                    onRecordAudio = {
+                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
+                        navController.navigate(Screen.AudioCapture.createRoute())
+                    },
+                    onSaveBookmark = {
+                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
+                        navController.navigate(Screen.BookmarkInput.createRoute())
+                    }
                 )
             }
         }
@@ -589,96 +602,6 @@ private fun DeleteMediaDialog(
             }
         }
     )
-}
-
-@Composable
-private fun AddContentSheet(
-    navController: NavController,
-    onHideSheet: () -> Unit,
-    imagePickerLauncher: ActivityResultLauncher<String>
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp)
-    ) {
-        Text(
-            "Create New",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        val items = listOf(
-            Triple("Text Note", Icons.Default.TextFields) {
-                onHideSheet()
-                navController.navigate(Screen.TextInput.createRoute())
-            },
-            Triple("Upload Image", Icons.Default.Image) {
-                onHideSheet()
-                imagePickerLauncher.launch("image/*")
-            },
-            Triple("Take Photo", Icons.Default.PhotoCamera) {
-                onHideSheet()
-                navController.navigate(Screen.CameraCapture.route)
-            },
-            Triple("Record Audio", Icons.Default.Mic) {
-                onHideSheet()
-                navController.navigate(Screen.AudioCapture.createRoute())
-            },
-            Triple("Save Bookmark", Icons.Default.Bookmark) {
-                onHideSheet()
-                navController.navigate(Screen.BookmarkInput.createRoute())
-            }
-        )
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items.forEach { (label, icon, action) ->
-                Card(
-                    onClick = action,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-    }
 }
 
 private fun generateRandomGradientBrush(seed: Int): Brush {

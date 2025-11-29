@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -182,7 +183,7 @@
         <service
             android:name=".service.OverlayService"
             android:exported="false"
-            android:foregroundServiceType="shortService" />
+            android:foregroundServiceType="microphone|shortService" />
 
         <!-- Quick Settings Tile Service -->
         <service
@@ -195,6 +196,12 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+        
+        <!-- Edge Gesture Service -->
+        <service
+            android:name=".service.EdgeGestureService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
 
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

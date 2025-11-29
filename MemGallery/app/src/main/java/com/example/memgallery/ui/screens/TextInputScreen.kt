@@ -21,7 +21,8 @@ fun TextInputScreen(
     existingImageUri: String? = null,
     existingAudioUri: String? = null,
     existingUserText: String? = null,
-    existingBookmarkUrl: String? = null
+    existingBookmarkUrl: String? = null,
+    memoryId: Int? = null
 ) {
     var text by remember { mutableStateOf(existingUserText ?: "") }
 
@@ -55,7 +56,8 @@ fun TextInputScreen(
                                 imageUri = existingImageUri,
                                 audioUri = existingAudioUri,
                                 userText = encodedText,
-                                bookmarkUrl = existingBookmarkUrl
+                                bookmarkUrl = existingBookmarkUrl,
+                                memoryId = memoryId
                             )
                         ) {
                             popUpTo(Screen.Gallery.route) { inclusive = false }

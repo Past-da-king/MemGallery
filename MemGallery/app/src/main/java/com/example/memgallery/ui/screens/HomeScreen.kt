@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -17,11 +18,19 @@ import com.example.memgallery.ui.viewmodels.SettingsViewModel
 fun HomeScreen(
     navController: NavController,
     openAddSheet: Boolean = false,
+    openAddTaskSheet: Boolean = false,
+    forceTaskPage: Boolean = false,
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val taskScreenEnabled by settingsViewModel.taskScreenEnabled.collectAsState()
     val pageCount = if (taskScreenEnabled) 2 else 1
     val pagerState = rememberPagerState(pageCount = { pageCount })
+
+    LaunchedEffect(forceTaskPage) {
+        if (forceTaskPage && taskScreenEnabled) {
+            pagerState.scrollToPage(1)
+        }
+    }
 
     HorizontalPager(
         state = pagerState,
@@ -29,7 +38,7 @@ fun HomeScreen(
     ) { page ->
         when (page) {
             0 -> GalleryScreen(navController = navController, openAddSheet = openAddSheet)
-            1 -> if (taskScreenEnabled) TaskScreen()
+            1 -> if (taskScreenEnabled) TaskScreen(openAddSheet = openAddTaskSheet)
         }
     }
 }

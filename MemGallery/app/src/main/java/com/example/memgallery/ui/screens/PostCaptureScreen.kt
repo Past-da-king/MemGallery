@@ -43,6 +43,7 @@ fun PostCaptureScreen(
     initialUserText: String? = null,
     initialBookmarkUrl: String? = null,
     memoryId: Int? = null,
+    openUrlSheet: Boolean = false,
     creationViewModel: MemoryCreationViewModel = hiltViewModel(),
     updateViewModel: MemoryUpdateViewModel = hiltViewModel()
 ) {
@@ -62,6 +63,12 @@ fun PostCaptureScreen(
     var tempUrl by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(openUrlSheet) {
+        if (openUrlSheet) {
+            showUrlSheet = true
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -218,7 +225,7 @@ fun PostCaptureScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl)) },
+                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -229,7 +236,7 @@ fun PostCaptureScreen(
                     Text("Audio")
                 }
                 Button(
-                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl)) },
+                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
@@ -256,14 +263,19 @@ fun PostCaptureScreen(
             Button(
                 onClick = {
                     if (isEditMode) {
-                        val updatedMemory = memory!!.copy(
-                            userText = draftUserText,
-                            imageUri = draftImageUri,
-                            audioFilePath = draftAudioUri,
-                            bookmarkUrl = draftBookmarkUrl
-                        )
-                        updateViewModel.updateMemory(updatedMemory)
-                        navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
+                        memory?.let { existingMemory ->
+                            val updatedMemory = existingMemory.copy(
+                                userText = draftUserText,
+                                imageUri = draftImageUri,
+                                audioFilePath = draftAudioUri,
+                                bookmarkUrl = draftBookmarkUrl
+                            )
+                            updateViewModel.updateMemory(updatedMemory)
+                            navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
+                        } ?: run {
+                            // Memory not loaded yet - log error
+                             android.util.Log.e("PostCaptureScreen", "Attempted to update null memory")
+                        }
                     } else {
                         creationViewModel.createMemory()
                     }
@@ -272,9 +284,11 @@ fun PostCaptureScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(vertical = 12.dp),
-                enabled = uiState !is MemoryCreationUiState.Loading
+                enabled = (isEditMode && memory != null) || (!isEditMode && uiState !is MemoryCreationUiState.Loading)
             ) {
                 if (uiState is MemoryCreationUiState.Loading && !isEditMode) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                } else if (isEditMode && memory == null) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Icon(Icons.Default.AddCircle, contentDescription = "Save Now", modifier = Modifier.size(20.dp))

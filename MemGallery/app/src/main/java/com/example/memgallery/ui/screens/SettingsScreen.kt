@@ -10,10 +10,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -260,109 +263,63 @@ fun SettingsScreen(
             }
 
             // Advanced Settings
-            var advancedExpanded by remember { mutableStateOf(false) }
-            val userSystemPrompt by viewModel.userSystemPrompt.collectAsState()
-            val localContext = LocalContext.current
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
-                onClick = { advancedExpanded = !advancedExpanded }
+                onClick = { navController.navigate(com.example.memgallery.navigation.Screen.AdvancedSettings.route) }
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Header
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                                        )
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
                                     )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Build,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.width(16.dp))
-                        
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Advanced",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Customize AI behavior",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
-                            imageVector = if(advancedExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Toggle Advanced Settings",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            imageVector = Icons.Default.Build,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Advanced",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "AI Persona & Edge Gestures",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    // Collapsible Content
-                    androidx.compose.animation.AnimatedVisibility(visible = advancedExpanded) {
-                        Column(modifier = Modifier.padding(top = 16.dp)) {
-                            HorizontalDivider()
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                "Custom AI Instructions",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                "Add instructions for the AI. This will be added to the system prompt and takes precedence in case of stylistic conflicts.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            OutlinedTextField(
-                                value = userSystemPrompt,
-                                onValueChange = viewModel::onUserSystemPromptChange,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp),
-                                placeholder = { Text("e.g., 'Make summaries short and witty.' or 'Always provide image analysis in point form.'") },
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Button(
-                                onClick = {
-                                    viewModel.saveUserSystemPrompt()
-                                    android.widget.Toast.makeText(localContext, "AI instructions saved!", android.widget.Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.align(Alignment.End)
-                            ) {
-                                Text("Save")
-                            }
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Open Advanced Settings",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             
@@ -745,15 +702,15 @@ fun AppearanceSection(
                     Box(
                         modifier = Modifier
                             .size(48.dp) // Slightly larger touch target
-                            .clip(androidx.compose.foundation.shape.CircleShape)
-                            .background(androidx.compose.ui.graphics.Color(color))
+                            .clip(CircleShape)
+                            .background(Color(color))
                             .clickable { onSelectedColorChange(color) }
                             .then(
                                 if (isSelected) {
                                     Modifier.border(
                                         3.dp, // Thicker border for better visibility
                                         MaterialTheme.colorScheme.onSurface,
-                                        androidx.compose.foundation.shape.CircleShape
+                                        CircleShape
                                     )
                                 } else Modifier
                             ),
@@ -763,7 +720,7 @@ fun AppearanceSection(
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = null,
-                                tint = if (color == 0xFFFFFFFF.toInt()) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White, // Handle white color checkmark
+                                tint = if (color == 0xFFFFFFFF.toInt()) Color.Black else Color.White, // Handle white color checkmark
                                 modifier = Modifier.size(24.dp)
                             )
                         }

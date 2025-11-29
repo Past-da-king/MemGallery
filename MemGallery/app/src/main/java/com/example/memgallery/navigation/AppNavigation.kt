@@ -21,21 +21,21 @@ sealed class Screen(val route: String) {
 
     object CameraCapture : Screen("camera_capture")
 
-    object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
-            return "text_input?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
+    object TextInput : Screen("text_input?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}&memoryId={memoryId}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null, memoryId: Int? = null): String {
+            return "text_input?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}&memoryId=${memoryId ?: ""}"
         }
     }
 
-    object AudioCapture : Screen("audio_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
-            return "audio_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
+    object AudioCapture : Screen("audio_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}&memoryId={memoryId}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null, memoryId: Int? = null): String {
+            return "audio_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}&memoryId=${memoryId ?: ""}"
         }
     }
 
-    object PostCapture : Screen("post_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}") {
-        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null): String {
-            return "post_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}"
+    object PostCapture : Screen("post_capture?imageUri={imageUri}&audioUri={audioUri}&userText={userText}&bookmarkUrl={bookmarkUrl}&memoryId={memoryId}") {
+        fun createRoute(imageUri: String? = null, audioUri: String? = null, userText: String? = null, bookmarkUrl: String? = null, memoryId: Int? = null): String {
+            return "post_capture?imageUri=${imageUri ?: ""}&audioUri=${audioUri ?: ""}&userText=${userText ?: ""}&bookmarkUrl=${bookmarkUrl ?: ""}&memoryId=${memoryId ?: ""}"
         }
     }
 
@@ -49,6 +49,18 @@ sealed class Screen(val route: String) {
 
     object BookmarkInput : Screen("bookmark_input") {
         fun createRoute() = "bookmark_input"
+    }
+
+    object AdvancedSettings : Screen("advanced_settings")
+
+    // Add Task with Sheet trigger
+    object TaskManager : Screen("task_manager?openAddSheet={openAddSheet}") {
+        fun createRoute(openAddSheet: Boolean = false) = "task_manager?openAddSheet=$openAddSheet"
+    }
+    
+    // Post Capture with URL Sheet trigger
+    object PostCaptureUrl : Screen("post_capture_url?openUrlSheet={openUrlSheet}") {
+        fun createRoute(openUrlSheet: Boolean = false) = "post_capture_url?openUrlSheet=$openUrlSheet"
     }
 }
 
@@ -67,7 +79,7 @@ fun AppNavigation(
     LaunchedEffect(navigateToRoute) {
         if (navigateToRoute != null) {
             navController.navigate(navigateToRoute) {
-                popUpTo(Screen.Gallery.route) { inclusive = false }
+                // popUpTo(Screen.Gallery.route) { inclusive = false }
             }
         }
     }
@@ -136,24 +148,38 @@ fun AppNavigation(
             SettingsScreen(navController = navController)
         }
         composable(
+            route = Screen.AdvancedSettings.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) {
+            AdvancedSettingsScreen(navController = navController)
+        }
+        composable(
             route = Screen.TextInput.route,
             arguments = listOf(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
                 navArgument("userText") { type = NavType.StringType; nullable = true },
-                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true },
+                navArgument("memoryId") { type = NavType.StringType; nullable = true } // StringType because IntType nullable is tricky in nav, we'll parse
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
             val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
+            val memoryIdStr = backStackEntry.arguments?.getString("memoryId")
+            val memoryId = if (memoryIdStr.isNullOrEmpty()) null else memoryIdStr.toIntOrNull()
+
             TextInputScreen(
                 navController = navController,
                 existingImageUri = imageUri,
                 existingAudioUri = audioUri,
                 existingUserText = userText,
-                existingBookmarkUrl = bookmarkUrl
+                existingBookmarkUrl = bookmarkUrl,
+                memoryId = memoryId
             )
         }
 
@@ -166,19 +192,24 @@ fun AppNavigation(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
                 navArgument("userText") { type = NavType.StringType; nullable = true },
-                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true },
+                navArgument("memoryId") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
             val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
+            val memoryIdStr = backStackEntry.arguments?.getString("memoryId")
+            val memoryId = if (memoryIdStr.isNullOrEmpty()) null else memoryIdStr.toIntOrNull()
+
             AudioCaptureScreen(
                 navController = navController,
                 existingImageUri = imageUri,
                 existingAudioUri = audioUri,
                 existingUserText = userText,
-                existingBookmarkUrl = bookmarkUrl
+                existingBookmarkUrl = bookmarkUrl,
+                memoryId = memoryId
             )
         }
         composable(
@@ -187,21 +218,38 @@ fun AppNavigation(
                 navArgument("imageUri") { type = NavType.StringType; nullable = true },
                 navArgument("audioUri") { type = NavType.StringType; nullable = true },
                 navArgument("userText") { type = NavType.StringType; nullable = true },
-                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true }
+                navArgument("bookmarkUrl") { type = NavType.StringType; nullable = true },
+                navArgument("memoryId") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")?.takeIf { it.isNotEmpty() }
             val audioUri = backStackEntry.arguments?.getString("audioUri")?.takeIf { it.isNotEmpty() }
             val userText = backStackEntry.arguments?.getString("userText")?.takeIf { it.isNotEmpty() }
             val bookmarkUrl = backStackEntry.arguments?.getString("bookmarkUrl")?.takeIf { it.isNotEmpty() }
+            val memoryIdStr = backStackEntry.arguments?.getString("memoryId")
+            val memoryId = if (memoryIdStr.isNullOrEmpty()) null else memoryIdStr.toIntOrNull()
+
             PostCaptureScreen(
                 navController = navController,
                 initialImageUri = imageUri,
                 initialAudioUri = audioUri,
                 initialUserText = userText,
-                initialBookmarkUrl = bookmarkUrl
+                initialBookmarkUrl = bookmarkUrl,
+                memoryId = memoryId
             )
         }
+        // New route for opening URL sheet directly
+        composable(
+            route = Screen.PostCaptureUrl.route,
+            arguments = listOf(navArgument("openUrlSheet") { type = NavType.BoolType; defaultValue = false })
+        ) { backStackEntry ->
+            val openUrlSheet = backStackEntry.arguments?.getBoolean("openUrlSheet") ?: false
+            PostCaptureScreen(
+                navController = navController,
+                openUrlSheet = openUrlSheet
+            )
+        }
+
         composable(
             route = Screen.PostCaptureEdit.route,
             arguments = listOf(navArgument("memoryId") { type = NavType.IntType })
@@ -221,6 +269,15 @@ fun AppNavigation(
         }
         composable(Screen.BookmarkInput.route) {
             BookmarkInputScreen(navController = navController)
+        }
+        
+        // Task Manager specific route for direct access
+        composable(
+            route = Screen.TaskManager.route,
+            arguments = listOf(navArgument("openAddSheet") { type = NavType.BoolType; defaultValue = false })
+        ) { backStackEntry ->
+             val openAddSheet = backStackEntry.arguments?.getBoolean("openAddSheet") ?: false
+             HomeScreen(navController = navController, openAddTaskSheet = openAddSheet, forceTaskPage = true)
         }
     }
 }

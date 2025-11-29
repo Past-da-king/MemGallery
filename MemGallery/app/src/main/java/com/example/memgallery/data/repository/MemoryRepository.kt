@@ -44,7 +44,7 @@ class MemoryRepository @Inject constructor(
         audioUri: String?,
         userText: String?,
         bookmarkUrl: String? = null
-    ): Result<Long> {
+    ): Result<Long> = try {
         Log.d(TAG, "savePendingMemory called with imageUri: $imageUri, audioUri: $audioUri, userText: $userText, bookmarkUrl: $bookmarkUrl")
 
         // Extract URL metadata if bookmarkUrl is present
@@ -54,23 +54,30 @@ class MemoryRepository @Inject constructor(
         var bookmarkFaviconUrl: String? = null
 
         if (bookmarkUrl != null) {
-            val metadata = urlMetadataExtractor.extract(bookmarkUrl)
-            bookmarkTitle = metadata.title
-            bookmarkDescription = metadata.description
-            
-            // Download bookmark image if available
-            if (metadata.imageUrl != null) {
-                val downloadedUri = fileUtils.downloadImageFromUrl(metadata.imageUrl)
-                if (downloadedUri != null) {
-                    bookmarkImageUrl = downloadedUri.toString()
-                    Log.d(TAG, "Bookmark image downloaded to: $bookmarkImageUrl")
-                } else {
-                    bookmarkImageUrl = metadata.imageUrl // Fallback to remote URL if download fails
+            try {
+                val metadata = urlMetadataExtractor.extract(bookmarkUrl)
+                bookmarkTitle = metadata.title
+                bookmarkDescription = metadata.description
+                
+                // Download bookmark image if available
+                if (metadata.imageUrl != null) {
+                    val downloadedUri = fileUtils.downloadImageFromUrl(metadata.imageUrl)
+                    if (downloadedUri != null) {
+                        bookmarkImageUrl = downloadedUri.toString()
+                        Log.d(TAG, "Bookmark image downloaded to: $bookmarkImageUrl")
+                    } else {
+                        bookmarkImageUrl = metadata.imageUrl // Fallback to remote URL if download fails
+                    }
                 }
+                
+                bookmarkFaviconUrl = metadata.faviconUrl
+                Log.d(TAG, "Extracted metadata: $metadata")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to extract URL metadata", e)
+                // Continue with saving even if metadata extraction fails
+                bookmarkTitle = bookmarkUrl
+                bookmarkDescription = "Failed to load page metadata"
             }
-            
-            bookmarkFaviconUrl = metadata.faviconUrl
-            Log.d(TAG, "Extracted metadata: $metadata")
         }
 
         // Create permanent copies for storage
@@ -114,8 +121,12 @@ class MemoryRepository @Inject constructor(
         )
         Log.d(TAG, "Inserting new pending memory entity: $memoryEntity")
         val memoryId = memoryDao.insertMemory(memoryEntity)
+        Log.d(TAG, "Successfully saved memory with ID: $memoryId")
         enqueueMemoryProcessing()
-        return Result.success(memoryId)
+        Result.success(memoryId)
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to save pending memory", e)
+        Result.failure(e)
     }
 
     suspend fun processMemoryWithAI(
@@ -172,20 +183,26 @@ class MemoryRepository @Inject constructor(
 
                 // Extract and save tasks
                 aiAnalysis.actions?.let { actions ->
-                    val tasks = actions.map { action ->
-                        com.example.memgallery.data.local.entity.TaskEntity(
-                            memoryId = memoryId,
-                            title = action.description.take(50), // Use first 50 chars as title
-                            description = action.description,
-                            dueDate = action.date,
-                            dueTime = action.time,
-                            priority = "MEDIUM", // Default
-                            status = "PENDING",
-                            type = action.type ?: "TODO"
-                        )
+                    val autoRemindersEnabled = settingsRepository.autoRemindersEnabledFlow.first()
+                    
+                    if (autoRemindersEnabled) {
+                        val tasks = actions.map { action ->
+                            com.example.memgallery.data.local.entity.TaskEntity(
+                                memoryId = memoryId,
+                                title = action.description.take(50), // Use first 50 chars as title
+                                description = action.description,
+                                dueDate = action.date,
+                                dueTime = action.time,
+                                priority = "MEDIUM", // Default
+                                status = "PENDING",
+                                type = action.type ?: "TODO"
+                            )
+                        }
+                        taskDao.insertTasks(tasks)
+                        Log.d(TAG, "Inserted ${tasks.size} tasks for memory $memoryId")
+                    } else {
+                        Log.d(TAG, "Auto-reminders disabled - skipping task creation")
                     }
-                    taskDao.insertTasks(tasks)
-                    Log.d(TAG, "Inserted ${tasks.size} tasks for memory $memoryId")
                 }
 
             } ?: run {
@@ -252,6 +269,10 @@ class MemoryRepository @Inject constructor(
             val updatedMemory = memory.copy(isHidden = hide)
             memoryDao.updateMemory(updatedMemory)
         }
+    }
+    
+    suspend fun createTask(task: com.example.memgallery.data.local.entity.TaskEntity): Long {
+        return taskDao.insertTask(task)
     }
 
     // TODO: This is a simplified version. The full AI processing should be triggered.

@@ -54,6 +54,8 @@ fun OnboardingScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { 4 })
     val coroutineScope = rememberCoroutineScope()
+    val apiKeyUiState by viewModel.apiKeyUiState.collectAsState()
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -105,15 +107,27 @@ fun OnboardingScreen(
             }
 
             if (pagerState.currentPage < 3) {
+                val isNextEnabled = pagerState.currentPage != 1 || apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success
+
                 FloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
+                            // Check if on API page and key not validated
+                            if (pagerState.currentPage == 1 && apiKeyUiState !is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success) {
+                                // Show toast: "Please validate your API key first"
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Please validate your API key before continuing",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                                return@launch
+                            }
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     },
                     modifier = Modifier.align(Alignment.CenterEnd),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = if (isNextEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isNextEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
                     Icon(Icons.Default.ArrowForward, contentDescription = "Next")
                 }
@@ -381,7 +395,17 @@ fun PermissionsPage() {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Media Access allows auto-detection of screenshots.\n\nNote: Android requires access to all photos. Your privacy is protected - the app only processes screenshots.",
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         PermissionItem(
             icon = Icons.Default.Notifications,

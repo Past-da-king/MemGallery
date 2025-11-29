@@ -44,6 +44,7 @@ fun AudioCaptureScreen(
     existingAudioUri: String?,
     existingUserText: String?,
     existingBookmarkUrl: String?,
+    memoryId: Int? = null,
     viewModel: AudioCaptureViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -78,10 +79,11 @@ fun AudioCaptureScreen(
                     imageUri = existingImageUri,
                     audioUri = fileUri,
                     userText = existingUserText,
-                    bookmarkUrl = existingBookmarkUrl
+                    bookmarkUrl = existingBookmarkUrl,
+                    memoryId = memoryId
                 )
             ) {
-                popUpTo(Screen.Gallery.route)
+                popUpTo(Screen.Gallery.route) { inclusive = false }
             }
         }
     }
