@@ -59,9 +59,12 @@ fun AddUrlSheet(
 
         Button(
             onClick = {
-                onAddLink(tempUrl)
-                tempUrl = ""
+                if (tempUrl.isNotBlank()) {
+                    onAddLink(tempUrl.trim())
+                    tempUrl = ""
+                }
             },
+            enabled = tempUrl.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),

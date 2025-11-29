@@ -1,8 +1,11 @@
 package com.example.memgallery.service
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
@@ -24,10 +27,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.memgallery.MainActivity
+import com.example.memgallery.R
 import com.example.memgallery.data.local.dao.TaskDao
 import com.example.memgallery.data.local.entity.TaskEntity
 import com.example.memgallery.data.repository.MemoryRepository
@@ -43,8 +48,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import android.net.Uri
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 
 @AndroidEntryPoint
 class OverlayService : Service() {
@@ -80,23 +83,43 @@ class OverlayService : Service() {
         val mode = intent?.getStringExtra("mode") ?: "ADD_MEMORY"
         currentMode = mode
         
+        startForegroundService()
+
         if (overlayView == null) {
             showOverlay()
         }
         lifecycleOwner.onResume()
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
-    private fun handlePostCapture(newItemUri: String? = null, newItemId: Long? = null) {
+    private fun startForegroundService() {
+        val channelId = "overlay_service"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "App Overlay", NotificationManager.IMPORTANCE_LOW)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("MemGallery Overlay")
+            .setContentText("Tap an edge gesture to capture.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .build()
+
+        startForeground(2003, notification)
+    }
+
+    private fun handlePostCapture(newItemId: Long?) {
         serviceScope.launch {
             val behavior = settingsRepository.postCaptureBehaviorFlow.first()
             if (behavior == "FOREGROUND") {
                 val intent = Intent(applicationContext, MainActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     if (newItemId != null) {
-                        putExtra("navigate_to", Screen.Detail.createRoute(newItemId.toInt()))
+                        // Navigate to PostCaptureScreen for editing
+                        putExtra("navigate_to", Screen.PostCaptureEdit.createRoute(newItemId.toInt()))
                     } else {
-                        // If we don't have ID immediately (pending), just go to gallery
+                        // Fallback to gallery if ID is somehow null
                         putExtra("navigate_to", Screen.Gallery.route)
                     }
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -124,45 +147,142 @@ class OverlayService : Service() {
                 status = "PENDING"
             )
             taskDao.insertTask(newTask)
-            handlePostCapture() // Task saving logic usually keeps user in flow, but respecting setting is fine
+            handlePostCapture(null) // Task saving logic usually keeps user in flow, but respecting setting is fine
         }
     }
 
     private fun saveUrl(url: String) {
         serviceScope.launch {
+            val behavior = settingsRepository.postCaptureBehaviorFlow.first()
+            
+            // Always save the memory first
+            android.util.Log.d("OverlayService", "Attempting to save URL: $url")
             val result = memoryRepository.savePendingMemory(
                 imageUri = null,
                 audioUri = null,
                 userText = null,
                 bookmarkUrl = url
             )
-            val id = result.getOrNull()
-            handlePostCapture(newItemId = id)
+            
+            if (behavior == "FOREGROUND") {
+                // Open app to PostCaptureScreen with URL data
+                result.onSuccess { id ->
+                    android.util.Log.d("OverlayService", "URL saved with ID: $id, opening PostCaptureScreen")
+                    val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                        putExtra("navigate_to", Screen.PostCapture.createRoute(
+                            imageUri = null,
+                            audioUri = null,
+                            userText = null,
+                            bookmarkUrl = url
+                        ))
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    startActivity(intent)
+                    stopSelf()
+                }.onFailure { error ->
+                    android.util.Log.e("OverlayService", "Failed to save URL", error)
+                    launch(kotlinx.coroutines.Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            applicationContext, 
+                            "Failed to save bookmark: ${error.message}", 
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    stopSelf()
+                }
+            } else {
+                // Background mode - save and process
+                result.onSuccess { id ->
+                    android.util.Log.d("OverlayService", "URL saved successfully with ID: $id")
+                    handlePostCapture(id)
+                    stopSelf()
+                }.onFailure { error ->
+                    android.util.Log.e("OverlayService", "Failed to save URL", error)
+                    launch(kotlinx.coroutines.Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            applicationContext, 
+                            "Failed to save bookmark: ${error.message}", 
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    stopSelf()
+                }
+            }
         }
     }
 
     private fun saveText(text: String) {
         serviceScope.launch {
+            val behavior = settingsRepository.postCaptureBehaviorFlow.first()
+            
+            // Always save the memory first
             val result = memoryRepository.savePendingMemory(
                 imageUri = null,
                 audioUri = null,
                 userText = text
             )
-            val id = result.getOrNull()
-            handlePostCapture(newItemId = id)
+            
+            if (behavior == "FOREGROUND") {
+                // Open app to PostCaptureScreen with text data
+                result.onSuccess { id ->
+                    val encodedText = java.net.URLEncoder.encode(text, "UTF-8")
+                    val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                        putExtra("navigate_to", Screen.PostCapture.createRoute(
+                            imageUri = null,
+                            audioUri = null,
+                            userText = encodedText,
+                            bookmarkUrl = null
+                        ))
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    startActivity(intent)
+                    stopSelf()
+                }
+            } else {
+                // Background mode - save and process
+                val id = result.getOrNull()
+                handlePostCapture(id)
+                stopSelf()
+            }
         }
     }
 
     private fun saveAudio(path: String) {
         serviceScope.launch {
+            val behavior = settingsRepository.postCaptureBehaviorFlow.first()
+            
+            // Always save the memory first
             val uri = Uri.fromFile(java.io.File(path)).toString()
             val result = memoryRepository.savePendingMemory(
                 imageUri = null,
                 audioUri = uri,
                 userText = null
             )
-            val id = result.getOrNull()
-            handlePostCapture(newItemId = id)
+            
+            if (behavior == "FOREGROUND") {
+                // Open app to PostCaptureScreen with audio data
+                result.onSuccess { id ->
+                    val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                        putExtra("navigate_to", Screen.PostCapture.createRoute(
+                            imageUri = null,
+                            audioUri = uri,
+                            userText = null,
+                            bookmarkUrl = null
+                        ))
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    startActivity(intent)
+                    stopSelf()
+                }
+            } else {
+                // Background mode - save and process
+                val id = result.getOrNull()
+                handlePostCapture(id)
+                stopSelf()
+            }
         }
     }
 
@@ -189,8 +309,7 @@ class OverlayService : Service() {
                 val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
                 val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)
                 
-                // Settings for Audio
-                val audioAutoStart by settingsRepository.audioAutoStartFlow.collectAsState(initial = true)
+                val audioAutoStart by settingsRepository.audioAutoStartFlow.collectAsState(initial = false)
 
                 MemGalleryTheme(
                     dynamicColor = dynamicTheming,
@@ -236,6 +355,7 @@ class OverlayService : Service() {
             windowManager.removeView(overlayView)
             overlayView = null
         }
+        stopForeground(true)
     }
 }
 
@@ -276,6 +396,7 @@ class OverlayAudioRecorder(private val context: android.content.Context, private
                 start()
                 isRecording = true
                 error = null
+                recordedFilePath = null // Reset on new recording
                 startTimerAndPolling()
             } catch (e: java.io.IOException) {
                 e.printStackTrace()
@@ -391,11 +512,10 @@ private fun OverlayContent(
             enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
             exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
         ) {
-            // Draggable State
             var offsetY by remember { mutableFloatStateOf(0f) }
             val draggableState = rememberDraggableState { delta ->
                 val newOffset = offsetY + delta
-                offsetY = newOffset.coerceAtLeast(0f) // Only allow dragging down
+                offsetY = newOffset.coerceAtLeast(0f)
             }
 
             Surface(
@@ -406,14 +526,14 @@ private fun OverlayContent(
                         state = draggableState,
                         orientation = Orientation.Vertical,
                         onDragStopped = {
-                            if (offsetY > 150f) { // Threshold to dismiss
+                            if (offsetY > 150f) { 
                                 dismiss()
                             } else {
-                                offsetY = 0f // Snap back
+                                offsetY = 0f 
                             }
                         }
                     )
-                    .windowInsetsPadding(WindowInsets.ime), // Handle keyboard
+                    .windowInsetsPadding(WindowInsets.ime),
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp
@@ -421,7 +541,6 @@ private fun OverlayContent(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Drag Handle
                     Box(
                         modifier = Modifier
                             .padding(vertical = 22.dp)
@@ -431,30 +550,14 @@ private fun OverlayContent(
                             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     )
                     
-                    // Content Switcher
                     when (mode) {
                         "ADD_MEMORY" -> {
                             AddMemorySheet(
-                                onTextNote = { 
-                                    dismiss()
-                                    onNavigate(Screen.TextInput.createRoute())
-                                },
-                                onUploadImage = {
-                                    dismiss()
-                                    onNavigate(Screen.Gallery.route) 
-                                },
-                                onTakePhoto = {
-                                    dismiss()
-                                    onNavigate(Screen.CameraCapture.route)
-                                },
-                                onRecordAudio = {
-                                    dismiss()
-                                    onNavigate(Screen.AudioCapture.createRoute())
-                                },
-                                onSaveBookmark = {
-                                    dismiss()
-                                    onNavigate(Screen.BookmarkInput.createRoute())
-                                }
+                                onTextNote = { dismiss(); onNavigate(Screen.TextInput.createRoute()) },
+                                onUploadImage = { dismiss(); onNavigate(Screen.Gallery.route) },
+                                onTakePhoto = { dismiss(); onNavigate(Screen.CameraCapture.route) },
+                                onRecordAudio = { dismiss(); onNavigate(Screen.AudioCapture.createRoute()) },
+                                onSaveBookmark = { dismiss(); onNavigate(Screen.BookmarkInput.createRoute()) }
                             )
                         }
                         "ADD_TASK" -> {
@@ -477,7 +580,7 @@ private fun OverlayContent(
                             )
                         }
                         "QUICK_AUDIO" -> {
-                            com.example.memgallery.ui.components.sheets.QuickAudioSheet(
+                            QuickAudioSheet(
                                 onDismiss = { dismiss() },
                                 onRecordingSaved = { path ->
                                     onSaveAudio(path)

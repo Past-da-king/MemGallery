@@ -24,18 +24,21 @@ import com.example.memgallery.navigation.Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookmarkInputScreen(
-    navController: NavController
+    navController: NavController,
+    initialUrl: String? = null
 ) {
-    var url by remember { mutableStateOf("") }
+    var url by remember { mutableStateOf(initialUrl ?: "") }
     var userNote by remember { mutableStateOf("") }
     val clipboardManager = LocalClipboardManager.current
 
-    // Check clipboard for URL on entry
+    // Check clipboard for URL on entry only if no initialUrl provided
     LaunchedEffect(Unit) {
-        val clipData = clipboardManager.getText()?.toString()
-        if (clipData != null && (clipData.startsWith("http://") || clipData.startsWith("https://"))) {
-            if (url.isBlank()) {
-                url = clipData
+        if (initialUrl.isNullOrBlank()) {
+            val clipData = clipboardManager.getText()?.toString()
+            if (clipData != null && (clipData.startsWith("http://") || clipData.startsWith("https://"))) {
+                if (url.isBlank()) {
+                    url = clipData
+                }
             }
         }
     }
