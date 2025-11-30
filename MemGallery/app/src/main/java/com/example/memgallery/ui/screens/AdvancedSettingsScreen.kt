@@ -60,14 +60,6 @@ fun AdvancedSettingsScreen(
     // Permission Handling
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
-    LaunchedEffect(edgeGestureEnabled, edgeGestureSide, positionY, heightPercent, widthDp, dualHandles, isVisible) {
-        if (edgeGestureEnabled && hasOverlayPermission) {
-            startEdgeGestureService(context)
-        } else {
-            stopEdgeGestureService(context)
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -361,18 +353,4 @@ fun ActionDropdown(
             }
         }
     }
-}
-
-private fun startEdgeGestureService(context: Context) {
-    val intent = Intent(context, EdgeGestureService::class.java)
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-        context.startForegroundService(intent)
-    } else {
-        context.startService(intent)
-    }
-}
-
-private fun stopEdgeGestureService(context: Context) {
-    val intent = Intent(context, EdgeGestureService::class.java)
-    context.stopService(intent)
 }

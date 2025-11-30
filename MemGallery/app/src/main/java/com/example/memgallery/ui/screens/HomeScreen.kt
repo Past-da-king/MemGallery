@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -38,7 +39,14 @@ fun HomeScreen(
     ) { page ->
         when (page) {
             0 -> GalleryScreen(navController = navController, openAddSheet = openAddSheet)
-            1 -> if (taskScreenEnabled) TaskScreen(openAddSheet = openAddTaskSheet)
+            1 -> if (taskScreenEnabled) {
+                TaskScreen(
+                    openAddSheet = openAddTaskSheet,
+                    onNavigateToMemory = { memoryId ->
+                        navController.navigate(Screen.Detail.createRoute(memoryId))
+                    }
+                )
+            }
         }
     }
 }

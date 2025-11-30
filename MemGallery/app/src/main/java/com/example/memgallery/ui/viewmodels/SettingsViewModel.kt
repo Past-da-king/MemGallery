@@ -1,10 +1,15 @@
 package com.example.memgallery.ui.viewmodels
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memgallery.data.remote.GeminiService
 import com.example.memgallery.data.repository.SettingsRepository
+import com.example.memgallery.service.EdgeGestureService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +28,7 @@ sealed interface ApiKeyUiState {
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val geminiService: GeminiService
 ) : ViewModel() {
@@ -309,7 +315,26 @@ class SettingsViewModel @Inject constructor(
     fun setEdgeGestureEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setEdgeGestureEnabled(enabled)
+            if (enabled) {
+                startEdgeGestureService()
+            } else {
+                stopEdgeGestureService()
+            }
         }
+    }
+
+    private fun startEdgeGestureService() {
+        val intent = Intent(context, EdgeGestureService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    private fun stopEdgeGestureService() {
+        val intent = Intent(context, EdgeGestureService::class.java)
+        context.stopService(intent)
     }
 
     fun setEdgeGestureSide(side: String) {
