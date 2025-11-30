@@ -1,68 +1,51 @@
 package com.example.memgallery.ui.screens
 
 import android.text.method.ScrollingMovementMethod
-import android.widget.TextView
 import android.util.TypedValue
+import android.widget.TextView
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.Alignment
-import com.google.accompanist.flowlayout.FlowRow
-import com.google.accompanist.flowlayout.FlowMainAxisAlignment
-import com.google.accompanist.flowlayout.FlowCrossAxisAlignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.Surface
-import androidx.compose.ui.window.Dialog
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.memgallery.data.local.entity.MemoryEntity
+import com.example.memgallery.data.remote.dto.ActionDto
 import com.example.memgallery.ui.components.AudioPlayer
 import com.example.memgallery.ui.components.FullscreenImageViewer
+import com.example.memgallery.ui.components.sheets.AddTaskSheet
 import com.example.memgallery.ui.viewmodels.MemoryDetailViewModel
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
+import com.example.memgallery.utils.ActionHandler
+import com.google.accompanist.flowlayout.FlowCrossAxisAlignment
+import com.google.accompanist.flowlayout.FlowMainAxisAlignment
+import com.google.accompanist.flowlayout.FlowRow
 import io.noties.markwon.Markwon
 import io.noties.markwon.image.ImagesPlugin
-import com.example.memgallery.data.remote.dto.ActionDto
-import com.example.memgallery.utils.ActionHandler
-
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import androidx.compose.material.icons.filled.Add
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +86,7 @@ fun MemoryDetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemoryDetailContent(
     memory: MemoryEntity,
@@ -115,7 +99,8 @@ fun MemoryDetailContent(
     var fullscreenImageUri by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
     val context = LocalContext.current
-    var showManualReminderDialog by remember { mutableStateOf(false) }
+    var showAddTaskSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Box(modifier = modifier.fillMaxSize()) {
         // Hero Image
@@ -317,7 +302,7 @@ fun MemoryDetailContent(
 
                     // Manual Reminder Button
                     OutlinedButton(
-                        onClick = { showManualReminderDialog = true },
+                        onClick = { showAddTaskSheet = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Add Manual Reminder", modifier = Modifier.size(18.dp))
@@ -370,109 +355,23 @@ fun MemoryDetailContent(
             )
         }
         
-        if (showManualReminderDialog) {
-            ManualReminderDialog(
-                memoryTitle = memory.aiTitle ?: "Memory",
-                onDismiss = { showManualReminderDialog = false },
-                onConfirm = { description, date, time, type ->
-                    onCreateTask(memory.aiTitle ?: "Memory Task", description, date, time, type)
-                    showManualReminderDialog = false
-                }
-            )
+        if (showAddTaskSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showAddTaskSheet = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                AddTaskSheet(
+                    taskToEdit = null,
+                    onDismiss = { showAddTaskSheet = false },
+                    onSave = { title, description, date, time, type, _, _ ->
+                        onCreateTask(title, description, date.toString(), time, type)
+                        showAddTaskSheet = false
+                    }
+                )
+            }
         }
     }
-}
-
-@Composable
-fun ManualReminderDialog(
-    memoryTitle: String,
-    onDismiss: () -> Unit,
-    onConfirm: (description: String, date: String?, time: String?, type: String) -> Unit
-) {
-    var description by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
-    var reminderType by remember { mutableStateOf("REMINDER") }
-    val context = LocalContext.current
-    
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Reminder") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Date Picker Button
-                OutlinedButton(
-                    onClick = {
-                        val calendar = java.util.Calendar.getInstance()
-                        android.app.DatePickerDialog(
-                            context,
-                            { _, year, month, day ->
-                                selectedDate = LocalDate.of(year, month + 1, day)
-                            },
-                            calendar.get(java.util.Calendar.YEAR),
-                            calendar.get(java.util.Calendar.MONTH),
-                            calendar.get(java.util.Calendar.DAY_OF_MONTH)
-                        ).show()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(selectedDate?.toString() ?: "Select Date")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Time Picker Button
-                OutlinedButton(
-                    onClick = {
-                        val calendar = java.util.Calendar.getInstance()
-                        android.app.TimePickerDialog(
-                            context,
-                            { _, hour, minute ->
-                                selectedTime = LocalTime.of(hour, minute)
-                            },
-                            calendar.get(java.util.Calendar.HOUR_OF_DAY),
-                            calendar.get(java.util.Calendar.MINUTE),
-                            true
-                        ).show()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(selectedTime?.toString() ?: "Select Time")
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(
-                        description, 
-                        selectedDate?.format(dateFormatter), 
-                        selectedTime?.format(timeFormatter), 
-                        reminderType
-                    )
-                },
-                enabled = description.isNotBlank()
-            ) {
-                Text("Create")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }
 
 @Composable

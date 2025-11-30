@@ -62,18 +62,22 @@ fun MemGalleryTheme(
         customColor != -1 -> {
             val seedColor = androidx.compose.ui.graphics.Color(customColor)
             if (useDarkTheme) {
+                // Fix for Black Theme: If selected color is Black, force accents to White for visibility
+                val isBlackTheme = seedColor == androidx.compose.ui.graphics.Color.Black
+                val effectiveColor = if (isBlackTheme) androidx.compose.ui.graphics.Color.White else seedColor
+
                 darkColorScheme(
-                    primary = seedColor,
+                    primary = effectiveColor,
                     onPrimary = androidx.compose.ui.graphics.Color.Black,
-                    primaryContainer = seedColor.copy(alpha = 0.3f),
+                    primaryContainer = effectiveColor.copy(alpha = 0.3f),
                     onPrimaryContainer = androidx.compose.ui.graphics.Color.White, // High contrast for dark mode
-                    secondary = seedColor,
+                    secondary = effectiveColor,
                     onSecondary = androidx.compose.ui.graphics.Color.Black,
-                    secondaryContainer = seedColor.copy(alpha = 0.3f),
+                    secondaryContainer = effectiveColor.copy(alpha = 0.3f),
                     onSecondaryContainer = androidx.compose.ui.graphics.Color.White,
-                    tertiary = seedColor,
+                    tertiary = effectiveColor,
                     onTertiary = androidx.compose.ui.graphics.Color.Black,
-                    tertiaryContainer = seedColor.copy(alpha = 0.3f),
+                    tertiaryContainer = effectiveColor.copy(alpha = 0.3f),
                     onTertiaryContainer = androidx.compose.ui.graphics.Color.White
                 )
             } else {

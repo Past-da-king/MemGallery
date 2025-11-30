@@ -95,28 +95,26 @@ fun PostCaptureScreen(
 
     LaunchedEffect(memory) {
         if (isEditMode && memory != null) {
-            creationViewModel.setDraftImageUri(memory!!.imageUri)
-            creationViewModel.setDraftAudioUri(memory!!.audioFilePath)
-            creationViewModel.setDraftUserText(memory!!.userText)
-            creationViewModel.setDraftBookmarkUrl(memory!!.bookmarkUrl)
+            if (initialImageUri == null) creationViewModel.setDraftImageUri(memory!!.imageUri)
+            if (initialAudioUri == null) creationViewModel.setDraftAudioUri(memory!!.audioFilePath)
+            if (initialUserText == null) creationViewModel.setDraftUserText(memory!!.userText)
+            if (initialBookmarkUrl == null) creationViewModel.setDraftBookmarkUrl(memory!!.bookmarkUrl)
         }
     }
 
     // Set initial draft values from navigation arguments
     LaunchedEffect(initialImageUri, initialAudioUri, initialUserText, initialBookmarkUrl) {
-        if (!isEditMode) {
-            if (initialImageUri != null) creationViewModel.setDraftImageUri(initialImageUri)
-            if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
-            if (initialBookmarkUrl != null) creationViewModel.setDraftBookmarkUrl(initialBookmarkUrl)
-            if (initialUserText != null) {
-                // URL decode the text to handle special characters
-                val decodedText = try {
-                    java.net.URLDecoder.decode(initialUserText, "UTF-8")
-                } catch (e: Exception) {
-                    initialUserText
-                }
-                creationViewModel.setDraftUserText(decodedText)
+        if (initialImageUri != null) creationViewModel.setDraftImageUri(initialImageUri)
+        if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
+        if (initialBookmarkUrl != null) creationViewModel.setDraftBookmarkUrl(initialBookmarkUrl)
+        if (initialUserText != null) {
+            // URL decode the text to handle special characters
+            val decodedText = try {
+                java.net.URLDecoder.decode(initialUserText, "UTF-8")
+            } catch (e: Exception) {
+                initialUserText
             }
+            creationViewModel.setDraftUserText(decodedText)
         }
     }
 

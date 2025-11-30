@@ -17,10 +17,10 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isCompleted = 0 ORDER BY dueDate ASC, dueTime ASC")
     fun getActiveTasks(): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE dueDate = :date ORDER BY dueTime ASC")
+    @Query("SELECT * FROM tasks WHERE dueDate = :date ORDER BY isCompleted ASC, dueTime ASC")
     fun getTasksByDate(date: String): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE dueDate >= :date ORDER BY dueDate ASC, dueTime ASC")
+    @Query("SELECT * FROM tasks WHERE dueDate >= :date ORDER BY isCompleted ASC, dueDate ASC, dueTime ASC")
     fun getUpcomingTasksFromDate(date: String): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks WHERE dueDate < :date AND isCompleted = 0 ORDER BY dueDate ASC")
