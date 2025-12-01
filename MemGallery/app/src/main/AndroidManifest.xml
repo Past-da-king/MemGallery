@@ -208,6 +208,7 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
+            
         <receiver
             android:name=".receiver.BootReceiver"
             android:enabled="true"

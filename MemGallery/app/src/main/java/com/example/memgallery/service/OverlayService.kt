@@ -106,7 +106,11 @@ class OverlayService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
-        startForeground(2003, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(2003, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+        } else {
+            startForeground(2003, notification)
+        }
     }
 
     private fun handlePostCapture(newItemId: Long?) {
