@@ -189,6 +189,9 @@ class SettingsViewModel @Inject constructor(
     val autoRemindersEnabled: StateFlow<Boolean> = settingsRepository.autoRemindersEnabledFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
 
+    val overlayStyle: StateFlow<String> = settingsRepository.overlayStyleFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "EDGE")
+
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setAutoIndexScreenshots(enabled)
@@ -388,6 +391,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setPostCaptureBehavior(behavior: String) {
         viewModelScope.launch { settingsRepository.setPostCaptureBehavior(behavior) }
+    }
+
+    fun setOverlayStyle(style: String) {
+        viewModelScope.launch { settingsRepository.setOverlayStyle(style) }
     }
 
     init {

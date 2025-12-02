@@ -56,6 +56,7 @@ fun AdvancedSettingsScreen(
     val audioAutoStart by viewModel.audioAutoStart.collectAsState()
     val postCaptureBehavior by viewModel.postCaptureBehavior.collectAsState()
     val autoRemindersEnabled by viewModel.autoRemindersEnabled.collectAsState()
+    val overlayStyle by viewModel.overlayStyle.collectAsState()
 
     // Permission Handling
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -176,127 +177,169 @@ fun AdvancedSettingsScreen(
                 }
             }
 
-            // 3. Edge Gesture Section
+            // 3. Overlay & Gestures Section
             SettingsCard(
                 icon = Icons.Default.Swipe,
-                title = "Edge Gesture",
-                description = "Global gestures to trigger actions"
+                title = "Overlay & Gestures",
+                description = "Configure how you access the overlay"
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Main Toggle
-                    SettingToggleItem(
-                        icon = Icons.Default.PowerSettingsNew,
-                        title = "Enable Edge Gesture",
-                        description = "Show a handle on the screen edge",
-                        checked = edgeGestureEnabled,
-                        onCheckedChange = { enabled ->
-                            if (enabled && !Settings.canDrawOverlays(context)) {
-                                // Request Permission
-                                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
-                                context.startActivity(intent)
-                            } else {
-                                viewModel.setEdgeGestureEnabled(enabled)
-                            }
-                        }
-                    )
-
-                    if (!hasOverlayPermission && edgeGestureEnabled) {
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    // Overlay Style Selector
+                    Text("Overlay Style", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        val options = listOf("Edge Gesture", "Quick Ball")
+                        val values = listOf("EDGE", "BALL")
+                        values.forEachIndexed { index, value ->
+                            SegmentedButton(
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                onClick = { viewModel.setOverlayStyle(value) },
+                                selected = overlayStyle == value
                             ) {
-                                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Overlay permission required", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                                Text(options[index])
                             }
                         }
                     }
 
                     HorizontalDivider()
 
-                    // Appearance
-                    Text("Appearance & Position", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    
-                    SettingToggleItem(
-                        icon = Icons.Default.Visibility,
-                        title = "Visible Handle",
-                        description = "Show the visual indicator",
-                        checked = isVisible,
-                        onCheckedChange = viewModel::setEdgeGestureVisible
-                    )
+                    if (overlayStyle == "EDGE") {
+                        // Edge Gesture Settings
+                        SettingToggleItem(
+                            icon = Icons.Default.PowerSettingsNew,
+                            title = "Enable Edge Gesture",
+                            description = "Show a handle on the screen edge",
+                            checked = edgeGestureEnabled,
+                            onCheckedChange = { enabled ->
+                                if (enabled && !Settings.canDrawOverlays(context)) {
+                                    // Request Permission
+                                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                                    context.startActivity(intent)
+                                } else {
+                                    viewModel.setEdgeGestureEnabled(enabled)
+                                }
+                            }
+                        )
 
-                    if (!dualHandles) {
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            val options = listOf("Left Edge", "Right Edge")
-                            val values = listOf("LEFT", "RIGHT")
-                            values.forEachIndexed { index, value ->
-                                SegmentedButton(
-                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                                    onClick = { viewModel.setEdgeGestureSide(value) },
-                                    selected = edgeGestureSide == value
+                        if (!hasOverlayPermission && edgeGestureEnabled) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(options[index])
+                                    Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Overlay permission required", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
+
+                        HorizontalDivider()
+
+                        // Appearance
+                        Text("Appearance & Position", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        
+                        SettingToggleItem(
+                            icon = Icons.Default.Visibility,
+                            title = "Visible Handle",
+                            description = "Show the visual indicator",
+                            checked = isVisible,
+                            onCheckedChange = viewModel::setEdgeGestureVisible
+                        )
+
+                        if (!dualHandles) {
+                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                val options = listOf("Left Edge", "Right Edge")
+                                val values = listOf("LEFT", "RIGHT")
+                                values.forEachIndexed { index, value ->
+                                    SegmentedButton(
+                                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                        onClick = { viewModel.setEdgeGestureSide(value) },
+                                        selected = edgeGestureSide == value
+                                    ) {
+                                        Text(options[index])
+                                    }
+                                }
+                            }
+                        }
+
+                        SettingToggleItem(
+                            icon = Icons.Default.CompareArrows,
+                            title = "Dual Handles",
+                            description = "Show handles on both sides",
+                            checked = dualHandles,
+                            onCheckedChange = viewModel::setEdgeGestureDualHandles
+                        )
+
+                        // Sliders
+                        Text("Vertical Position: $positionY%", style = MaterialTheme.typography.bodyMedium)
+                        Slider(
+                            value = positionY.toFloat(),
+                            onValueChange = { viewModel.setEdgeGesturePositionY(it.toInt()) },
+                            valueRange = 0f..100f
+                        )
+
+                        Text("Height: $heightPercent%", style = MaterialTheme.typography.bodyMedium)
+                        Slider(
+                            value = heightPercent.toFloat(),
+                            onValueChange = { viewModel.setEdgeGestureHeightPercent(it.toInt()) },
+                            valueRange = 10f..100f
+                        )
+
+                        Text("Thickness: ${widthDp}dp", style = MaterialTheme.typography.bodyMedium)
+                        Slider(
+                            value = widthDp.toFloat(),
+                            onValueChange = { viewModel.setEdgeGestureWidth(it.toInt()) },
+                            valueRange = 10f..60f
+                        )
+
+                        HorizontalDivider()
+
+                        // Gesture Mappings
+                        Text("Gesture Actions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+
+                        ActionDropdown(
+                            label = "Swipe Up",
+                            selectedAction = swipeUpAction,
+                            onActionSelected = viewModel::setEdgeGestureActionSwipeUp
+                        )
+
+                        ActionDropdown(
+                            label = "Swipe Down",
+                            selectedAction = swipeDownAction,
+                            onActionSelected = viewModel::setEdgeGestureActionSwipeDown
+                        )
+
+                        ActionDropdown(
+                            label = "Double Tap",
+                            selectedAction = doubleTapAction,
+                            onActionSelected = viewModel::setEdgeGestureActionDoubleTap
+                        )
+                    } else {
+                        // Quick Ball Settings
+                        Text(
+                            "Quick Ball is active. You can drag it anywhere on the screen.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        SettingToggleItem(
+                            icon = Icons.Default.PowerSettingsNew,
+                            title = "Enable Overlay",
+                            description = "Show the Quick Ball",
+                            checked = edgeGestureEnabled,
+                            onCheckedChange = { enabled ->
+                                if (enabled && !Settings.canDrawOverlays(context)) {
+                                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                                    context.startActivity(intent)
+                                } else {
+                                    viewModel.setEdgeGestureEnabled(enabled)
+                                }
+                            }
+                        )
                     }
-
-                    SettingToggleItem(
-                        icon = Icons.Default.CompareArrows,
-                        title = "Dual Handles",
-                        description = "Show handles on both sides",
-                        checked = dualHandles,
-                        onCheckedChange = viewModel::setEdgeGestureDualHandles
-                    )
-
-                    // Sliders
-                    Text("Vertical Position: $positionY%", style = MaterialTheme.typography.bodyMedium)
-                    Slider(
-                        value = positionY.toFloat(),
-                        onValueChange = { viewModel.setEdgeGesturePositionY(it.toInt()) },
-                        valueRange = 0f..100f
-                    )
-
-                    Text("Height: $heightPercent%", style = MaterialTheme.typography.bodyMedium)
-                    Slider(
-                        value = heightPercent.toFloat(),
-                        onValueChange = { viewModel.setEdgeGestureHeightPercent(it.toInt()) },
-                        valueRange = 10f..100f
-                    )
-
-                    Text("Thickness: ${widthDp}dp", style = MaterialTheme.typography.bodyMedium)
-                    Slider(
-                        value = widthDp.toFloat(),
-                        onValueChange = { viewModel.setEdgeGestureWidth(it.toInt()) },
-                        valueRange = 10f..60f
-                    )
-
-                    HorizontalDivider()
-
-                    // Gesture Mappings
-                    Text("Gesture Actions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-
-                    ActionDropdown(
-                        label = "Swipe Up",
-                        selectedAction = swipeUpAction,
-                        onActionSelected = viewModel::setEdgeGestureActionSwipeUp
-                    )
-
-                    ActionDropdown(
-                        label = "Swipe Down",
-                        selectedAction = swipeDownAction,
-                        onActionSelected = viewModel::setEdgeGestureActionSwipeDown
-                    )
-
-                    ActionDropdown(
-                        label = "Double Tap",
-                        selectedAction = doubleTapAction,
-                        onActionSelected = viewModel::setEdgeGestureActionDoubleTap
-                    )
                 }
             }
         }

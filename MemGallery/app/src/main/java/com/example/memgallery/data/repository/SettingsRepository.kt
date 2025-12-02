@@ -66,6 +66,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val AUDIO_AUTO_START = booleanPreferencesKey("audio_auto_start")
         val POST_CAPTURE_BEHAVIOR = stringPreferencesKey("post_capture_behavior") // "BACKGROUND", "FOREGROUND"
         val AUTO_REMINDERS_ENABLED = booleanPreferencesKey("auto_reminders_enabled")
+        val OVERLAY_STYLE = stringPreferencesKey("overlay_style") // "EDGE", "BALL"
     }
 
     init {
@@ -357,6 +358,17 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setAutoRemindersEnabled(enabled: Boolean) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.AUTO_REMINDERS_ENABLED] = enabled
+        }
+    }
+
+    val overlayStyleFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.OVERLAY_STYLE] ?: "EDGE"
+        }
+
+    suspend fun setOverlayStyle(style: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.OVERLAY_STYLE] = style
         }
     }
 }

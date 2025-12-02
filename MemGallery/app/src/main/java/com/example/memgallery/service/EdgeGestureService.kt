@@ -15,6 +15,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.memgallery.MainActivity
 import com.example.memgallery.R
 import com.example.memgallery.data.repository.SettingsRepository
@@ -37,6 +40,12 @@ class EdgeGestureService : Service() {
     // Views for Left and Right handles
     private var leftView: View? = null
     private var rightView: View? = null
+    
+    // View for Quick Ball
+    private var ballView: androidx.compose.ui.platform.ComposeView? = null
+    private var ballParams: WindowManager.LayoutParams? = null
+    private var isBallExpanded = false
+    private var ballLifecycleOwner: OverlayLifecycleOwner? = null
     
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -84,7 +93,8 @@ class EdgeGestureService : Service() {
                 settingsRepository.edgeGestureHeightPercentFlow,
                 settingsRepository.edgeGestureWidthFlow,
                 settingsRepository.edgeGestureDualHandlesFlow,
-                settingsRepository.edgeGestureVisibleFlow
+                settingsRepository.edgeGestureVisibleFlow,
+                settingsRepository.overlayStyleFlow
             ) { args ->
                 val side = args[0] as String
                 val posY = args[1] as Int
@@ -92,13 +102,124 @@ class EdgeGestureService : Service() {
                 val widthDp = args[3] as Int
                 val dual = args[4] as Boolean
                 val visible = args[5] as Boolean
+                val style = args[6] as String
                 
-                updateViews(side, posY, heightPercent, widthDp, dual, visible)
+                updateOverlay(style, side, posY, heightPercent, widthDp, dual, visible)
             }.collect {}
         }
     }
 
-    private fun updateViews(side: String, posY: Int, heightPercent: Int, widthDp: Int, dual: Boolean, visible: Boolean) {
+    private fun updateOverlay(style: String, side: String, posY: Int, heightPercent: Int, widthDp: Int, dual: Boolean, visible: Boolean) {
+        if (style == "BALL") {
+            // Remove Edge Views
+            removeEdgeViews()
+            // Show Ball
+            if (visible) updateBallView() else removeBallView()
+        } else {
+            // Remove Ball View
+            removeBallView()
+            // Show Edge Views
+            updateEdgeViews(side, posY, heightPercent, widthDp, dual, visible)
+        }
+    }
+
+    private fun removeEdgeViews() {
+        leftView?.let { if (it.parent != null) windowManager.removeView(it) }
+        leftView = null
+        rightView?.let { if (it.parent != null) windowManager.removeView(it) }
+        rightView = null
+    }
+
+    private fun removeBallView() {
+        ballView?.let { if (it.parent != null) windowManager.removeView(it) }
+        ballLifecycleOwner?.onPause()
+        ballLifecycleOwner?.onDestroy()
+        ballLifecycleOwner = null
+        ballView = null
+        ballParams = null
+    }
+
+    private fun updateBallView() {
+        if (ballView == null) {
+            val density = resources.displayMetrics.density
+            val ballSizePx = (56 * density).toInt()
+            
+            ballParams = WindowManager.LayoutParams(
+                ballSizePx,
+                ballSizePx,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = 0
+                y = 100
+            }
+
+            ballLifecycleOwner = OverlayLifecycleOwner()
+            ballLifecycleOwner?.onCreate()
+            ballLifecycleOwner?.onResume()
+
+            ballView = androidx.compose.ui.platform.ComposeView(this).apply {
+                setViewTreeLifecycleOwner(ballLifecycleOwner)
+                setViewTreeViewModelStoreOwner(ballLifecycleOwner)
+                setViewTreeSavedStateRegistryOwner(ballLifecycleOwner)
+                
+                setContent {
+                    com.example.memgallery.ui.theme.MemGalleryTheme {
+                        com.example.memgallery.ui.components.overlay.QuickBall(
+                            isExpanded = isBallExpanded,
+                            onExpandChange = { expanded ->
+                                isBallExpanded = expanded
+                                updateBallWindowSize(expanded)
+                            },
+                            onNavigate = { action ->
+                                executeAction(action)
+                            },
+                            onDrag = { delta ->
+                                ballParams?.let { params ->
+                                    params.x += delta.x.toInt()
+                                    params.y += delta.y.toInt()
+                                    windowManager.updateViewLayout(this, params)
+                                }
+                            },
+                            onDragEnd = {
+                                // Snap logic could go here
+                            }
+                        )
+                    }
+                }
+            }
+            windowManager.addView(ballView, ballParams)
+        }
+    }
+
+    private fun updateBallWindowSize(expanded: Boolean) {
+        ballParams?.let { params ->
+            val density = resources.displayMetrics.density
+            val ballSizePx = (56 * density).toInt()
+            val expandedSizePx = (300 * density).toInt() // Enough for ball + menu
+            val offsetDiff = (expandedSizePx - ballSizePx) / 2
+
+            if (expanded) {
+                params.width = expandedSizePx
+                params.height = expandedSizePx
+                params.x -= offsetDiff
+                params.y -= offsetDiff
+                // When expanded, we want to capture clicks outside to close
+                params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+            } else {
+                params.width = ballSizePx
+                params.height = ballSizePx
+                params.x += offsetDiff
+                params.y += offsetDiff
+                params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+            }
+            windowManager.updateViewLayout(ballView, params)
+        }
+    }
+
+    private fun updateEdgeViews(side: String, posY: Int, heightPercent: Int, widthDp: Int, dual: Boolean, visible: Boolean) {
         val displayMetrics = resources.displayMetrics
         val screenHeight = displayMetrics.heightPixels
         val density = displayMetrics.density
@@ -270,5 +391,6 @@ class EdgeGestureService : Service() {
         serviceScope.cancel()
         leftView?.let { if (it.parent != null) windowManager.removeView(it) }
         rightView?.let { if (it.parent != null) windowManager.removeView(it) }
+        ballView?.let { if (it.parent != null) windowManager.removeView(it) }
     }
 }
