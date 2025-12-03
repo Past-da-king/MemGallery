@@ -124,16 +124,19 @@ fun MemoryDetailContent(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenHeightPx = with(density) { maxHeight.toPx() }
+        val hasImage = memory.imageUri != null
+        
         // Anchors:
         // Top (Expanded): 0f (Sheet covers everything)
-        // Initial/Bottom (Collapsed): Set to screen height minus a small "lip" (e.g. 80dp) 
-        // so it can be dragged almost fully down to reveal the image.
+        // Initial: If image exists, start at 25% from top (covering 75%). If no image, start at 0.
+        // Collapsed (Bottom): If image exists, allow drag to bottom (minus lip). If no image, lock at 0.
         
         val expandedOffset = 0f
-        val collapsedOffset = screenHeightPx - with(density) { 80.dp.toPx() }
+        val collapsedOffset = if (hasImage) screenHeightPx - with(density) { 80.dp.toPx() } else 0f
+        val initialOffset = if (hasImage) screenHeightPx * 0.25f else 0f
         
         // State for sheet offset
-        var sheetOffset by remember { mutableStateOf(collapsedOffset) }
+        var sheetOffset by remember { mutableStateOf(initialOffset) }
 
         // Nested Scroll Connection
         val nestedScrollConnection = remember {
@@ -172,15 +175,7 @@ fun MemoryDetailContent(
                     painter = rememberAsyncImagePainter(model = memory.imageUri),
                     contentDescription = memory.aiTitle,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable {
-                             // Only open fullscreen if sheet is collapsed (image visible)
-                             if (sheetOffset > expandedOffset + 50f) { 
-                                 fullscreenImageUri = memory.imageUri
-                                 showFullscreenImage = true
-                             }
-                        }
+                    modifier = Modifier.fillMaxSize()
                 )
                 // Gradient overlay
                 Box(
