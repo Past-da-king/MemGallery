@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MemGallery</string>
+    
+    <!-- Shortcuts -->
+    <string name="shortcut_add">添加</string>
+    <string name="shortcut_add_memory">添加记忆</string>
+    <string name="shortcut_audio">音频</string>
+    <string name="shortcut_record_audio">录制音频</string>
+    <string name="shortcut_note">笔记</string>
+    <string name="shortcut_create_note">创建笔记</string>
+    
+    <!-- Process Text -->
+    <string name="process_text_label">保存至 MemGallery</string>
+    
+    <!-- Share Targets -->
+    <string name="share_quick_save">快速保存</string>
+    <string name="share_open_in_app">在应用中打开</string>
+</resources>
