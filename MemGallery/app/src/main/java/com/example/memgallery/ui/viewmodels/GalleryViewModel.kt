@@ -79,9 +79,15 @@ class GalleryViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    fun createCollection(name: String, description: String) {
+    fun createCollection(name: String, description: String, memoriesToAdd: List<Int> = emptyList()) {
         viewModelScope.launch {
-            memoryRepository.createCollection(name, description)
+            val collectionId = memoryRepository.createCollection(name, description)
+            if (memoriesToAdd.isNotEmpty()) {
+                memoriesToAdd.forEach { memoryId ->
+                    memoryRepository.addMemoryToCollection(memoryId, collectionId.toInt())
+                }
+                clearSelection()
+            }
         }
     }
 

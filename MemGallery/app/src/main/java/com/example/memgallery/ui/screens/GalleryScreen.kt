@@ -470,7 +470,13 @@ fun GalleryScreen(
                 com.example.memgallery.ui.components.sheets.CreateCollectionSheet(
                     onDismiss = { showCreateCollectionDialog = false },
                     onCreate = { name, desc ->
-                        viewModel.createCollection(name, desc)
+                        // If we are in selection mode or have selected memories, add them
+                        val memoriesToAdd = if (selectionModeActive || selectedMemoryIds.isNotEmpty()) {
+                            selectedMemoryIds.toList()
+                        } else {
+                            emptyList()
+                        }
+                        viewModel.createCollection(name, desc, memoriesToAdd)
                         showCreateCollectionDialog = false
                     }
                 )
