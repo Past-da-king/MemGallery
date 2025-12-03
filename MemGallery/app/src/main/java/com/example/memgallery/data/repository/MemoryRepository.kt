@@ -24,6 +24,7 @@ class MemoryRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val memoryDao: MemoryDao,
     private val taskDao: com.example.memgallery.data.local.dao.TaskDao,
+    private val collectionDao: com.example.memgallery.data.local.dao.CollectionDao,
     private val geminiService: GeminiService,
     private val fileUtils: FileUtils,
     private val settingsRepository: SettingsRepository,
@@ -37,6 +38,39 @@ class MemoryRepository @Inject constructor(
 
     fun getMemory(id: Int): Flow<MemoryEntity?> {
         return memoryDao.getMemoryById(id)
+    }
+
+    // Collection Methods
+    fun getAllCollections(): Flow<List<com.example.memgallery.data.local.entity.CollectionEntity>> {
+        return collectionDao.getAllCollections()
+    }
+
+    fun getMemoriesForCollection(collectionId: Int): Flow<List<MemoryEntity>> {
+        return collectionDao.getMemoriesForCollection(collectionId)
+    }
+
+    suspend fun createCollection(name: String, description: String): Long {
+        val collection = com.example.memgallery.data.local.entity.CollectionEntity(
+            name = name,
+            description = description
+        )
+        return collectionDao.insertCollection(collection)
+    }
+
+    suspend fun deleteCollection(collectionId: Int) {
+        collectionDao.deleteCollection(collectionId)
+    }
+
+    suspend fun addMemoryToCollection(memoryId: Int, collectionId: Int) {
+        collectionDao.addMemoryToCollection(
+            com.example.memgallery.data.local.entity.MemoryCollectionCrossRef(memoryId, collectionId)
+        )
+    }
+
+    suspend fun removeMemoryFromCollection(memoryId: Int, collectionId: Int) {
+        collectionDao.removeMemoryFromCollection(
+            com.example.memgallery.data.local.entity.MemoryCollectionCrossRef(memoryId, collectionId)
+        )
     }
 
     suspend fun savePendingMemory(
@@ -152,6 +186,8 @@ class MemoryRepository @Inject constructor(
             }
         }
 
+        val existingCollections = collectionDao.getAllCollections().first().map { "${it.name}: ${it.description}" }
+
         val analysisResult = geminiService.processMemory(
             imageUri, 
             audioUri, 
@@ -159,7 +195,8 @@ class MemoryRepository @Inject constructor(
             bookmarkUrl,
             bookmarkTitle,
             bookmarkDescription,
-            bookmarkImageUrl
+            bookmarkImageUrl,
+            existingCollections
         )
 
         analysisResult.onFailure {
@@ -180,6 +217,15 @@ class MemoryRepository @Inject constructor(
                 )
                 memoryDao.updateMemory(updatedMemory)
                 Log.d(TAG, "Memory $memoryId updated with AI analysis.")
+
+                // Handle Suggested Collections
+                aiAnalysis.suggestedCollections?.forEach { collectionName ->
+                    val collection = collectionDao.getCollectionByName(collectionName)
+                    if (collection != null) {
+                        addMemoryToCollection(memoryId, collection.id)
+                        Log.d(TAG, "Auto-added memory $memoryId to collection: ${collection.name}")
+                    }
+                }
 
                 // Extract and save tasks
                 aiAnalysis.actions?.let { actions ->
@@ -272,7 +318,8 @@ class MemoryRepository @Inject constructor(
     }
     
     suspend fun createTask(task: com.example.memgallery.data.local.entity.TaskEntity): Long {
-        return taskDao.insertTask(task)
+        // Manually created tasks are approved by default
+        return taskDao.insertTask(task.copy(isApproved = true))
     }
 
     // TODO: This is a simplified version. The full AI processing should be triggered.

@@ -43,6 +43,13 @@ class TaskViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val unapprovedTasks: StateFlow<List<TaskEntity>> = taskDao.getUnapprovedTasks()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     fun selectDate(date: LocalDate?) {
         _selectedDate.value = date
     }
@@ -56,6 +63,24 @@ class TaskViewModel @Inject constructor(
     fun deleteTask(task: TaskEntity) {
         viewModelScope.launch {
             taskDao.deleteTask(task)
+        }
+    }
+
+    fun deleteTasks(tasks: List<TaskEntity>) {
+        viewModelScope.launch {
+            taskDao.deleteTasksByIds(tasks.map { it.id })
+        }
+    }
+
+    fun approveTask(task: TaskEntity) {
+        viewModelScope.launch {
+            taskDao.updateTask(task.copy(isApproved = true))
+        }
+    }
+
+    fun approveTasks(tasks: List<TaskEntity>) {
+        viewModelScope.launch {
+            taskDao.approveTasks(tasks.map { it.id })
         }
     }
 
@@ -78,7 +103,8 @@ class TaskViewModel @Inject constructor(
                 type = type,
                 isRecurring = isRecurring,
                 recurrenceRule = recurrenceRule,
-                status = "PENDING"
+                status = "PENDING",
+                isApproved = true // Manual tasks are always approved
             )
             taskDao.insertTask(newTask)
         }

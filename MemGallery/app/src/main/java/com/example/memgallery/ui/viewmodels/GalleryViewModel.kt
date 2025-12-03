@@ -39,6 +39,13 @@ class GalleryViewModel @Inject constructor(
     private val _selectedMemoryIds = MutableStateFlow(emptySet<Int>())
     val selectedMemoryIds = _selectedMemoryIds.asStateFlow()
 
+    val collections = memoryRepository.getAllCollections()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     private val _memories = memoryRepository.getMemories()
 
     val memories: StateFlow<List<MemoryEntity>> = combine(
@@ -61,6 +68,7 @@ class GalleryViewModel @Inject constructor(
             "Notes" -> filteredBySearch.filter { !it.userText.isNullOrBlank() }
             "Audio" -> filteredBySearch.filter { it.audioFilePath != null }
             "Bookmarks" -> filteredBySearch.filter { it.bookmarkUrl != null }
+            "Collections" -> emptyList() // Handled by UI to show collection list
             "All" -> filteredBySearch
             else -> filteredBySearch // Should not happen with defined filters
         }
@@ -70,6 +78,21 @@ class GalleryViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    fun createCollection(name: String, description: String) {
+        viewModelScope.launch {
+            memoryRepository.createCollection(name, description)
+        }
+    }
+
+    fun addSelectedMemoriesToCollection(collectionId: Int) {
+        viewModelScope.launch {
+            _selectedMemoryIds.value.forEach { memoryId ->
+                memoryRepository.addMemoryToCollection(memoryId, collectionId)
+            }
+            clearSelection()
+        }
+    }
 
     fun onSearchTextChange(text: String) {
         _searchText.value = text

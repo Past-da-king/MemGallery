@@ -57,6 +57,10 @@ class GeminiService @Inject constructor(
                 },
                 "required": ["type", "description"]
               }
+            },
+            "suggested_collections": {
+              "type": "array",
+              "items": { "type": "string" }
             }
           },
           "required": ["title", "summary", "tags"]
@@ -91,7 +95,8 @@ class GeminiService @Inject constructor(
         bookmarkUrl: String?,
         bookmarkTitle: String?,
         bookmarkDescription: String?,
-        bookmarkImageUrl: String?
+        bookmarkImageUrl: String?,
+        existingCollections: List<String> = emptyList()
     ): Result<AiAnalysisDto> = withContext(Dispatchers.IO) {
         Log.d(TAG, "processMemory started")
         val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client is not initialized."))
@@ -102,10 +107,15 @@ class GeminiService @Inject constructor(
                 .bufferedReader().use { it.readText() }
             val userSystemPrompt = settingsRepository.userSystemPromptFlow.first()
             
+            val collectionsInstruction = if (existingCollections.isNotEmpty()) {
+                "\n\nExisting Collections:\n" + existingCollections.joinToString("\n") + 
+                "\n\nIf this memory fits into one or more of these collections, include their names in the 'suggested_collections' array in the JSON response."
+            } else ""
+
             val finalSystemInstruction = if (userSystemPrompt.isNotBlank()) {
-                "$baseSystemInstruction\n\n---\n\nThese are user preferences that take precedence over the base instructions in case of conflict:\n\n$userSystemPrompt"
+                "$baseSystemInstruction\n\n---\n\nThese are user preferences that take precedence over the base instructions in case of conflict:\n\n$userSystemPrompt$collectionsInstruction"
             } else {
-                baseSystemInstruction
+                "$baseSystemInstruction$collectionsInstruction"
             }
 
             val systemInstructionContent = Content.fromParts(Part.fromText(finalSystemInstruction))

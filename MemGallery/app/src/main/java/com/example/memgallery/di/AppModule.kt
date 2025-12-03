@@ -25,7 +25,7 @@ object AppModule {
             AppDatabase::class.java,
             "memgallery_db"
         )
-        .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10)
+        .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11)
         .build()
     }
 
@@ -33,6 +33,12 @@ object AppModule {
     @Singleton
     fun provideMemoryDao(appDatabase: AppDatabase): MemoryDao {
         return appDatabase.memoryDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCollectionDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.CollectionDao {
+        return appDatabase.collectionDao()
     }
 
     @Provides

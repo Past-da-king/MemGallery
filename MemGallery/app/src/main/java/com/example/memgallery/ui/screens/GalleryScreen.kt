@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,6 +58,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.drawBehind
+import com.example.memgallery.ui.components.CollectionCard
+import com.example.memgallery.ui.components.sheets.CreateCollectionSheet
+import com.example.memgallery.ui.components.sheets.SelectCollectionSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +69,7 @@ fun GalleryScreen(
     viewModel: GalleryViewModel = hiltViewModel(),
     openAddSheet: Boolean = false
 ) {
+    val collections by viewModel.collections.collectAsState()
     val memories by viewModel.memories.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
@@ -91,6 +96,8 @@ fun GalleryScreen(
     var showMemoryOptionsSheet by remember { mutableStateOf(false) }
     var selectedMemoryForOptions by remember { mutableStateOf<MemoryEntity?>(null) }
     var showDeleteMultipleMemoriesDialog by remember { mutableStateOf(false) }
+    var showCreateCollectionDialog by remember { mutableStateOf(false) }
+    var showAddToCollectionSheet by remember { mutableStateOf(false) }
 
     // State to control Search Bar visibility (Drop Down)
     var isSearchBarVisible by remember { mutableStateOf(true) }
@@ -119,12 +126,22 @@ fun GalleryScreen(
     Scaffold(
         floatingActionButton = {
             if (!selectionModeActive) {
-                FloatingActionButton(
-                    onClick = { showBottomSheet = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Memory")
+                if (selectedFilter == "Collections") {
+                    FloatingActionButton(
+                        onClick = { showCreateCollectionDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(Icons.Default.CreateNewFolder, contentDescription = "Create Collection")
+                    }
+                } else {
+                    FloatingActionButton(
+                        onClick = { showBottomSheet = true },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Memory")
+                    }
                 }
             }
         }
@@ -133,63 +150,100 @@ fun GalleryScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            LazyVerticalStaggeredGrid(
-                state = gridState,
-                columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    // Content starts exactly where the header ends
-                    top = headerHeightDp + 16.dp, 
-                    bottom = padding.calculateBottomPadding() + 80.dp,
-                    start = 16.dp,
-                    end = 16.dp
-                ),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalItemSpacing = 12.dp
-            ) {
+            if (selectedFilter == "Collections") {
+                 LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        top = headerHeightDp + 16.dp,
+                        bottom = padding.calculateBottomPadding() + 80.dp,
+                        start = 16.dp,
+                        end = 16.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(collections) { collection ->
+                        CollectionCard(
+                            name = collection.name,
+                            description = collection.description,
+                            onClick = { navController.navigate(Screen.CollectionDetail.createRoute(collection.id)) }
+                        )
+                    }
+                    if (collections.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 48.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("No collections yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                LazyVerticalStaggeredGrid(
+                    state = gridState,
+                    columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        // Content starts exactly where the header ends
+                        top = headerHeightDp + 16.dp, 
+                        bottom = padding.calculateBottomPadding() + 80.dp,
+                        start = 16.dp,
+                        end = 16.dp
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalItemSpacing = 12.dp
+                ) {
 
-                // Highlight Section
-                if (highlightTag != null && highlightMemories.isNotEmpty()) {
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        highlightMemories.firstOrNull()?.let { highlightMemory ->
-                            HighlightMemoryCard(
-                                memory = highlightMemory,
-                                tag = highlightTag!!,
-                                onClick = { navController.navigate(Screen.Detail.createRoute(highlightMemory.id)) }
+                    // Highlight Section
+                    if (highlightTag != null && highlightMemories.isNotEmpty()) {
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            highlightMemories.firstOrNull()?.let { highlightMemory ->
+                                HighlightMemoryCard(
+                                    memory = highlightMemory,
+                                    tag = highlightTag!!,
+                                    onClick = { navController.navigate(Screen.Detail.createRoute(highlightMemory.id)) }
+                                )
+                            }
+                        }
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            Text(
+                                text = "All Memories",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
                     }
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Text(
-                            text = "All Memories",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 8.dp)
+
+                    items(memories) { memory ->
+                        val isSelected = selectedMemoryIds.contains(memory.id)
+                        MemoryCard(
+                            memory = memory,
+                            isSelected = isSelected,
+                            onClick = { clickedMemory ->
+                                if (selectionModeActive) {
+                                    viewModel.toggleMemorySelection(clickedMemory.id)
+                                } else {
+                                    navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
+                                }
+                            },
+                            onLongClick = { longPressedMemory ->
+                                if (!selectionModeActive) {
+                                    viewModel.toggleSelectionMode()
+                                }
+                                viewModel.toggleMemorySelection(longPressedMemory.id)
+                            }
                         )
                     }
-                }
-
-                items(memories) { memory ->
-                    val isSelected = selectedMemoryIds.contains(memory.id)
-                    MemoryCard(
-                        memory = memory,
-                        isSelected = isSelected,
-                        onClick = { clickedMemory ->
-                            if (selectionModeActive) {
-                                viewModel.toggleMemorySelection(clickedMemory.id)
-                            } else {
-                                navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
-                            }
-                        },
-                        onLongClick = { longPressedMemory ->
-                            if (!selectionModeActive) {
-                                viewModel.toggleSelectionMode()
-                            }
-                            viewModel.toggleMemorySelection(longPressedMemory.id)
-                        }
-                    )
                 }
             }
 
@@ -228,6 +282,16 @@ fun GalleryScreen(
                             }
                         },
                         actions = {
+                            IconButton(
+                                onClick = {
+                                    if (selectedMemoryIds.size >= 1) {
+                                        showAddToCollectionSheet = true
+                                    }
+                                },
+                                enabled = selectedMemoryIds.isNotEmpty()
+                            ) {
+                                Icon(Icons.Default.Folder, contentDescription = "Add to Collection")
+                            }
                             IconButton(
                                 onClick = {
                                     if (selectedMemoryIds.size == 1) {
@@ -342,7 +406,7 @@ fun GalleryScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             modifier = Modifier.padding(top = 12.dp)
                         ) {
-                            val filters = listOf("All", "Images", "Notes", "Audio", "Bookmarks")
+                            val filters = listOf("All", "Images", "Notes", "Audio", "Bookmarks", "Collections")
                             items(filters) { filter ->
                                     val isSelected = selectedFilter == filter
                                     FilterChip(
@@ -393,6 +457,43 @@ fun GalleryScreen(
                         coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
                         navController.navigate(Screen.BookmarkInput.createRoute())
                     }
+                )
+            }
+        }
+        
+        if (showCreateCollectionDialog) {
+            ModalBottomSheet(
+                onDismissRequest = { showCreateCollectionDialog = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                com.example.memgallery.ui.components.sheets.CreateCollectionSheet(
+                    onDismiss = { showCreateCollectionDialog = false },
+                    onCreate = { name, desc ->
+                        viewModel.createCollection(name, desc)
+                        showCreateCollectionDialog = false
+                    }
+                )
+            }
+        }
+        
+        if (showAddToCollectionSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showAddToCollectionSheet = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                SelectCollectionSheet(
+                    collections = collections,
+                    onSelect = { collectionId ->
+                        viewModel.addSelectedMemoriesToCollection(collectionId)
+                        showAddToCollectionSheet = false
+                    },
+                    onCreateNew = {
+                        showAddToCollectionSheet = false
+                        showCreateCollectionDialog = true
+                    },
+                    onDismiss = { showAddToCollectionSheet = false }
                 )
             }
         }

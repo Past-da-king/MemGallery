@@ -11,20 +11,29 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
-    @Query("SELECT * FROM tasks ORDER BY dueDate ASC, dueTime ASC")
+    @Query("SELECT * FROM tasks WHERE isApproved = 1 ORDER BY dueDate ASC, dueTime ASC")
     fun getAllTasks(): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE isCompleted = 0 ORDER BY dueDate ASC, dueTime ASC")
+    @Query("SELECT * FROM tasks WHERE isCompleted = 0 AND isApproved = 1 ORDER BY dueDate ASC, dueTime ASC")
     fun getActiveTasks(): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE dueDate = :date ORDER BY isCompleted ASC, dueTime ASC")
+    @Query("SELECT * FROM tasks WHERE dueDate = :date AND isApproved = 1 ORDER BY isCompleted ASC, dueTime ASC")
     fun getTasksByDate(date: String): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE dueDate >= :date ORDER BY isCompleted ASC, dueDate ASC, dueTime ASC")
+    @Query("SELECT * FROM tasks WHERE dueDate >= :date AND isApproved = 1 ORDER BY isCompleted ASC, dueDate ASC, dueTime ASC")
     fun getUpcomingTasksFromDate(date: String): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE dueDate < :date AND isCompleted = 0 ORDER BY dueDate ASC")
+    @Query("SELECT * FROM tasks WHERE dueDate < :date AND isCompleted = 0 AND isApproved = 1 ORDER BY dueDate ASC")
     fun getOverdueTasks(date: String): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE isApproved = 0 ORDER BY creationTimestamp DESC")
+    fun getUnapprovedTasks(): Flow<List<TaskEntity>>
+
+    @Query("UPDATE tasks SET isApproved = 1 WHERE id IN (:ids)")
+    suspend fun approveTasks(ids: List<Int>)
+
+    @Query("DELETE FROM tasks WHERE id IN (:ids)")
+    suspend fun deleteTasksByIds(ids: List<Int>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskEntity): Long

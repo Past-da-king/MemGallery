@@ -47,6 +47,10 @@ sealed class Screen(val route: String) {
         fun createRoute(memoryId: Int) = "detail/$memoryId"
     }
 
+    object CollectionDetail : Screen("collection/{collectionId}") {
+        fun createRoute(collectionId: Int) = "collection/$collectionId"
+    }
+
     object BookmarkInput : Screen("bookmark_input") {
         fun createRoute() = "bookmark_input"
     }
@@ -266,6 +270,13 @@ fun AppNavigation(
         ) { backStackEntry ->
             val memoryId = backStackEntry.arguments?.getInt("memoryId") ?: 0
             MemoryDetailScreen(navController = navController, memoryId = memoryId)
+        }
+        composable(
+            route = Screen.CollectionDetail.route,
+            arguments = listOf(navArgument("collectionId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val collectionId = backStackEntry.arguments?.getInt("collectionId") ?: 0
+            CollectionDetailScreen(navController = navController, collectionId = collectionId)
         }
         composable(Screen.BookmarkInput.route) {
             BookmarkInputScreen(navController = navController)

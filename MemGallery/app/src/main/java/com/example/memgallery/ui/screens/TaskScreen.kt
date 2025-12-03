@@ -54,6 +54,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
+import com.example.memgallery.ui.components.sheets.UnapprovedTasksSheet
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskScreen(
@@ -63,6 +65,7 @@ fun TaskScreen(
 ) {
     val tasks by viewModel.tasksForDisplay.collectAsState()
     val activeTasks by viewModel.activeTasks.collectAsState()
+    val unapprovedTasks by viewModel.unapprovedTasks.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     
     // Filter by type
@@ -72,6 +75,16 @@ fun TaskScreen(
     var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
     var isAddSheetOpen by remember { mutableStateOf(false) }
     var isCalendarExpanded by remember { mutableStateOf(false) }
+    
+    // Unapproved Tasks Sheet State
+    var showUnapprovedSheet by remember { mutableStateOf(false) }
+    val unapprovedSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    LaunchedEffect(unapprovedTasks) {
+        if (unapprovedTasks.isNotEmpty()) {
+            showUnapprovedSheet = true
+        }
+    }
 
     LaunchedEffect(openAddSheet) {
         if (openAddSheet) {
@@ -273,6 +286,33 @@ fun TaskScreen(
                         isAddSheetOpen = false
                         selectedTask = null
                     }
+                )
+            }
+        }
+        
+        // Unapproved Tasks Sheet
+        if (showUnapprovedSheet && unapprovedTasks.isNotEmpty()) {
+            ModalBottomSheet(
+                onDismissRequest = { showUnapprovedSheet = false },
+                sheetState = unapprovedSheetState,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                dragHandle = { BottomSheetDefaults.DragHandle() }
+            ) {
+                UnapprovedTasksSheet(
+                    tasks = unapprovedTasks,
+                    onApprove = { tasksToApprove ->
+                        viewModel.approveTasks(tasksToApprove)
+                        if (unapprovedTasks.size == tasksToApprove.size) {
+                            showUnapprovedSheet = false
+                        }
+                    },
+                    onDelete = { tasksToDelete ->
+                        viewModel.deleteTasks(tasksToDelete)
+                        if (unapprovedTasks.size == tasksToDelete.size) {
+                            showUnapprovedSheet = false
+                        }
+                    },
+                    onDismiss = { showUnapprovedSheet = false }
                 )
             }
         }

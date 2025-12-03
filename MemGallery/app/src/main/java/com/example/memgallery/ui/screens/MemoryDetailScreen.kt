@@ -7,6 +7,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,7 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,6 +52,7 @@ import io.noties.markwon.image.ImagesPlugin
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +80,7 @@ fun MemoryDetailScreen(
                 memory = it,
                 onNavigateUp = { navController.navigateUp() },
                 onEdit = { navController.navigate("post_capture_edit/${it.id}") },
-                modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+                bottomPadding = padding.calculateBottomPadding(),
                 onCreateTask = { title, desc, date, time, type ->
                     viewModel.createTask(it.id, title, desc, date, time, type)
                 }
@@ -93,6 +100,7 @@ fun MemoryDetailContent(
     onNavigateUp: () -> Unit,
     onEdit: () -> Unit,
     onCreateTask: (String, String, String?, String?, String) -> Unit,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     var showFullscreenImage by remember { mutableStateOf(false) }
@@ -102,66 +110,116 @@ fun MemoryDetailContent(
     var showAddTaskSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // Hero Image
+    val density = LocalDensity.current
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val screenHeight = maxHeight
+        // Define anchors
+        // 1. Top (Expanded): 0.dp (Sheet covers screen)
+        // 2. Initial (Half): ~40% down (Image visible)
+        // 3. Bottom (Collapsed/Lip): Screen Height - 100.dp (Full Image visible)
+        
+        val topAnchor = 0f
+        val initialAnchor = with(density) { 400.dp.toPx() }
+        val bottomAnchor = with(density) { (screenHeight - 100.dp).toPx() }
+        
+        var offsetY by remember { mutableStateOf(initialAnchor) }
+
+        // Hero Image (Background Layer)
         if (memory.imageUri != null) {
             Image(
                 painter = rememberAsyncImagePainter(model = memory.imageUri),
                 contentDescription = memory.aiTitle,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp)
+                    .fillMaxSize() // Fills the entire screen behind the sheet
                     .clickable {
-                        fullscreenImageUri = memory.imageUri
-                        showFullscreenImage = true
+                        // Only allow fullscreen click if sheet is near bottom
+                        if (offsetY > bottomAnchor - 200f) {
+                            fullscreenImageUri = memory.imageUri
+                            showFullscreenImage = true
+                        }
                     }
             )
-            // Gradient overlay for status bar visibility if needed
+            // Gradient overlay for text visibility if sheet is down
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
+                    .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.3f),
+                                Color.Transparent, 
+                                Color.Black.copy(alpha = 0.6f)
+                            )
                         )
                     )
             )
         } else {
              Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
+                    .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
         }
 
-        // Content Sheet
-        Column(
+        // Content Sheet (Foreground Layer)
+        Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
+                .fillMaxWidth()
+                .fillMaxHeight() // Sheet is full height
+                .offset { IntOffset(x = 0, y = offsetY.roundToInt()) } // Move it down
+                .draggable(
+                    state = rememberDraggableState { delta ->
+                        val newOffset = offsetY + delta
+                        offsetY = newOffset.coerceIn(topAnchor, bottomAnchor)
+                    },
+                    orientation = Orientation.Vertical,
+                    onDragStopped = { velocity ->
+                        // Snap logic
+                        val targetOffset = when {
+                            velocity > 1000 -> bottomAnchor // Fast swipe down
+                            velocity < -1000 -> topAnchor // Fast swipe up
+                            offsetY > bottomAnchor - (bottomAnchor - initialAnchor) / 2 -> bottomAnchor
+                            offsetY > initialAnchor / 2 -> initialAnchor
+                            else -> topAnchor
+                        }
+                        // Simple snap (animation could be added with Animatable)
+                        offsetY = targetOffset
+                    }
+                ),
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            color = MaterialTheme.colorScheme.background,
+            tonalElevation = 8.dp,
+            shadowElevation = 16.dp
         ) {
-            Spacer(modifier = Modifier.height(if (memory.imageUri != null) 320.dp else 100.dp))
-            
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = MaterialTheme.colorScheme.background,
-                tonalElevation = 2.dp
-            ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    // Drag Handle (Visual cue)
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Drag Handle Area (Fixed at top of sheet)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp)
+                        .background(MaterialTheme.colorScheme.surface), // Match surface
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .width(40.dp)
                             .height(4.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                            .align(Alignment.CenterHorizontally)
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                // Scrollable Content
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f) // Fill remaining space
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Title & Date
                     Text(
@@ -312,13 +370,14 @@ fun MemoryDetailContent(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Bottom padding for FAB
-                    Spacer(modifier = Modifier.height(80.dp))
+                    // Bottom padding
+                    Spacer(modifier = Modifier.height(bottomPadding + 80.dp))
                 }
             }
         }
 
         // Top Bar Actions (Floating)
+        // Always visible unless sheet is fully up (optional, but safe to keep floating)
         Row(
             modifier = Modifier
                 .fillMaxWidth()

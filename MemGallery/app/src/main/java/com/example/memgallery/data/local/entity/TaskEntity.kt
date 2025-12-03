@@ -28,6 +28,7 @@ data class TaskEntity(
     val isCompleted: Boolean = false,
     val priority: String = "MEDIUM", // LOW, MEDIUM, HIGH
     val status: String = "PENDING", // PENDING, COMPLETED
+    val isApproved: Boolean = false,
     val type: String = "TODO", // TODO, EVENT
     val isRecurring: Boolean = false,
     val recurrenceRule: String? = null, // e.g., "DAILY", "WEEKLY", "MONTHLY"
