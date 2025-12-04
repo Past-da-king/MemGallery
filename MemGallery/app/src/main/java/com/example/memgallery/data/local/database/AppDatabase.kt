@@ -20,7 +20,7 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         CollectionEntity::class, 
         MemoryCollectionCrossRef::class
     ], 
-    version = 11, 
+    version = 12, 
     exportSchema = false
 )
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class)
@@ -81,6 +81,37 @@ abstract class AppDatabase : RoomDatabase() {
                 // Create indices for cross ref
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_memory_collection_cross_ref_memoryId` ON `memory_collection_cross_ref` (`memoryId`)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_memory_collection_cross_ref_collectionId` ON `memory_collection_cross_ref` (`collectionId`)")
+            }
+        }
+
+        val MIGRATION_11_12 = object : androidx.room.migration.Migration(11, 12) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add type, isRecurring, recurrenceRule to tasks if they don't exist
+                // We use try-catch for each column to handle "duplicate column name" error 
+                // which happens if user did a fresh install on v11 (which created table with these columns)
+                // but DB version was 11, so now going to 12 checks this migration.
+
+                val columns = listOf(
+                    "ALTER TABLE tasks ADD COLUMN type TEXT NOT NULL DEFAULT 'TODO'",
+                    "ALTER TABLE tasks ADD COLUMN isRecurring INTEGER NOT NULL DEFAULT 0",
+                    "ALTER TABLE tasks ADD COLUMN recurrenceRule TEXT",
+                    "ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'PENDING'",
+                    "ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'MEDIUM'"
+                )
+
+                for (sql in columns) {
+                    try {
+                        database.execSQL(sql)
+                    } catch (e: android.database.sqlite.SQLiteException) {
+                        // Check for duplicate column error (message varies by SQLite version/device, but usually contains "duplicate column name")
+                        if (e.message?.contains("duplicate column name") == true) {
+                            android.util.Log.w("Migration_11_12", "Column already exists, skipping: ${e.message}")
+                        } else {
+                            // Re-throw other errors
+                            throw e
+                        }
+                    }
+                }
             }
         }
     }
