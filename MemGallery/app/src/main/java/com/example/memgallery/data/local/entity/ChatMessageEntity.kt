@@ -23,5 +23,7 @@ data class ChatMessageEntity(
     val chatId: Int,
     val role: String, // "user" or "model"
     val content: String,
+    val audioFilePath: String? = null, // Path to audio file attachment
+    val imageUri: String? = null,      // URI of image/document attachment
     val timestamp: Long = System.currentTimeMillis()
 )

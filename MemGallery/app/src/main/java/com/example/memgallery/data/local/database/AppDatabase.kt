@@ -22,7 +22,7 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         com.example.memgallery.data.local.entity.ChatEntity::class,
         com.example.memgallery.data.local.entity.ChatMessageEntity::class
     ], 
-    version = 13, 
+    version = 14, 
     exportSchema = false
 )
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class)
@@ -153,6 +153,22 @@ abstract class AppDatabase : RoomDatabase() {
                 } catch (e: android.database.sqlite.SQLiteException) {
                     if (e.message?.contains("duplicate column name") == true) {
                         android.util.Log.w("Migration_12_13", "Column already exists, skipping: ${e.message}")
+                    } else {
+                        throw e
+                    }
+                }
+            }
+        }
+
+        val MIGRATION_13_14 = object : androidx.room.migration.Migration(13, 14) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add media columns to chat_messages table
+                try {
+                    database.execSQL("ALTER TABLE chat_messages ADD COLUMN audioFilePath TEXT")
+                    database.execSQL("ALTER TABLE chat_messages ADD COLUMN imageUri TEXT")
+                } catch (e: android.database.sqlite.SQLiteException) {
+                    if (e.message?.contains("duplicate column name") == true) {
+                        android.util.Log.w("Migration_13_14", "Column already exists, skipping: ${e.message}")
                     } else {
                         throw e
                     }

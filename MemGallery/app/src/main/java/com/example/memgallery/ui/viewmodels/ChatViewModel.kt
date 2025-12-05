@@ -90,6 +90,10 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             _inputMessage.value = "" // Clear input
+            
+            // Insert user message immediately for instant UI feedback
+            chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "user", content = message))
+            
             _isLoading.value = true
             
             // Update title if it's the first message (or title is "New Chat")
@@ -103,7 +107,8 @@ class ChatViewModel @Inject constructor(
             _isLoading.value = false
             
             if (result.isFailure) {
-                // Handle error
+                // Handle error - could show error state or retry option
+                android.util.Log.e("ChatViewModel", "Failed to send message", result.exceptionOrNull())
             }
         }
     }
@@ -132,6 +137,114 @@ class ChatViewModel @Inject constructor(
             memoryRepository.saveChatMemory(chatExport)
             chatDao.updateChat(chat.copy(isSavedAsMemory = true))
             android.util.Log.d("ChatViewModel", "Chat saved as memory successfully")
+        }
+    }
+
+    // ==================== MEDIA SUPPORT ====================
+
+    // Snackbar state for feedback
+    private val _snackbarMessage = MutableStateFlow<String?>(null)
+    val snackbarMessage = _snackbarMessage.asStateFlow()
+    
+    fun clearSnackbar() {
+        _snackbarMessage.value = null
+    }
+
+    /**
+     * Send a message with audio attachment
+     */
+    fun sendAudioMessage(audioFilePath: String, additionalText: String? = null) {
+        val chatId = _currentChatId.value ?: return
+
+        viewModelScope.launch {
+            // Insert user message immediately with audio indicator
+            val displayText = additionalText?.takeIf { it.isNotBlank() } ?: "🎤 Voice message"
+            chatDao.insertMessage(ChatMessageEntity(
+                chatId = chatId, 
+                role = "user", 
+                content = displayText,
+                audioFilePath = audioFilePath
+            ))
+            
+            _isLoading.value = true
+            
+            // Update title if first message
+            val chat = chatDao.getChatById(chatId)
+            if (chat != null && chat.title == "New Chat") {
+                chatDao.updateChat(chat.copy(title = "Voice Chat"))
+            }
+            
+            val result = chatGeminiService.sendMessageWithMedia(
+                chatId = chatId,
+                message = additionalText,
+                audioUri = "file://$audioFilePath"
+            )
+            _isLoading.value = false
+            
+            if (result.isFailure) {
+                android.util.Log.e("ChatViewModel", "Failed to send audio message", result.exceptionOrNull())
+                _snackbarMessage.value = "Failed to send audio message"
+            }
+        }
+    }
+
+    /**
+     * Send a message with image or document attachment
+     */
+    fun sendMediaMessage(mediaUri: String, additionalText: String? = null) {
+        val chatId = _currentChatId.value ?: return
+
+        viewModelScope.launch {
+            _inputMessage.value = "" // Clear input
+            
+            // Insert user message immediately with media indicator
+            val displayText = additionalText?.takeIf { it.isNotBlank() } ?: "📎 Attachment"
+            chatDao.insertMessage(ChatMessageEntity(
+                chatId = chatId, 
+                role = "user", 
+                content = displayText,
+                imageUri = mediaUri
+            ))
+            
+            _isLoading.value = true
+            
+            // Update title if first message
+            val chat = chatDao.getChatById(chatId)
+            if (chat != null && chat.title == "New Chat") {
+                chatDao.updateChat(chat.copy(title = "Media Chat"))
+            }
+            
+            val result = chatGeminiService.sendMessageWithMedia(
+                chatId = chatId,
+                message = additionalText,
+                imageUri = mediaUri
+            )
+            _isLoading.value = false
+            
+            if (result.isFailure) {
+                android.util.Log.e("ChatViewModel", "Failed to send media message", result.exceptionOrNull())
+                _snackbarMessage.value = "Failed to send attachment"
+            }
+        }
+    }
+
+    /**
+     * Save an AI message as a note (memory)
+     * This creates a text-based memory that will be processed by the AI worker
+     */
+    fun saveMessageAsNote(content: String) {
+        viewModelScope.launch {
+            try {
+                memoryRepository.savePendingMemory(
+                    imageUri = null,
+                    audioUri = null,
+                    userText = content
+                )
+                _snackbarMessage.value = "Saved as note"
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Failed to save message as note", e)
+                _snackbarMessage.value = "Failed to save note"
+            }
         }
     }
 }
