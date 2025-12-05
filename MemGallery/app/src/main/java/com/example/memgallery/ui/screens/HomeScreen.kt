@@ -24,12 +24,13 @@ fun HomeScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val taskScreenEnabled by settingsViewModel.taskScreenEnabled.collectAsState()
-    val pageCount = if (taskScreenEnabled) 2 else 1
-    val pagerState = rememberPagerState(pageCount = { pageCount })
+    // Page 0: Chat, Page 1: Gallery, Page 2: Task (if enabled)
+    val pageCount = if (taskScreenEnabled) 3 else 2
+    val pagerState = rememberPagerState(initialPage = 1, pageCount = { pageCount })
 
     LaunchedEffect(forceTaskPage) {
         if (forceTaskPage && taskScreenEnabled) {
-            pagerState.scrollToPage(1)
+            pagerState.scrollToPage(2)
         }
     }
 
@@ -38,8 +39,9 @@ fun HomeScreen(
         modifier = Modifier.fillMaxSize()
     ) { page ->
         when (page) {
-            0 -> GalleryScreen(navController = navController, openAddSheet = openAddSheet)
-            1 -> if (taskScreenEnabled) {
+            0 -> com.example.memgallery.ui.screens.ChatScreen(navController = navController)
+            1 -> GalleryScreen(navController = navController, openAddSheet = openAddSheet)
+            2 -> if (taskScreenEnabled) {
                 TaskScreen(
                     openAddSheet = openAddTaskSheet,
                     onNavigateToMemory = { memoryId ->

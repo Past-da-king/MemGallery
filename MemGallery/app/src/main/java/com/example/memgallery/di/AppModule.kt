@@ -29,7 +29,8 @@ object AppModule {
             AppDatabase.MIGRATION_8_9, 
             AppDatabase.MIGRATION_9_10, 
             AppDatabase.MIGRATION_10_11,
-            AppDatabase.MIGRATION_11_12
+            AppDatabase.MIGRATION_11_12,
+            AppDatabase.MIGRATION_12_13
         )
         .build()
     }
@@ -57,5 +58,11 @@ object AppModule {
     @Singleton
     fun provideTaskDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.TaskDao {
         return appDatabase.taskDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.ChatDao {
+        return appDatabase.chatDao()
     }
 }

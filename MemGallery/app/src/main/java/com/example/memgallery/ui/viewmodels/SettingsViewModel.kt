@@ -30,7 +30,8 @@ sealed interface ApiKeyUiState {
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val geminiService: GeminiService
+    private val geminiService: GeminiService,
+    private val chatGeminiService: com.example.memgallery.data.remote.ChatGeminiService
 ) : ViewModel() {
 
     val autoIndexScreenshots: StateFlow<Boolean> = settingsRepository.autoIndexScreenshotsFlow
@@ -223,6 +224,7 @@ class SettingsViewModel @Inject constructor(
             result.onSuccess {
                 settingsRepository.saveApiKey(key)
                 geminiService.initialize(key)
+                chatGeminiService.initialize(key)
                 _apiKeyUiState.value = ApiKeyUiState.Success("Success! Key is valid.")
             }.onFailure {
                 _apiKeyUiState.value = ApiKeyUiState.Error("Error: Invalid Key.")

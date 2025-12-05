@@ -31,5 +31,9 @@ data class MemoryEntity(
     // Metadata
     val creationTimestamp: Long,
     val status: String, // e.g., "PENDING", "PROCESSING", "COMPLETED", "FAILED"
-    val isHidden: Boolean = false
+    val isHidden: Boolean = false,
+    
+    // Chat Memory Support
+    val type: String = "MEMORY", // "MEMORY" or "CHAT"
+    val chatExport: String? = null // Full chat content if type is "CHAT"
 )

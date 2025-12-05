@@ -163,6 +163,27 @@ class MemoryRepository @Inject constructor(
         Result.failure(e)
     }
 
+    suspend fun saveChatMemory(chatExport: String): Long {
+        val memoryEntity = MemoryEntity(
+            userText = null,
+            imageUri = null,
+            audioFilePath = null,
+            aiTitle = "Chat Session",
+            aiSummary = null,
+            aiTags = null,
+            aiImageAnalysis = null,
+            aiAudioTranscription = null,
+            aiActions = null,
+            creationTimestamp = System.currentTimeMillis(),
+            status = "PENDING",
+            type = "CHAT",
+            chatExport = chatExport
+        )
+        val id = memoryDao.insertMemory(memoryEntity)
+        enqueueMemoryProcessing()
+        return id
+    }
+
     suspend fun processMemoryWithAI(
         memoryId: Int,
         imageUri: String?,

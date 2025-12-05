@@ -47,6 +47,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val SELECTED_COLOR = intPreferencesKey("selected_color")
         val SHOW_HIGHLIGHTS = booleanPreferencesKey("show_highlights")
         val USER_SYSTEM_PROMPT = stringPreferencesKey("user_system_prompt")
+        val USER_CONTEXT_SUMMARY = stringPreferencesKey("user_context_summary")
         
         // Edge Gesture
         val EDGE_GESTURE_ENABLED = booleanPreferencesKey("edge_gesture_enabled")
@@ -241,6 +242,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun saveUserSystemPrompt(prompt: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.USER_SYSTEM_PROMPT] = prompt
+        }
+    }
+
+    // User Context Summary
+    val userContextSummaryFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.USER_CONTEXT_SUMMARY] ?: ""
+        }
+
+    suspend fun saveUserContextSummary(summary: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.USER_CONTEXT_SUMMARY] = summary
         }
     }
 

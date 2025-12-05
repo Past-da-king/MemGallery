@@ -18,9 +18,11 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         MemoryEntity::class, 
         TaskEntity::class, 
         CollectionEntity::class, 
-        MemoryCollectionCrossRef::class
+        MemoryCollectionCrossRef::class,
+        com.example.memgallery.data.local.entity.ChatEntity::class,
+        com.example.memgallery.data.local.entity.ChatMessageEntity::class
     ], 
-    version = 12, 
+    version = 13, 
     exportSchema = false
 )
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class)
@@ -28,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
     abstract fun taskDao(): TaskDao
     abstract fun collectionDao(): CollectionDao
+    abstract fun chatDao(): com.example.memgallery.data.local.dao.ChatDao
 
     companion object {
         val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
@@ -110,6 +113,48 @@ abstract class AppDatabase : RoomDatabase() {
                             // Re-throw other errors
                             throw e
                         }
+                    }
+                }
+            }
+        }
+
+        val MIGRATION_12_13 = object : androidx.room.migration.Migration(12, 13) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Create chats table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `chats` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `title` TEXT NOT NULL, 
+                        `summary` TEXT, 
+                        `timestamp` INTEGER NOT NULL, 
+                        `isSavedAsMemory` INTEGER NOT NULL
+                    )
+                """)
+
+                // Create chat_messages table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `chat_messages` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `chatId` INTEGER NOT NULL, 
+                        `role` TEXT NOT NULL, 
+                        `content` TEXT NOT NULL, 
+                        `timestamp` INTEGER NOT NULL, 
+                        FOREIGN KEY(`chatId`) REFERENCES `chats`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """)
+
+                // Create index for chat_messages
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_chat_messages_chatId` ON `chat_messages` (`chatId`)")
+
+                // Add columns to memories table
+                try {
+                    database.execSQL("ALTER TABLE memories ADD COLUMN type TEXT NOT NULL DEFAULT 'MEMORY'")
+                    database.execSQL("ALTER TABLE memories ADD COLUMN chatExport TEXT")
+                } catch (e: android.database.sqlite.SQLiteException) {
+                    if (e.message?.contains("duplicate column name") == true) {
+                        android.util.Log.w("Migration_12_13", "Column already exists, skipping: ${e.message}")
+                    } else {
+                        throw e
                     }
                 }
             }

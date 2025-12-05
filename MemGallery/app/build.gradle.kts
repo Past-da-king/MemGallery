@@ -63,6 +63,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        javaParameters = true
     }
     buildFeatures {
         compose = true
