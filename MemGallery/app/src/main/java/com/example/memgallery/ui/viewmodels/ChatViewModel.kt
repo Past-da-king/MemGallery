@@ -92,6 +92,13 @@ class ChatViewModel @Inject constructor(
             _inputMessage.value = "" // Clear input
             _isLoading.value = true
             
+            // Update title if it's the first message (or title is "New Chat")
+            val chat = chatDao.getChatById(chatId)
+            if (chat != null && chat.title == "New Chat") {
+                val newTitle = message.take(30) + if (message.length > 30) "..." else ""
+                chatDao.updateChat(chat.copy(title = newTitle))
+            }
+            
             val result = chatGeminiService.sendMessage(chatId, message)
             _isLoading.value = false
             

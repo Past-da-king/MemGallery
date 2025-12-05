@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -92,16 +93,19 @@ fun ChatScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .statusBarsPadding()
                     .padding(horizontal = 24.dp)
                     .padding(top = 8.dp, bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val currentChatTitle = chats.find { it.id == currentChatId }?.title ?: "New Chat"
                 Text(
-                    text = "Chat",
+                    text = currentChatTitle,
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -122,19 +126,21 @@ fun ChatScreen(
                     
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // New Chat Icon (Styled like Settings)
-                    IconButton(
-                        onClick = { viewModel.createNewChat() },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "New Chat",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp)
-                        )
+                    // Save Chat Icon (Visible only if messages exist)
+                    if (currentMessages.isNotEmpty()) {
+                        IconButton(
+                            onClick = { currentChatId?.let { viewModel.saveChatAsMemory(it) } },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Save,
+                                contentDescription = "Save Chat",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }
