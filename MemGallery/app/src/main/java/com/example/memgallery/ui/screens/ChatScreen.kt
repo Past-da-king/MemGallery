@@ -57,9 +57,10 @@ fun ChatScreen(
     val focusManager = LocalFocusManager.current
 
     // Auto-scroll to bottom when new messages arrive
+    // In reverseLayout, item 0 is at the bottom, so we scroll there
     LaunchedEffect(currentMessages.size) {
         if (currentMessages.isNotEmpty()) {
-            listState.animateScrollToItem(currentMessages.size - 1)
+            listState.animateScrollToItem(0)
         }
     }
 
@@ -71,6 +72,7 @@ fun ChatScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         bottomBar = {
             ChatInputBar(
                 inputMessage = inputMessage,
@@ -157,10 +159,12 @@ fun ChatScreen(
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
+                        contentPadding = PaddingValues(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp),
+                        reverseLayout = true,
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        items(currentMessages) { message ->
+                        // Reverse the messages so newest appears at bottom in reverseLayout
+                        items(currentMessages.reversed()) { message ->
                             MessageBubble(message = message)
                         }
                         if (isLoading) {

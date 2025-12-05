@@ -110,14 +110,28 @@ class ChatViewModel @Inject constructor(
 
     fun saveChatAsMemory(chatId: Int) {
         viewModelScope.launch {
+            android.util.Log.d("ChatViewModel", "saveChatAsMemory called for chatId: $chatId")
             val chat = chatDao.getChatById(chatId) ?: return@launch
-            if (chat.isSavedAsMemory) return@launch // Already saved
+            if (chat.isSavedAsMemory) {
+                android.util.Log.d("ChatViewModel", "Chat already saved as memory, skipping")
+                return@launch
+            }
 
-            val messages = chatDao.getMessagesForChat(chatId).first()
+            // Use the cached messages from the UI state for reliability
+            val messages = currentMessages.value
+            android.util.Log.d("ChatViewModel", "Messages count: ${messages.size}")
+            
+            if (messages.isEmpty()) {
+                android.util.Log.w("ChatViewModel", "No messages to save!")
+                return@launch
+            }
+            
             val chatExport = messages.joinToString("\n") { "${it.role}: ${it.content}" }
+            android.util.Log.d("ChatViewModel", "Chat export length: ${chatExport.length}")
 
             memoryRepository.saveChatMemory(chatExport)
             chatDao.updateChat(chat.copy(isSavedAsMemory = true))
+            android.util.Log.d("ChatViewModel", "Chat saved as memory successfully")
         }
     }
 }
