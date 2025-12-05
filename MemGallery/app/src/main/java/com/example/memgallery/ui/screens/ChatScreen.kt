@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -111,14 +112,31 @@ fun ChatScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Start recording
-            startAudioRecording(context, { recorder, file ->
+            try {
+                val (recorder, file) = startAudioRecording(context)
                 mediaRecorder = recorder
                 recordingFile = file
                 isRecording = true
-            }, { amplitudes ->
-                recordingAmplitudes = amplitudes
-            })
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Audio Amplitude Polling
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            while (true) {
+                delay(50) // Update every 50ms
+                mediaRecorder?.maxAmplitude?.let { maxAmp ->
+                    // Normalize amplitude (0-32767) to 0-1 range with some boosting
+                    val norm = (maxAmp / 32767f).coerceIn(0f, 1f)
+                    // Add to list and keep size constant
+                    recordingAmplitudes = (recordingAmplitudes + norm).takeLast(40)
+                }
+            }
+        } else {
+            recordingAmplitudes = List(40) { 0f }
         }
     }
 
@@ -156,22 +174,32 @@ fun ChatScreen(
                 onMicClick = {
                     if (isRecording) {
                         // Stop recording
-                        stopAudioRecording(mediaRecorder) { filePath ->
-                            isRecording = false
-                            mediaRecorder = null
-                            filePath?.let { viewModel.sendAudioMessage(it) }
+                        try {
+                            mediaRecorder?.stop()
+                            mediaRecorder?.release()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
+                        mediaRecorder = null
+                        isRecording = false
+                        
+                        // Send the file
+                        recordingFile?.absolutePath?.let { path ->
+                            viewModel.sendAudioMessage(path)
+                        }
+                        recordingFile = null
                     } else {
                         // Check permission and start recording
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
                             == PackageManager.PERMISSION_GRANTED) {
-                            startAudioRecording(context, { recorder, file ->
+                            try {
+                                val (recorder, file) = startAudioRecording(context)
                                 mediaRecorder = recorder
                                 recordingFile = file
                                 isRecording = true
-                            }, { amplitudes ->
-                                recordingAmplitudes = amplitudes
-                            })
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         } else {
                             audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
@@ -351,140 +379,190 @@ fun EnhancedChatInputBar(
     recordingAmplitudes: List<Float>
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp, // Flat design, container handles shape
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            // Recording waveform (shown when recording)
-            AnimatedVisibility(visible = isRecording) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Pulsing red dot
-                    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                    val alpha by infiniteTransition.animateFloat(
-                        initialValue = 0.3f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(500),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "pulse"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(Color.Red.copy(alpha = alpha), CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Recording...", color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.weight(1f))
-                    // Mini waveform
-                    MiniWaveform(amplitudes = recordingAmplitudes, modifier = Modifier.width(100.dp).height(32.dp))
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(if (isRecording) 8.dp else 0.dp))
-            
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .navigationBarsPadding() // Ensure it respects gesture bar
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .background(containerColor, RoundedCornerShape(28.dp)) // Pill shape
+                    .padding(horizontal = 8.dp, vertical = 4.dp), // Padding inside the pill
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Attach button
-                IconButton(
-                    onClick = onAttachClick,
-                    enabled = !isRecording && !isLoading,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            CircleShape
-                        )
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Attach",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Text field (hidden when recording)
-                if (!isRecording) {
-                    TextField(
-                        value = inputMessage,
-                        onValueChange = onValueChange,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(24.dp)),
-                        placeholder = { Text("Message...", style = MaterialTheme.typography.bodyLarge) },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                        ),
-                        maxLines = 4,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        keyboardActions = KeyboardActions(onSend = { if (inputMessage.isNotBlank() && !isLoading) onSend() })
-                    )
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Microphone button
-                IconButton(
-                    onClick = onMicClick,
-                    enabled = !isLoading,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(
-                            if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
-                            CircleShape
-                        )
-                ) {
-                    Icon(
-                        if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                        contentDescription = if (isRecording) "Stop" else "Record",
-                        tint = if (isRecording) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Send button (hidden when recording)
-                if (!isRecording) {
+                // Left Action (Attach)
+                AnimatedVisibility(visible = !isRecording) {
                     IconButton(
-                        onClick = onSend,
-                        enabled = inputMessage.isNotBlank() && !isLoading,
+                        onClick = onAttachClick,
+                        enabled = !isLoading,
                         modifier = Modifier
-                            .size(44.dp)
-                            .background(
-                                if (inputMessage.isNotBlank()) primaryColor else MaterialTheme.colorScheme.surfaceVariant,
-                                CircleShape
-                            )
+                            .size(40.dp)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = if (inputMessage.isNotBlank()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
+                            Icons.Default.Add,
+                            contentDescription = "Attach",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
                         )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Center Content (TextField or Recording UI)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = 4.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (isRecording) {
+                        // Recording UI
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Pulsing Dot
+                            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                            val alpha by infiniteTransition.animateFloat(
+                                initialValue = 0.3f,
+                                targetValue = 1f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(800),
+                                    repeatMode = RepeatMode.Reverse
+                                ),
+                                label = "pulse"
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = alpha), CircleShape)
+                            )
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            // Waveform
+                            MiniWaveform(
+                                amplitudes = recordingAmplitudes, 
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(32.dp),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Text(
+                                text = formatDuration(recordingAmplitudes.size * 50L), // Approx duration
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    } else {
+                        // Text Input
+                        TextField(
+                            value = inputMessage,
+                            onValueChange = onValueChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { 
+                                Text(
+                                    "Ask Gemini...", 
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                ) 
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = primaryColor
+                            ),
+                            maxLines = 5,
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(onSend = { if (inputMessage.isNotBlank() && !isLoading) onSend() })
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Right Action (Mic or Send)
+                val isSendVisible = inputMessage.isNotBlank() && !isRecording
+                
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = when {
+                            isRecording -> "Stop"
+                            isSendVisible -> "Send"
+                            else -> "Mic"
+                        },
+                        label = "Action Button"
+                    ) { state ->
+                        when (state) {
+                            "Stop" -> {
+                                IconButton(
+                                    onClick = onMicClick,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(MaterialTheme.colorScheme.errorContainer, CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Stop,
+                                        contentDescription = "Stop Recording",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                            "Send" -> {
+                                IconButton(
+                                    onClick = onSend,
+                                    enabled = !isLoading,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(primaryColor, CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Send",
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+                            "Mic" -> {
+                                IconButton(
+                                    onClick = onMicClick,
+                                    enabled = !isLoading,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Mic,
+                                        contentDescription = "Record Audio",
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -493,23 +571,40 @@ fun EnhancedChatInputBar(
 }
 
 @Composable
-fun MiniWaveform(amplitudes: List<Float>, modifier: Modifier = Modifier) {
-    val primaryColor = MaterialTheme.colorScheme.error
+fun MiniWaveform(
+    amplitudes: List<Float>, 
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+) {
     Canvas(modifier = modifier) {
-        val barWidth = size.width / (amplitudes.size * 2f)
-        val gap = barWidth
-        amplitudes.forEachIndexed { index, amplitude ->
-            val barHeight = (size.height * amplitude).coerceAtLeast(4f)
+        val barWidth = 4.dp.toPx()
+        val gap = 2.dp.toPx()
+        val totalWidth = size.width
+        val maxBars = (totalWidth / (barWidth + gap)).toInt()
+        
+        // Take the last N amplitudes that fit
+        val visibleAmplitudes = amplitudes.takeLast(maxBars)
+        
+        visibleAmplitudes.forEachIndexed { index, amplitude ->
+            // Animate height based on amplitude
+            val barHeight = (size.height * amplitude).coerceAtLeast(4.dp.toPx())
             val x = index * (barWidth + gap)
             val y = (size.height - barHeight) / 2f
+            
             drawRoundRect(
-                color = primaryColor.copy(alpha = 0.6f + (amplitude * 0.4f)),
+                color = color.copy(alpha = 0.5f + (amplitude * 0.5f)),
                 topLeft = Offset(x, y),
                 size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(4f, 4f)
+                cornerRadius = CornerRadius(barWidth / 2, barWidth / 2)
             )
         }
     }
+}
+
+private fun formatDuration(millis: Long): String {
+    val seconds = (millis / 1000) % 60
+    val minutes = (millis / (1000 * 60)) % 60
+    return String.format("%02d:%02d", minutes, seconds)
 }
 
 @Composable
@@ -749,11 +844,10 @@ fun ChatHistoryList(
 }
 
 // Audio recording helpers
+// Audio recording helpers
 private fun startAudioRecording(
-    context: android.content.Context,
-    onRecorderCreated: (MediaRecorder, File) -> Unit,
-    onAmplitudesUpdate: (List<Float>) -> Unit
-) {
+    context: android.content.Context
+): Pair<MediaRecorder, File> {
     val fileName = "CHAT_AUD_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.m4a"
     val outputFile = File(context.externalCacheDir, fileName)
 
@@ -767,31 +861,9 @@ private fun startAudioRecording(
         setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
         setOutputFile(outputFile.absolutePath)
-        try {
-            prepare()
-            start()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return
-        }
+        prepare()
+        start()
     }
 
-    onRecorderCreated(recorder, outputFile)
-
-    // Start polling for amplitudes in a coroutine-friendly way is handled by the caller
-}
-
-private fun stopAudioRecording(
-    mediaRecorder: MediaRecorder?,
-    onStopped: (String?) -> Unit
-) {
-    try {
-        mediaRecorder?.stop()
-        mediaRecorder?.release()
-        // Get the file path from the recorder (we need to track this separately)
-        onStopped(null) // Caller should track the file
-    } catch (e: Exception) {
-        e.printStackTrace()
-        onStopped(null)
-    }
+    return Pair(recorder, outputFile)
 }
