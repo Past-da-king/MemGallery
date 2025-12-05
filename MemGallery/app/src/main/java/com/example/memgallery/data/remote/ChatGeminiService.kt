@@ -5,6 +5,7 @@ import android.util.Log
 import com.example.memgallery.data.local.dao.ChatDao
 import com.example.memgallery.data.local.dao.CollectionDao
 import com.example.memgallery.data.local.dao.MemoryDao
+import com.example.memgallery.data.local.dao.TaskDao
 import com.example.memgallery.data.local.entity.ChatMessageEntity
 import com.example.memgallery.data.repository.SettingsRepository
 import com.google.genai.Client
@@ -27,7 +28,8 @@ class ChatGeminiService @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val memoryDao: MemoryDao,
     private val collectionDao: CollectionDao,
-    private val chatDao: ChatDao
+    private val chatDao: ChatDao,
+    private val taskDao: TaskDao
 ) {
     private var client: Client? = null
 
@@ -35,19 +37,16 @@ class ChatGeminiService @Inject constructor(
         // Initialize ChatTools with DAOs
         ChatTools.memoryDao = memoryDao
         ChatTools.collectionDao = collectionDao
+        ChatTools.taskDao = taskDao
     }
 
     fun initialize(apiKey: String) {
         client = Client.builder().apiKey(apiKey).build()
         
         // Initialize the search client for ChatTools
-        // We reuse the API key to create a separate client for search operations
         try {
-             val searchClient = Client.builder().apiKey(apiKey).build()
-             // We can't check if lateinit is initialized easily, but we can assign it.
-             // Ideally we should check if it's already assigned to avoid re-creation if not needed,
-             // but re-creating the client is cheap enough here.
-             ChatTools.searchClient = searchClient
+            val searchClient = Client.builder().apiKey(apiKey).build()
+            ChatTools.searchClient = searchClient
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing search client", e)
         }
@@ -93,28 +92,67 @@ class ChatGeminiService @Inject constructor(
             // 1. Get Chat History
             val history = chatDao.getMessagesForChat(chatId).first()
             
-            // 2. Build Context (System Instruction)
+            // 2. Build System Instruction with Query Tool Documentation
             val userContext = settingsRepository.userContextSummaryFlow.first()
-            val baseInstruction = "You are a helpful AI assistant with access to the user's memories. " +
-                    "Use the provided tools to search for memories or collections when asked. " +
-                    "If the user asks for current information or something you don't know, use the 'webSearch' tool. " +
-                    "Always answer based on the user's context if available."
+            
+            val baseInstruction = """
+You are a helpful AI assistant with FULL READ ACCESS to the user's personal data.
+
+## QUERY TOOL
+Use `queryDatabase(table, filters, fields)` to query any data:
+
+**Parameters:**
+- `table`: "memories", "tasks", or "collections"
+- `filters`: JSON string with optional filters
+- `fields`: "all" or comma-separated like "id,title,summary"
+
+**Available Filters:**
+| Filter | Type | Description |
+|--------|------|-------------|
+| id | Int | Get specific record |
+| search | String | Text search in content |
+| dateFrom | String | Start date (YYYY-MM-DD) |
+| dateTo | String | End date (YYYY-MM-DD) |
+| completed | Boolean | Task completion status |
+| dueDate | String | Task due date (YYYY-MM-DD) |
+| priority | String | Task priority (LOW/MEDIUM/HIGH) |
+| collectionName | String | Memories in collection |
+| limit | Int | Max results (default 20) |
+
+**Examples:**
+- All memories: `queryDatabase("memories", "{}", "all")`
+- Search "meeting": `queryDatabase("memories", "{\"search\": \"meeting\"}", "all")`
+- Memory #5: `queryDatabase("memories", "{\"id\": 5}", "all")`
+- Today's tasks: `queryDatabase("tasks", "{\"dueDate\": \"2024-12-05\"}", "all")`
+- Pending tasks: `queryDatabase("tasks", "{\"completed\": false}", "all")`
+- All collections: `queryDatabase("collections", "{}", "all")`
+
+## WEB SEARCH
+Use `webSearch(query)` for current web information.
+
+## GUIDELINES
+- Query data before answering questions about user's memories/tasks
+- Use markdown formatting in responses
+- Be helpful and conversational
+""".trimIndent()
             
             val systemInstruction = if (userContext.isNotBlank()) {
-                "$baseInstruction\n\nUser Context:\n$userContext"
+                "$baseInstruction\n\n## USER CONTEXT\n$userContext"
             } else {
                 baseInstruction
             }
 
-            // 3. Prepare Tools
-            // Reflection for ChatTools methods
-            val searchMemoriesMethod = ChatTools::class.java.getMethod("searchMemories", String::class.java)
-            val getCollectionMemoriesMethod = ChatTools::class.java.getMethod("getCollectionMemories", String::class.java)
+            // 3. Prepare Tools (just 2 now: queryDatabase and webSearch)
+            val queryDatabaseMethod = ChatTools::class.java.getMethod(
+                "queryDatabase", 
+                String::class.java, 
+                String::class.java, 
+                String::class.java
+            )
             val webSearchMethod = ChatTools::class.java.getMethod("webSearch", String::class.java)
 
             val tools = Tool.builder()
-                //.googleSearch(GoogleSearch.builder().build()) // Removed integrated Google Search
-                .functions(searchMemoriesMethod, getCollectionMemoriesMethod, webSearchMethod)
+                .functions(queryDatabaseMethod, webSearchMethod)
                 .build()
 
             val config = GenerateContentConfig.builder()
@@ -136,7 +174,7 @@ class ChatGeminiService @Inject constructor(
             val responseText = response.text() ?: "I'm sorry, I couldn't generate a response."
             Log.d(TAG, "Received response: $responseText")
             
-            // 7. Save User Message and AI Response to DB
+            // 6. Save User Message and AI Response to DB
             chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "user", content = message))
             chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "model", content = responseText))
 

@@ -1,5 +1,8 @@
 package com.example.memgallery.ui.screens
 
+import android.text.method.LinkMovementMethod
+import android.util.TypedValue
+import android.widget.TextView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,17 +29,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.data.local.entity.ChatEntity
 import com.example.memgallery.data.local.entity.ChatMessageEntity
 import com.example.memgallery.ui.viewmodels.ChatViewModel
+import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +60,6 @@ fun ChatScreen(
     var showHistorySheet by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    val focusManager = LocalFocusManager.current
 
     // Auto-scroll to bottom when new messages arrive
     // In reverseLayout, item 0 is at the bottom, so we scroll there
@@ -79,7 +84,7 @@ fun ChatScreen(
                 onValueChange = viewModel::updateInputMessage,
                 onSend = {
                     viewModel.sendMessage()
-                    focusManager.clearFocus()
+                    // Keyboard stays open - don't clear focus
                 },
                 isLoading = isLoading
             )
@@ -293,35 +298,35 @@ fun ChatInputBar(
 fun MessageBubble(message: ChatMessageEntity) {
     val isUser = message.role == "user"
     
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
-    ) {
-        if (!isUser) {
-            Text(
-                text = "AI Assistant",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 4.dp, start = 8.dp)
-            )
-        }
-        
-        Surface(
-            shape = if (isUser) {
-                RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
-            } else {
-                RoundedCornerShape(4.dp, 20.dp, 20.dp, 20.dp)
-            },
-            color = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.widthIn(max = 340.dp)
+    if (isUser) {
+        // User messages: Right-aligned bubble
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End
         ) {
-            Text(
-                text = message.content,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    lineHeight = 24.sp
-                ),
-                color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            Surface(
+                shape = RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.widthIn(max = 340.dp)
+            ) {
+                Text(
+                    text = message.content,
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    } else {
+        // AI messages: Full-width markdown text (ChatGPT style)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
+        ) {
+            ChatMarkdownText(
+                markdown = message.content,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodyLarge
             )
         }
     }
@@ -330,29 +335,48 @@ fun MessageBubble(message: ChatMessageEntity) {
 @Composable
 fun LoadingIndicator() {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            shape = RoundedCornerShape(4.dp, 20.dp, 20.dp, 20.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.padding(top = 24.dp)
-        ) {
-            Row(modifier = Modifier.padding(16.dp)) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Thinking...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        CircularProgressIndicator(
+            modifier = Modifier.size(16.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            "Thinking...",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
+}
+
+@Composable
+fun ChatMarkdownText(markdown: String, modifier: Modifier = Modifier, style: androidx.compose.ui.text.TextStyle) {
+    val context = LocalContext.current
+    val onSurfaceColor = MaterialTheme.colorScheme.onBackground
+    val markwon = remember {
+        Markwon.builder(context).build()
+    }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            TextView(ctx).apply {
+                movementMethod = LinkMovementMethod.getInstance()
+                setTextColor(onSurfaceColor.toArgb())
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, style.fontSize.value)
+                setLineSpacing(0f, 1.3f)
+            }
+        },
+        update = { textView ->
+            markwon.setMarkdown(textView, markdown)
+        }
+    )
 }
 
 @Composable
