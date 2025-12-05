@@ -14,9 +14,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -343,11 +345,17 @@ fun ChatScreen(
             }
         }
     }
+    // Selection state for deletion
+    val selectionModeActive by viewModel.selectionModeActive.collectAsState()
+    val selectedChatIds by viewModel.selectedChatIds.collectAsState()
 
     // History Sheet
     if (showHistorySheet) {
         ModalBottomSheet(
-            onDismissRequest = { showHistorySheet = false },
+            onDismissRequest = { 
+                showHistorySheet = false
+                viewModel.clearSelection()
+            },
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             sheetState = rememberModalBottomSheetState()
         ) {
@@ -361,7 +369,13 @@ fun ChatScreen(
                 onNewChat = {
                     viewModel.createNewChat()
                     showHistorySheet = false
-                }
+                },
+                selectionModeActive = selectionModeActive,
+                selectedChatIds = selectedChatIds,
+                onToggleSelection = viewModel::toggleChatSelection,
+                onDeleteChat = viewModel::deleteChat,
+                onDeleteSelected = viewModel::deleteSelectedChats,
+                onClearSelection = viewModel::clearSelection
             )
         }
     }
@@ -790,37 +804,80 @@ fun ChatMarkdownText(markdown: String, modifier: Modifier = Modifier, style: and
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatHistoryList(
     chats: List<ChatEntity>,
     currentChatId: Int?,
     onChatSelected: (Int) -> Unit,
-    onNewChat: () -> Unit
+    onNewChat: () -> Unit,
+    selectionModeActive: Boolean = false,
+    selectedChatIds: Set<Int> = emptySet(),
+    onToggleSelection: (Int) -> Unit = {},
+    onDeleteChat: (Int) -> Unit = {},
+    onDeleteSelected: () -> Unit = {},
+    onClearSelection: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 32.dp)
     ) {
-        Text(
-            "Chat History",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(16.dp)
-        )
+        // Header - changes based on selection mode
+        if (selectionModeActive) {
+            // Selection Mode Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClearSelection) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel", tint = MaterialTheme.colorScheme.onErrorContainer)
+                }
+                Text(
+                    "${selectedChatIds.size} selected",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(
+                    onClick = onDeleteSelected,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete All")
+                }
+            }
+        } else {
+            Text(
+                "Chat History",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(16.dp)
+            )
+        }
         
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            item {
-                ListItem(
-                    headlineContent = { Text("New Chat") },
-                    leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
-                    modifier = Modifier.clickable(onClick = onNewChat)
-                )
-                HorizontalDivider()
+            // New Chat button (hidden in selection mode)
+            if (!selectionModeActive) {
+                item {
+                    ListItem(
+                        headlineContent = { Text("New Chat") },
+                        leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
+                        modifier = Modifier.clickable(onClick = onNewChat)
+                    )
+                    HorizontalDivider()
+                }
             }
-            items(chats) { chat ->
+            
+            items(chats, key = { it.id }) { chat ->
+                val isSelected = chat.id in selectedChatIds
+                
                 ListItem(
                     headlineContent = { 
                         Text(
@@ -831,11 +888,53 @@ fun ChatHistoryList(
                     supportingContent = if (chat.summary != null) {
                         { Text(chat.summary, maxLines = 1) }
                     } else null,
+                    leadingContent = if (selectionModeActive) {
+                        {
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = { onToggleSelection(chat.id) },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = MaterialTheme.colorScheme.error
+                                )
+                            )
+                        }
+                    } else null,
+                    trailingContent = if (!selectionModeActive) {
+                        {
+                            IconButton(
+                                onClick = { onDeleteChat(chat.id) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    } else null,
                     modifier = Modifier
-                        .clickable { onChatSelected(chat.id) }
+                        .combinedClickable(
+                            onClick = {
+                                if (selectionModeActive) {
+                                    onToggleSelection(chat.id)
+                                } else {
+                                    onChatSelected(chat.id)
+                                }
+                            },
+                            onLongClick = {
+                                if (!selectionModeActive) {
+                                    onToggleSelection(chat.id) // This will trigger selection mode
+                                }
+                            }
+                        )
                         .background(
-                            if (chat.id == currentChatId) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) 
-                            else Color.Transparent
+                            when {
+                                isSelected -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                                chat.id == currentChatId -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                                else -> Color.Transparent
+                            }
                         )
                 )
             }

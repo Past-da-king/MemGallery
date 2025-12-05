@@ -96,49 +96,11 @@ class ChatGeminiService @Inject constructor(
             // 1. Get Chat History
             val history = chatDao.getMessagesForChat(chatId).first()
             
-            // 2. Build System Instruction with Query Tool Documentation
+            // 2. Build System Instruction with comprehensive context
             val userContext = settingsRepository.userContextSummaryFlow.first()
             
-            val baseInstruction = """
-You are a helpful AI assistant with FULL READ ACCESS to the user's personal data.
-
-## QUERY TOOL
-Use `queryDatabase(table, filters, fields)` to query any data:
-
-**Parameters:**
-- `table`: "memories", "tasks", or "collections"
-- `filters`: JSON string with optional filters
-- `fields`: "all" or comma-separated like "id,title,summary"
-
-**Available Filters:**
-| Filter | Type | Description |
-|--------|------|-------------|
-| id | Int | Get specific record |
-| search | String | Text search in content |
-| dateFrom | String | Start date (YYYY-MM-DD) |
-| dateTo | String | End date (YYYY-MM-DD) |
-| completed | Boolean | Task completion status |
-| dueDate | String | Task due date (YYYY-MM-DD) |
-| priority | String | Task priority (LOW/MEDIUM/HIGH) |
-| collectionName | String | Memories in collection |
-| limit | Int | Max results (default 20) |
-
-**Examples:**
-- All memories: `queryDatabase("memories", "{}", "all")`
-- Search "meeting": `queryDatabase("memories", "{\"search\": \"meeting\"}", "all")`
-- Memory #5: `queryDatabase("memories", "{\"id\": 5}", "all")`
-- Today's tasks: `queryDatabase("tasks", "{\"dueDate\": \"2024-12-05\"}", "all")`
-- Pending tasks: `queryDatabase("tasks", "{\"completed\": false}", "all")`
-- All collections: `queryDatabase("collections", "{}", "all")`
-
-## WEB SEARCH
-Use `webSearch(query)` for current web information.
-
-## GUIDELINES
-- Query data before answering questions about user's memories/tasks
-- Use markdown formatting in responses
-- Be helpful and conversational
-""".trimIndent()
+            // Use the dedicated system prompt with current date/time
+            val baseInstruction = ChatSystemPrompt.generate()
             
             val systemInstruction = if (userContext.isNotBlank()) {
                 "$baseInstruction\n\n## USER CONTEXT\n$userContext"

@@ -83,6 +83,67 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    // ==================== CHAT SELECTION & DELETION ====================
+    
+    private val _selectionModeActive = MutableStateFlow(false)
+    val selectionModeActive = _selectionModeActive.asStateFlow()
+    
+    private val _selectedChatIds = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedChatIds = _selectedChatIds.asStateFlow()
+    
+    fun toggleSelectionMode() {
+        _selectionModeActive.value = !_selectionModeActive.value
+        if (!_selectionModeActive.value) {
+            _selectedChatIds.value = emptySet()
+        }
+    }
+    
+    fun toggleChatSelection(chatId: Int) {
+        val current = _selectedChatIds.value.toMutableSet()
+        if (chatId in current) {
+            current.remove(chatId)
+        } else {
+            current.add(chatId)
+        }
+        _selectedChatIds.value = current
+        
+        // Exit selection mode if nothing selected
+        if (current.isEmpty()) {
+            _selectionModeActive.value = false
+        }
+    }
+    
+    fun clearSelection() {
+        _selectedChatIds.value = emptySet()
+        _selectionModeActive.value = false
+    }
+    
+    fun deleteChat(chatId: Int) {
+        viewModelScope.launch {
+            chatDao.deleteChatsByIds(listOf(chatId))
+            // If deleted chat was current, clear selection
+            if (_currentChatId.value == chatId) {
+                _currentChatId.value = null
+            }
+            _snackbarMessage.value = "Chat deleted"
+        }
+    }
+    
+    fun deleteSelectedChats() {
+        viewModelScope.launch {
+            val ids = _selectedChatIds.value.toList()
+            if (ids.isNotEmpty()) {
+                chatDao.deleteChatsByIds(ids)
+                // If current chat was in deleted list, clear it
+                if (_currentChatId.value in ids) {
+                    _currentChatId.value = null
+                }
+                _snackbarMessage.value = "${ids.size} chat(s) deleted"
+            }
+            clearSelection()
+        }
+    }
+
     fun sendMessage() {
         val message = _inputMessage.value
         val chatId = _currentChatId.value ?: return
