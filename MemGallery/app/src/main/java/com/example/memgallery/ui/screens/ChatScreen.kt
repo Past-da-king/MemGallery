@@ -37,6 +37,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -65,6 +66,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
@@ -84,6 +86,11 @@ fun ChatScreen(
     var showAttachMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    
+    // Audio Playback State
+    val currentPlayingAudioPath by viewModel.currentPlayingAudioPath.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState()
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Audio recording state
@@ -108,6 +115,16 @@ fun ChatScreen(
             viewModel.sendMediaMessage(it.toString(), inputMessage.takeIf { it.isNotBlank() })
         }
     }
+
+
+
+    // ... (existing code) ...
+
+
+    
+    // ... (existing code) ...
+
+
 
     // Audio permission
     val audioPermissionLauncher = rememberLauncherForActivityResult(
@@ -299,7 +316,10 @@ fun ChatScreen(
                                 onCopy = { 
                                     clipboardManager.setText(AnnotatedString(message.content))
                                     scope.launch { snackbarHostState.showSnackbar("Copied to clipboard") }
-                                }
+                                },
+                                isPlaying = isPlaying && currentPlayingAudioPath == message.audioFilePath,
+                                onPlayAudio = viewModel::playAudio,
+                                onPauseAudio = viewModel::pauseAudio
                             )
                         }
                     }
@@ -314,41 +334,23 @@ fun ChatScreen(
             onDismissRequest = { showAttachMenu = false },
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .padding(bottom = 32.dp)
-            ) {
-                Text(
-                    "Attach",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                
-                ListItem(
-                    headlineContent = { Text("Image") },
-                    leadingContent = { Icon(Icons.Default.Image, contentDescription = null) },
-                    modifier = Modifier.clickable {
-                        showAttachMenu = false
-                        imagePickerLauncher.launch("image/*")
-                    }
-                )
-                ListItem(
-                    headlineContent = { Text("Document (PDF)") },
-                    leadingContent = { Icon(Icons.Default.Description, contentDescription = null) },
-                    modifier = Modifier.clickable {
-                        showAttachMenu = false
-                        documentPickerLauncher.launch(arrayOf("application/pdf", "text/*"))
-                    }
-                )
-            }
+            PremiumAttachmentSheet(
+                onDismiss = { showAttachMenu = false },
+                onImageClick = {
+                    showAttachMenu = false
+                    imagePickerLauncher.launch("image/*")
+                },
+                onDocumentClick = {
+                    showAttachMenu = false
+                    documentPickerLauncher.launch(arrayOf("application/pdf", "text/*"))
+                }
+            )
         }
     }
     // Selection state for deletion
     val selectionModeActive by viewModel.selectionModeActive.collectAsState()
     val selectedChatIds by viewModel.selectedChatIds.collectAsState()
-
+    
     // History Sheet
     if (showHistorySheet) {
         ModalBottomSheet(
@@ -426,7 +428,7 @@ fun EnhancedChatInputBar(
                         Icon(
                             Icons.Default.Add,
                             contentDescription = "Attach",
-                            tint = MaterialTheme.colorScheme.onSurface,
+                            tint = MaterialTheme.colorScheme.primary, // Dynamic color
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -572,7 +574,7 @@ fun EnhancedChatInputBar(
                                     Icon(
                                         Icons.Default.Mic,
                                         contentDescription = "Record Audio",
-                                        tint = MaterialTheme.colorScheme.onSurface
+                                        tint = primaryColor // Dynamic color as requested
                                     )
                                 }
                             }
@@ -653,9 +655,17 @@ fun EmptyStateWelcome() {
 fun MessageBubble(
     message: ChatMessageEntity,
     onSaveAsNote: () -> Unit,
-    onCopy: () -> Unit
+    onCopy: () -> Unit,
+    isPlaying: Boolean = false,
+    onPlayAudio: (String) -> Unit = {},
+    onPauseAudio: () -> Unit = {}
 ) {
     val isUser = message.role == "user"
+    
+    // Logic to hide text bubble if it's just a placeholder for media
+    val isPlaceholder = message.content == "🎤 Voice message" || message.content == "📎 Attachment"
+    val hasMedia = message.audioFilePath != null || message.imageUri != null
+    val showTextBubble = !isPlaceholder || !hasMedia
     
     if (isUser) {
         // User messages
@@ -663,71 +673,226 @@ fun MessageBubble(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.End
         ) {
-            // Show audio indicator if present
+            // Audio Player
             if (message.audioFilePath != null) {
-                CompactAudioPlayer(audioPath = message.audioFilePath)
+                AudioPlayerBubble(
+                    audioPath = message.audioFilePath,
+                    isPlaying = isPlaying,
+                    onPlay = { onPlayAudio(message.audioFilePath) },
+                    onPause = onPauseAudio
+                )
                 Spacer(modifier = Modifier.height(4.dp))
             }
-            // Show image indicator if present
+            
+            // Image Preview
             if (message.imageUri != null) {
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                        .widthIn(max = 280.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.AttachFile, "Attachment", modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Attachment", style = MaterialTheme.typography.labelSmall)
+                    val isPdf = message.imageUri.endsWith(".pdf", ignoreCase = true)
+                    
+                    if (isPdf) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.AttachFile,
+                                contentDescription = "Attachment",
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Attachment",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    } else {
+                        coil.compose.AsyncImage(
+                            model = message.imageUri,
+                            contentDescription = "Attachment",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
+                        )
                     }
                 }
             }
-            Surface(
-                shape = RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.widthIn(max = 340.dp)
-            ) {
-                Text(
-                    text = message.content,
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            
+            // Text Bubble (only if needed)
+            if (showTextBubble) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.widthIn(max = 340.dp)
+                ) {
+                    Text(
+                        text = message.content,
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
     } else {
-        // AI messages
+        // AI messages - Full width, no icon
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.Start
+            modifier = Modifier.fillMaxWidth()
         ) {
-            ChatMarkdownText(
-                markdown = message.content,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                style = MaterialTheme.typography.bodyLarge
-            )
-            // Action buttons
+            Column(modifier = Modifier.padding(16.dp)) {
+                MarkdownText(
+                    markdown = message.content,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+            }
+            
+            // Action Buttons
             Row(
-                modifier = Modifier.padding(top = 8.dp, start = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilledTonalIconButton(
-                    onClick = onCopy,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.Outlined.ContentCopy, "Copy", modifier = Modifier.size(16.dp))
+                IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.ContentCopy, "Copy", modifier = Modifier.size(16.dp))
                 }
-                FilledTonalIconButton(
-                    onClick = onSaveAsNote,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.Outlined.NoteAdd, "Save as Note", modifier = Modifier.size(16.dp))
+                IconButton(onClick = onSaveAsNote, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Save, "Save as Note", modifier = Modifier.size(16.dp))
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun AudioPlayerBubble(
+    audioPath: String,
+    isPlaying: Boolean,
+    onPlay: () -> Unit,
+    onPause: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.width(200.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { if (isPlaying) onPause() else onPlay() },
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            ) {
+                Icon(
+                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // Visual waveform representation
+            Row(
+                modifier = Modifier.weight(1f).height(24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                repeat(15) {
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .height((10..24).random().dp)
+                            .background(
+                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f),
+                                CircleShape
+                            )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PremiumAttachmentSheet(
+    onDismiss: () -> Unit,
+    onImageClick: () -> Unit,
+    onDocumentClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp)
+            .padding(bottom = 32.dp)
+    ) {
+        Text(
+            "Share Content",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            AttachmentOption(
+                icon = Icons.Default.Image,
+                label = "Gallery",
+                color = MaterialTheme.colorScheme.primary,
+                onClick = onImageClick
+            )
+            AttachmentOption(
+                icon = Icons.Default.Description,
+                label = "Document",
+                color = MaterialTheme.colorScheme.primary,
+                onClick = onDocumentClick
+            )
+        }
+    }
+}
+
+@Composable
+fun AttachmentOption(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .background(color.copy(alpha = 0.1f), CircleShape)
+                .border(1.dp, color.copy(alpha = 0.3f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium)
+        )
     }
 }
 
@@ -942,7 +1107,6 @@ fun ChatHistoryList(
     }
 }
 
-// Audio recording helpers
 // Audio recording helpers
 private fun startAudioRecording(
     context: android.content.Context

@@ -308,4 +308,65 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+    // ==================== AUDIO PLAYBACK ====================
+    
+    private var mediaPlayer: android.media.MediaPlayer? = null
+    
+    private val _currentPlayingAudioPath = MutableStateFlow<String?>(null)
+    val currentPlayingAudioPath = _currentPlayingAudioPath.asStateFlow()
+    
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying = _isPlaying.asStateFlow()
+    
+    fun playAudio(path: String) {
+        if (_currentPlayingAudioPath.value == path && _isPlaying.value) {
+            pauseAudio()
+            return
+        }
+        
+        stopAudio() // Stop any previous playback
+        
+        try {
+            mediaPlayer = android.media.MediaPlayer().apply {
+                setDataSource(path)
+                prepare()
+                start()
+                setOnCompletionListener {
+                    stopAudio()
+                }
+            }
+            _currentPlayingAudioPath.value = path
+            _isPlaying.value = true
+        } catch (e: Exception) {
+            android.util.Log.e("ChatViewModel", "Failed to play audio: $path", e)
+            _snackbarMessage.value = "Failed to play audio"
+            stopAudio()
+        }
+    }
+    
+    fun pauseAudio() {
+        mediaPlayer?.let {
+            if (it.isPlaying) {
+                it.pause()
+                _isPlaying.value = false
+            }
+        }
+    }
+    
+    fun stopAudio() {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (e: Exception) {
+            // Ignore
+        }
+        mediaPlayer = null
+        _currentPlayingAudioPath.value = null
+        _isPlaying.value = false
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        stopAudio()
+    }
 }
