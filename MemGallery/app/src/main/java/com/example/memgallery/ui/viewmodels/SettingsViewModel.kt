@@ -71,6 +71,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = "meta-llama/llama-4-maverick-17b-128e-instruct"
         )
 
+    val maxToolCalls: StateFlow<Int> = settingsRepository.maxToolCallsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 3
+        )
+
     // Notification Preferences
     val notificationsEnabled: StateFlow<Boolean> = settingsRepository.notificationsEnabledFlow
         .stateIn(
@@ -320,6 +327,12 @@ class SettingsViewModel @Inject constructor(
     fun setGroqModelId(modelId: String) {
         viewModelScope.launch {
             settingsRepository.setGroqModelId(modelId)
+        }
+    }
+
+    fun setMaxToolCalls(count: Int) {
+        viewModelScope.launch {
+            settingsRepository.setMaxToolCalls(count)
         }
     }
 

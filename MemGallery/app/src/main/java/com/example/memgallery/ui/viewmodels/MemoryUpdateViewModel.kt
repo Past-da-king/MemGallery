@@ -30,6 +30,7 @@ class MemoryUpdateViewModel @Inject constructor(
     fun updateMemory(memory: MemoryEntity) {
         viewModelScope.launch {
             memoryRepository.updateMemory(memory)
+            memoryRepository.reprocessMemory(memory.id)
         }
     }
 }

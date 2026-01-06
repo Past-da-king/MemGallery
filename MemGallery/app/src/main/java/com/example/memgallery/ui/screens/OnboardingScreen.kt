@@ -52,9 +52,11 @@ fun OnboardingScreen(
     navController: NavController,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    val pagerState = rememberPagerState(pageCount = { 5 })
     val coroutineScope = rememberCoroutineScope()
     val apiKeyUiState by viewModel.apiKeyUiState.collectAsState()
+    val groqApiKeyUiState by viewModel.groqApiKeyUiState.collectAsState()
+    val aiProvider by viewModel.aiProvider.collectAsState()
     val context = LocalContext.current
 
     Box(
@@ -64,13 +66,15 @@ fun OnboardingScreen(
     ) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            userScrollEnabled = false // Force valid selection before moving
         ) { page ->
             when (page) {
                 0 -> WelcomePage()
-                1 -> ApiKeySetupPage(viewModel = viewModel)
-                2 -> PermissionsPage()
-                3 -> HowItWorksPage(
+                1 -> ChooseAiPage(viewModel = viewModel)
+                2 -> ApiKeySetupPage(viewModel = viewModel)
+                3 -> PermissionsPage()
+                4 -> HowItWorksPage(
                     onGetStarted = {
                         viewModel.completeOnboarding()
                         navController.navigate(Screen.Gallery.route) {
@@ -92,7 +96,7 @@ fun OnboardingScreen(
                 modifier = Modifier.align(Alignment.CenterStart),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                repeat(4) { iteration ->
+                repeat(5) { iteration ->
                     val color = if (pagerState.currentPage == iteration)
                         MaterialTheme.colorScheme.primary
                     else
@@ -106,21 +110,34 @@ fun OnboardingScreen(
                 }
             }
 
-            if (pagerState.currentPage < 3) {
-                val isNextEnabled = pagerState.currentPage != 1 || apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success
+            if (pagerState.currentPage < 4) {
+                val isNextEnabled = when (pagerState.currentPage) {
+                    1 -> true // Always allow moving from selection (selection is immediate)
+                    2 -> if (aiProvider == "GROQ") 
+                            groqApiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success
+                         else 
+                            apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success
+                    else -> true
+                }
 
                 FloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
-                            // Check if on API page and key not validated
-                            if (pagerState.currentPage == 1 && apiKeyUiState !is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success) {
-                                // Show toast: "Please validate your API key first"
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "Please validate your API key before continuing",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                                return@launch
+                            // API Key Validation Check
+                            if (pagerState.currentPage == 2) {
+                                val isValid = if (aiProvider == "GROQ") 
+                                    groqApiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success
+                                else 
+                                    apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Success
+                                    
+                                if (!isValid) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Please validate your API key before continuing",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@launch
+                                }
                             }
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
@@ -174,9 +191,121 @@ fun WelcomePage() {
 }
 
 @Composable
+fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
+    val aiProvider by viewModel.aiProvider.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Choose Your Intelligence",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = "Select the AI brain needed to power MemGallery.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Google Gemini Card
+        AiProviderCard(
+            title = "Google Gemini",
+            description = "Google's trusted multimodal AI. Good balance of speed and reasoning.",
+            isSelected = aiProvider == "GEMINI",
+            onClick = { viewModel.setAiProvider("GEMINI") }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Groq Card
+        AiProviderCard(
+            title = "Groq LPU (Llama 3)",
+            description = "Blazing fast inference. Best for real-time interactions.",
+            isSelected = aiProvider == "GROQ",
+            onClick = { viewModel.setAiProvider("GROQ") }
+        )
+    }
+}
+
+@Composable
+fun AiProviderCard(
+    title: String,
+    description: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(2.dp, borderColor),
+        color = containerColor,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Placeholder Icon
+            Icon(
+                imageVector = if (title.contains("Groq")) Icons.Default.Layers else Icons.Default.Check, // Replace with proper icons if available
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            if (isSelected) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
-    val apiKey by viewModel.apiKey.collectAsState()
-    val apiKeyUiState by viewModel.apiKeyUiState.collectAsState()
+    val aiProvider by viewModel.aiProvider.collectAsState()
+    
+    // Dynamic State based on provider
+    val apiKey by if (aiProvider == "GROQ") viewModel.groqApiKey.collectAsState() else viewModel.apiKey.collectAsState()
+    val apiKeyUiState by if (aiProvider == "GROQ") viewModel.groqApiKeyUiState.collectAsState() else viewModel.apiKeyUiState.collectAsState()
+
+    val providerName = if (aiProvider == "GROQ") "Groq Cloud" else "Google AI Studio"
+    val providerUrl = if (aiProvider == "GROQ") "console.groq.com" else "aistudio.google.com"
+    val inputLabel = if (aiProvider == "GROQ") "Groq API Key" else "Google AI Studio API Key"
+    val placeholder = if (aiProvider == "GROQ") "gsk_..." else "AIzaSy..."
 
     Column(
         modifier = Modifier
@@ -216,7 +345,7 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "MemGallery uses Google's Gemini AI to analyze your memories.",
+            text = "MemGallery uses $providerName to analyze your memories.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -237,9 +366,9 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(8. dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "1. Visit aistudio.google.com\n2. Sign in with Google\n3. Click 'Get API Key'\n4. Create API Key\n5. Copy and paste below",
+                    text = "1. Visit $providerUrl\n2. Sign in\n3. Create API Key\n4. Copy and paste below",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -251,10 +380,13 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
         // API Key Input
         OutlinedTextField(
             value = apiKey,
-            onValueChange = viewModel::onApiKeyChange,
+            onValueChange = { 
+                if (aiProvider == "GROQ") viewModel.onGroqApiKeyChange(it) 
+                else viewModel.onApiKeyChange(it)
+            },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Google AI Studio API Key") },
-            placeholder = { Text("AIzaSy...") },
+            label = { Text(inputLabel) },
+            placeholder = { Text(placeholder) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             isError = apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error
@@ -293,7 +425,10 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = viewModel::validateAndSaveKey,
+            onClick = {
+                if (aiProvider == "GROQ") viewModel.validateAndSaveGroqKey()
+                else viewModel.validateAndSaveKey()
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = apiKey.isNotBlank() && apiKeyUiState !is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Loading,
             shape = RoundedCornerShape(12.dp)
@@ -311,7 +446,7 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "You can skip this and add it later in Settings",
+            text = "You can change this later in Settings",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

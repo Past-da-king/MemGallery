@@ -75,6 +75,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         // AI Provider
         val AI_PROVIDER = stringPreferencesKey("ai_provider") // "GEMINI", "GROQ"
         val GROQ_MODEL_ID = stringPreferencesKey("groq_model_id")
+        val MAX_TOOL_CALLS = intPreferencesKey("max_tool_calls")
     }
 
     init {
@@ -457,6 +458,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setGroqModelId(modelId: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.GROQ_MODEL_ID] = modelId
+        }
+    }
+
+    // Max Tool Calls
+    val maxToolCallsFlow: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.MAX_TOOL_CALLS] ?: 3
+        }
+
+    suspend fun setMaxToolCalls(count: Int) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.MAX_TOOL_CALLS] = count
         }
     }
 }

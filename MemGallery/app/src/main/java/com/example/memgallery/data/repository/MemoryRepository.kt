@@ -386,6 +386,20 @@ class MemoryRepository @Inject constructor(
         enqueueMemoryProcessing()
     }
 
+    suspend fun reprocessMemory(memoryId: Int) {
+        Log.d(TAG, "Reprocessing memory $memoryId")
+        val existingMemory = memoryDao.getMemoryById(memoryId).first()
+        existingMemory?.let { memory ->
+            // Update status to PENDING to trigger worker
+            val updatedMemory = memory.copy(
+                status = "PENDING"
+            )
+            memoryDao.updateMemory(updatedMemory)
+            Log.d(TAG, "Memory $memoryId status set to PENDING for reprocessing")
+            enqueueMemoryProcessing()
+        }
+    }
+
     private fun enqueueMemoryProcessing() {
         // Network constraints removed to allow background processing
         // Android restricts background network access (API 24+), causing WorkManager

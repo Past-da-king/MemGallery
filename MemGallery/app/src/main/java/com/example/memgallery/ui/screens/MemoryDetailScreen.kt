@@ -72,11 +72,49 @@ fun MemoryDetailScreen(
 ) {
     viewModel.loadMemory(memoryId)
     val memory by viewModel.memory.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Implement share functionality */ },
+                onClick = {
+                    memory?.let { mem ->
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            
+                            val sb = StringBuilder()
+                            if (!mem.aiTitle.isNullOrBlank()) sb.append(mem.aiTitle).append("\n\n")
+                            if (!mem.aiSummary.isNullOrBlank()) sb.append(mem.aiSummary).append("\n\n")
+                            if (!mem.userText.isNullOrBlank()) sb.append("Note: ").append(mem.userText).append("\n\n")
+                            if (!mem.bookmarkUrl.isNullOrBlank()) sb.append(mem.bookmarkUrl)
+                            
+                            putExtra(android.content.Intent.EXTRA_TEXT, sb.toString())
+                            
+                            // Share image if available
+                            val imageUriString = mem.imageUri ?: mem.imageUris?.firstOrNull()
+                            if (imageUriString != null) {
+                                try {
+                                    val uri = android.net.Uri.parse(imageUriString)
+                                    val shareUri = if (uri.scheme == "file") {
+                                        androidx.core.content.FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.provider",
+                                            java.io.File(uri.path!!)
+                                        )
+                                    } else {
+                                        uri
+                                    }
+                                    putExtra(android.content.Intent.EXTRA_STREAM, shareUri)
+                                    type = "image/*"
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        }
+                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Memory"))
+                    }
+                },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {

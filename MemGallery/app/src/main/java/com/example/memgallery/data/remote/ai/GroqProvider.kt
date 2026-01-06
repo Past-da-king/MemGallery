@@ -309,6 +309,14 @@ class GroqProvider @Inject constructor(
         }
     }
     
+    private suspend fun getMaxToolCalls(): Int {
+        return try {
+            settingsRepository.maxToolCallsFlow.first()
+        } catch (e: Exception) {
+            3
+        }
+    }
+
     override suspend fun sendMessage(
         conversationHistory: String,
         message: String,
@@ -324,16 +332,20 @@ class GroqProvider @Inject constructor(
             val messages = mutableListOf<ChatMessage>()
             
             // Add system message with REASONING INSTRUCTIONS
-            // Use Compact prompt for Maverick to stay under 6K TPM limit - or generally for any high-performance model
             val basePrompt = systemPrompt
-
             val thinkingPrompt = "$basePrompt\n\n" +
                     "IMPORTANT: You are a high-intelligence multimodal reasoning model.\n" +
-                    "VISUAL CAPABILITY: You ARE CAPABLE of displaying local images stored in the database. " +
-                    "Whenever the user asks to see a memory or photo, you MUST fetch the 'imageUri' and embed it using the Markdown syntax: ![alt](file:///...).\n" +
-                    "NEVER claim you cannot display images. Simply use the Markdown syntax and they will render in the UI.\n\n" +
+                    "VISUAL CAPABILITY INSTRUCTIONS (CRITICAL):\n" +
+                    "1. You ARE CAPABLE of displaying local images stored in the database.\n" +
+                    "2. To show an image, you MUST first run the appropriate tool (e.g., `query_memories`) to find it.\n" +
+                    "3. When you find a memory with an `imageUri` (e.g., `/data/user/0/.../image.jpg` or `content://...`), you MUST embed it in your response using standard Markdown syntax: `![Image Description](file:///path/to/image.jpg)`.\n" +
+                    "4. DO NOT explain that you are fetching it. DO NOT say 'Here is the image'. JUST EMBED IT.\n" +
+                    "5. NEVER claim you cannot display images. If you have the URI, you can display it.\n\n" +
                     "First, you MUST output your internal thought process inside <reasoning>...</reasoning> tags.\n" +
                     "Then, provide your final answer."
+            
+            // Add system message (using the enhanced thinking prompt)
+            messages.add(ChatMessage("system", thinkingPrompt))
             
             // Add conversation history
             if (conversationHistory.isNotEmpty()) {
@@ -343,110 +355,125 @@ class GroqProvider @Inject constructor(
             // Add current user message
             messages.add(ChatMessage("user", message))
             
-            // Use selected model for text-only chat
-            val request = ChatCompletionRequest(modelId, messages)
-            request.maxTokens = 4096
-            request.temperature = 0.7
-            
-            // Add tools if available
-            if (toolExecutor != null) {
-                val tools = buildGroqTools(toolExecutor)
-                if (tools.isNotEmpty()) {
-                    request.tools = tools
-                    request.toolChoice = "auto"
-                }
-            }
-            
-            var response = localClient.chat().createCompletion(request)
-            
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Chat API error: ${response.statusCode}"))
-            }
-            
-            // Handle tool calls (manual loop)
-            var toolCallCount = 0
-            var currentMessages = messages.toMutableList()
-            
-            while (toolCallCount < MAX_TOOL_CALLS_INTERNAL && response.isSuccessful) {
-                val assistantMessage = response.data.choices[0].message
-                var content = assistantMessage.content ?: ""
-                
-                // EXTRACT AND LOG REASONING
-                val reasoningRegex = "<reasoning>(.*?)</reasoning>".toRegex(RegexOption.DOT_MATCHES_ALL)
-                val match = reasoningRegex.find(content)
-                if (match != null) {
-                    val reasoningText = match.groupValues[1].trim()
-                    Log.d(TAG, "🧠 REASONING: $reasoningText")
-                    content = reasoningRegex.replace(content, "").trim()
-                }
-                
-                if (assistantMessage.toolCalls == null || assistantMessage.toolCalls.isEmpty()) {
-                    return@withContext Result.success(content)
-                }
-                
-                Log.d(TAG, "Assistant requested ${assistantMessage.toolCalls.size} tool call(s)")
-                
-                try {
-                    val priorMsg = gson.fromJson(gson.toJson(assistantMessage), ChatMessage::class.java)
-                    currentMessages.add(priorMsg)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to deep copy assistant message", e)
-                    val fallback = ChatMessage("assistant", assistantMessage.content ?: "")
-                    fallback.toolCalls = assistantMessage.toolCalls
-                    currentMessages.add(fallback)
-                }
-                
-                // Execute tools
-                for (toolCall in assistantMessage.toolCalls) {
-                    toolCallCount++
-                    if (toolCallCount > MAX_TOOL_CALLS_INTERNAL) break
-                    
-                    val toolName = toolCall.function.name
-                    val arguments = parseToolArguments(toolCall.function.arguments)
-                    
-                    Log.d(TAG, "Executing tool: $toolName with args: $arguments")
-                    val result = toolExecutor?.executeTool(toolName, arguments) ?: "Tool not found"
-                    Log.d(TAG, "Tool Result: ${result.take(200)}...")
-                    
-                    val toolMessage = ChatMessage.createToolMessage(toolCall.id, result)
-                    currentMessages.add(toolMessage)
-                }
-                
-                // Continue with new request
-                val continueRequest = ChatCompletionRequest(modelId, currentMessages)
-                continueRequest.maxTokens = 4096
-                continueRequest.temperature = 0.7
-                if (toolExecutor != null) {
-                     val tools = buildGroqTools(toolExecutor)
-                     if (tools.isNotEmpty()) {
-                         continueRequest.tools = tools
-                         continueRequest.toolChoice = "auto"
-                     }
-                }
-                
-                response = localClient.chat().createCompletion(continueRequest)
-                if (!response.isSuccessful) {
-                     return@withContext Result.failure(Exception("Chat API error (continue): ${response.statusCode}"))
-                }
-                
-                val finalMsg = response.data.choices[0].message
-                if (finalMsg.toolCalls == null || finalMsg.toolCalls.isEmpty()) {
-                     var finalContent = finalMsg.content ?: ""
-                     val finalMatch = reasoningRegex.find(finalContent)
-                     if (finalMatch != null) {
-                        Log.d(TAG, "🧠 REASONING (Final): ${finalMatch.groupValues[1].trim()}")
-                        finalContent = reasoningRegex.replace(finalContent, "").trim()
-                     }
-                     return@withContext Result.success(finalContent)
-                }
-            } 
-            
-            return@withContext Result.failure(Exception("Max tool calls exceeded"))
+            // Execute the chat request using the common helper
+            executeChatRequest(localClient, modelId, messages, toolExecutor)
             
         } catch (e: Exception) {
             Log.e(TAG, "Error in sendMessage (Chat API)", e)
             Result.failure(e)
         }
+    }
+
+    /**
+     * Common helper to execute a chat request with tool support.
+     * Handles the loop of model response -> tool execution -> model response.
+     */
+    private suspend fun executeChatRequest(
+        localClient: GroqClient,
+        modelId: String,
+        messages: MutableList<ChatMessage>,
+        toolExecutor: ToolExecutor?
+    ): Result<String> {
+        val maxToolCalls = getMaxToolCalls()
+        
+        // Initial request
+        val request = ChatCompletionRequest(modelId, messages)
+        request.maxTokens = 4096
+        request.temperature = 0.7
+        
+        // Add tools if available
+        if (toolExecutor != null) {
+            val tools = buildGroqTools(toolExecutor)
+            if (tools.isNotEmpty()) {
+                request.tools = tools
+                request.toolChoice = "auto"
+            }
+        }
+        
+        var response = localClient.chat().createCompletion(request)
+        
+        if (!response.isSuccessful) {
+            return Result.failure(Exception("Chat API error: ${response.statusCode}"))
+        }
+        
+        // Handle tool calls (manual loop)
+        var toolCallCount = 0
+        
+        while (toolCallCount < maxToolCalls && response.isSuccessful) {
+            val assistantMessage = response.data.choices[0].message
+            var content = assistantMessage.content ?: ""
+            
+            // EXTRACT AND LOG REASONING
+            val reasoningRegex = "<reasoning>(.*?)</reasoning>".toRegex(RegexOption.DOT_MATCHES_ALL)
+            val match = reasoningRegex.find(content)
+            if (match != null) {
+                val reasoningText = match.groupValues[1].trim()
+                Log.d(TAG, "🧠 REASONING: $reasoningText")
+                content = reasoningRegex.replace(content, "").trim()
+            }
+            
+            if (assistantMessage.toolCalls == null || assistantMessage.toolCalls.isEmpty()) {
+                return Result.success(content)
+            }
+            
+            Log.d(TAG, "Assistant requested ${assistantMessage.toolCalls.size} tool call(s)")
+            
+            try {
+                val priorMsg = gson.fromJson(gson.toJson(assistantMessage), ChatMessage::class.java)
+                messages.add(priorMsg)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to deep copy assistant message", e)
+                val fallback = ChatMessage("assistant", assistantMessage.content ?: "")
+                fallback.toolCalls = assistantMessage.toolCalls
+                messages.add(fallback)
+            }
+            
+            // Execute tools
+            for (toolCall in assistantMessage.toolCalls) {
+                toolCallCount++
+                if (toolCallCount > maxToolCalls) break
+                
+                val toolName = toolCall.function.name
+                val arguments = parseToolArguments(toolCall.function.arguments)
+                
+                Log.d(TAG, "Executing tool: $toolName with args: $arguments")
+                val result = toolExecutor?.executeTool(toolName, arguments) ?: "Tool not found"
+                Log.d(TAG, "Tool Result: ${result.take(200)}...")
+                
+                val toolMessage = ChatMessage.createToolMessage(toolCall.id, result)
+                messages.add(toolMessage)
+            }
+            
+            // Continue with new request
+            val continueRequest = ChatCompletionRequest(modelId, messages)
+            continueRequest.maxTokens = 4096
+            continueRequest.temperature = 0.7
+            if (toolExecutor != null) {
+                 val tools = buildGroqTools(toolExecutor)
+                 if (tools.isNotEmpty()) {
+                     continueRequest.tools = tools
+                     continueRequest.toolChoice = "auto"
+                 }
+            }
+            
+            response = localClient.chat().createCompletion(continueRequest)
+            if (!response.isSuccessful) {
+                 return Result.failure(Exception("Chat API error (continue): ${response.statusCode}"))
+            }
+            
+            val finalMsg = response.data.choices[0].message
+            if (finalMsg.toolCalls == null || finalMsg.toolCalls.isEmpty()) {
+                 var finalContent = finalMsg.content ?: ""
+                 val finalMatch = reasoningRegex.find(finalContent)
+                 if (finalMatch != null) {
+                    Log.d(TAG, "🧠 REASONING (Final): ${finalMatch.groupValues[1].trim()}")
+                    finalContent = reasoningRegex.replace(finalContent, "").trim()
+                 }
+                 return Result.success(finalContent)
+            }
+        } 
+        
+        return Result.failure(Exception("Max tool calls exceeded"))
     }
     
     override suspend fun sendMessageWithMedia(
@@ -508,21 +535,13 @@ class GroqProvider @Inject constructor(
                 }
             } else {
                 // Text-only (includes audio transcription) - use Scout for chat
+                // Use executeChatRequest to enable tool support (e.g. for voice commands)
                 val messages = mutableListOf(
                     ChatMessage("system", systemPrompt),
                     ChatMessage("user", promptBuilder.toString())
                 )
                 
-                val request = ChatCompletionRequest(modelId, messages)
-                request.maxTokens = 4096
-                request.temperature = 0.7
-                
-                val response = localClient.chat().createCompletion(request)
-                if (response.isSuccessful) {
-                    response.data.choices[0].message.content
-                } else {
-                    throw Exception("Chat API error: ${response.statusCode}")
-                }
+                executeChatRequest(localClient, modelId, messages, toolExecutor).getOrThrow()
             }
             
             Result.success(responseText ?: "I'm sorry, I couldn't generate a response.")

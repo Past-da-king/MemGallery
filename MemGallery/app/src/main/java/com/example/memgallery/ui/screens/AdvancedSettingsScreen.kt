@@ -62,6 +62,7 @@ fun AdvancedSettingsScreen(
     val postCaptureBehavior by viewModel.postCaptureBehavior.collectAsState()
     val autoRemindersEnabled by viewModel.autoRemindersEnabled.collectAsState()
     val overlayStyle by viewModel.overlayStyle.collectAsState()
+    val maxToolCalls by viewModel.maxToolCalls.collectAsState()
 
     // User Context State
     val userContextSummary by viewModel.userContextSummary.collectAsState()
@@ -295,6 +296,27 @@ fun AdvancedSettingsScreen(
                 description = "Customize app interactions"
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                    // 1.8 Max Tool Calls Section
+                    Text(
+                        "Max AI Tool Calls: ${maxToolCalls}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Limit the number of steps the AI can take to solve a query.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value = maxToolCalls.toFloat(),
+                        onValueChange = { viewModel.setMaxToolCalls(it.toInt()) },
+                        valueRange = 1f..10f,
+                        steps = 8
+                    )
+
+                    HorizontalDivider()
+
                     SettingToggleItem(
                         icon = Icons.Default.Event,
                         title = "Auto-Generate Reminders",
