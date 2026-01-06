@@ -309,7 +309,10 @@ class GroqProvider @Inject constructor(
             }
 
             val thinkingPrompt = "$basePrompt\n\n" +
-                    "IMPORTANT: You are a high-intelligence reasoning model.\n" +
+                    "IMPORTANT: You are a high-intelligence multimodal reasoning model.\n" +
+                    "VISUAL CAPABILITY: You ARE CAPABLE of displaying local images stored in the database. " +
+                    "Whenever the user asks to see a memory or photo, you MUST fetch the 'imageUri' and embed it using the Markdown syntax: ![alt](file:///...).\n" +
+                    "NEVER claim you cannot display images. Simply use the Markdown syntax and they will render in the UI.\n\n" +
                     "First, you MUST output your internal thought process inside <reasoning>...</reasoning> tags.\n" +
                     "Then, provide your final answer."
             

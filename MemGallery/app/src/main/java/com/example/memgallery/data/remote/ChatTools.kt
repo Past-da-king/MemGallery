@@ -237,11 +237,11 @@ object ChatTools {
                 // Image URIs for AI to reference in Markdown
                 val hasImageField = showAll || fieldList.any { it.replace("_", "") == "imageuri" } || "media" in fieldList || "image" in fieldList
                 if (hasImageField) {
-                    m.imageUri?.let { appendLine("\n**Image URI:** $it") }
+                    m.imageUri?.let { appendLine("\nimageUri: $it") }
                     m.imageUris?.takeIf { it.size > 1 }?.let { 
-                        appendLine("**All Image URIs:** ${it.joinToString(", ")}")
+                        appendLine("imageUris: ${it.joinToString(", ")}")
                     }
-                    m.bookmarkImageUrl?.let { appendLine("**Bookmark Preview Image:** $it") }
+                    m.bookmarkImageUrl?.let { appendLine("bookmarkImageUrl: $it") }
                 }
             }
         }
