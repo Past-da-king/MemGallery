@@ -63,6 +63,14 @@ class SettingsViewModel @Inject constructor(
     private val _groqApiKeyUiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
     val groqApiKeyUiState: StateFlow<ApiKeyUiState> = _groqApiKeyUiState.asStateFlow()
 
+    // Groq Model State
+    val groqModelId: StateFlow<String> = settingsRepository.groqModelIdFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "meta-llama/llama-4-maverick-17b-128e-instruct"
+        )
+
     // Notification Preferences
     val notificationsEnabled: StateFlow<Boolean> = settingsRepository.notificationsEnabledFlow
         .stateIn(
@@ -306,6 +314,12 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.clearGroqApiKey()
             _groqApiKey.value = ""
             _groqApiKeyUiState.value = ApiKeyUiState.Idle
+        }
+    }
+
+    fun setGroqModelId(modelId: String) {
+        viewModelScope.launch {
+            settingsRepository.setGroqModelId(modelId)
         }
     }
 

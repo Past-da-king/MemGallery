@@ -74,6 +74,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         
         // AI Provider
         val AI_PROVIDER = stringPreferencesKey("ai_provider") // "GEMINI", "GROQ"
+        val GROQ_MODEL_ID = stringPreferencesKey("groq_model_id")
     }
 
     init {
@@ -440,9 +441,22 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             preferences[PreferencesKeys.OVERLAY_STYLE] ?: "EDGE"
         }
 
+
     suspend fun setOverlayStyle(style: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.OVERLAY_STYLE] = style
+        }
+    }
+
+    // Groq Model Selection
+    val groqModelIdFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.GROQ_MODEL_ID] ?: "meta-llama/llama-4-maverick-17b-128e-instruct"
+        }
+
+    suspend fun setGroqModelId(modelId: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.GROQ_MODEL_ID] = modelId
         }
     }
 }

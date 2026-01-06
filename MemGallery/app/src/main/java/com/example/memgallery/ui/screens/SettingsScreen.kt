@@ -171,6 +171,8 @@ fun SettingsScreen(
                     } else {
                         val groqApiKey by viewModel.groqApiKey.collectAsState()
                         val groqApiKeyUiState by viewModel.groqApiKeyUiState.collectAsState()
+                        val selectedModelId by viewModel.groqModelId.collectAsState()
+                        var showModelSheet by remember { mutableStateOf(false) }
                         
                         Text(
                             "Groq API Key",
@@ -178,12 +180,13 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.tertiary
                         )
-                        Text(
-                            "Uses LLaMA 4 Scout for vision & Whisper v3 for audio",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                        GridModelSelection(
+                             selectedModelId = selectedModelId,
+                             onClick = { showModelSheet = true }
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         GroqApiKeySection(
                             apiKey = groqApiKey,
                             uiState = groqApiKeyUiState,
@@ -191,6 +194,17 @@ fun SettingsScreen(
                             onValidate = viewModel::validateAndSaveGroqKey,
                             onClear = viewModel::clearGroqKey
                         )
+                        
+                        if (showModelSheet) {
+                            GroqModelSheet(
+                                currentModelId = selectedModelId,
+                                onModelSelected = { 
+                                    viewModel.setGroqModelId(it)
+                                    showModelSheet = false
+                                },
+                                onDismiss = { showModelSheet = false }
+                            )
+                        }
                     }
                 }
             }
@@ -967,5 +981,179 @@ fun AppearanceSection(
             checked = amoledModeEnabled,
             onCheckedChange = onAmoledModeChange
         )
+    }
+}
+
+@Composable
+fun GridModelSelection(
+    selectedModelId: String,
+    onClick: () -> Unit
+) {
+    val model = com.example.memgallery.data.remote.ai.GroqModels.models.find { it.id == selectedModelId }
+        ?: com.example.memgallery.data.remote.ai.GroqModels.models.first()
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+           Column(modifier = Modifier.weight(1f)) {
+               Text(
+                   text = "Model",
+                   style = MaterialTheme.typography.labelSmall,
+                   color = MaterialTheme.colorScheme.onSurfaceVariant
+               )
+               Text(
+                   text = model.id.split("/").last(), // Show simple name
+                   style = MaterialTheme.typography.titleSmall,
+                   fontWeight = FontWeight.Bold,
+                   color = MaterialTheme.colorScheme.onSurface
+               )
+           }
+           Icon(
+               imageVector = Icons.Default.ArrowDropDown,
+               contentDescription = "Select Model"
+           )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GroqModelSheet(
+    currentModelId: String,
+    onModelSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text(
+                "Select Groq Model",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                com.example.memgallery.data.remote.ai.GroqModels.models.forEach { model ->
+                    val isSelected = model.id == currentModelId
+                    Card(
+                        onClick = { onModelSelected(model.id) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = model.id,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (model.description.isNotEmpty()) {
+                                         Text(
+                                            text = model.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                   }
+                                }
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            // Rate Limits Grid
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                LimitBadge(
+                                    label = "RPM", 
+                                    value = model.rpm.toString(), 
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    textColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                LimitBadge(
+                                    label = "TPM", 
+                                    value = if (model.tpm >= 1000) "${model.tpm/1000}K" else model.tpm.toString(), 
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    textColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                LimitBadge(
+                                    label = "RPD", 
+                                    value = if (model.rpd >= 1000) "${model.rpd/1000}K" else model.rpd.toString(), 
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LimitBadge(
+    label: String,
+    value: String,
+    color: Color,
+    textColor: Color
+) {
+    Surface(
+        color = color,
+        shape = RoundedCornerShape(6.dp),
+        modifier = Modifier.wrapContentWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = textColor.copy(alpha = 0.7f),
+                modifier = Modifier.padding(end = 4.dp)
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = textColor
+            )
+        }
     }
 }

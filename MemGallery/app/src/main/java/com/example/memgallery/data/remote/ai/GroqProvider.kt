@@ -15,6 +15,7 @@ import com.groq.sdk.models.mcp.MCPCallOutput
 import com.groq.sdk.models.vision.VisionRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -26,14 +27,15 @@ import javax.inject.Singleton
 private const val TAG = "GroqProvider"
 
 // Maverick: 128 experts, 400B total params - Superior reasoning, multimodal, and detail
-private const val VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+// Maverick: 128 experts, 400B total params - Superior reasoning, multimodal, and detail
+// private const val VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 
 // Scout: 16 experts, 109B total params - Good for text-only chat, more cost-effective
 // User requested switch to Maverick (LLaMA 4 128e) for superior reasoning.
-private const val CHAT_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+// private const val CHAT_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 
-private const val AUDIO_MODEL = "whisper-large-v3"
-private const val MAX_TOOL_CALLS = 3
+private const val AUDIO_MODEL_INTERNAL = "whisper-large-v3"
+private const val MAX_TOOL_CALLS_INTERNAL = 3
 
 /**
  * Groq AI provider implementation.
@@ -42,10 +44,14 @@ private const val MAX_TOOL_CALLS = 3
  */
 @Singleton
 class GroqProvider @Inject constructor(
-    private val gson: Gson
+    private val gson: Gson,
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository
 ) : AIProvider {
     
     override val providerName: String = "Groq"
+    
+    // Default fallback models
+    private val DEFAULT_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
     
     private var client: GroqClient? = null
     
@@ -65,6 +71,14 @@ class GroqProvider @Inject constructor(
         client = null
     }
     
+    private suspend fun getSelectedModel(): String {
+        return try {
+            settingsRepository.groqModelIdFlow.first()
+        } catch (e: Exception) {
+            DEFAULT_MODEL
+        }
+    }
+
     override suspend fun validateApiKey(apiKey: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val tempClient = GroqClient.builder()
@@ -74,7 +88,7 @@ class GroqProvider @Inject constructor(
             
             // Simple test message
             val message = ChatMessage("user", "test")
-            val request = ChatCompletionRequest(CHAT_MODEL, listOf(message))
+            val request = ChatCompletionRequest("llama-3.1-8b-instant", listOf(message))
             request.maxTokens = 5
             
             val response = tempClient.chat().createCompletion(request)
@@ -208,6 +222,7 @@ class GroqProvider @Inject constructor(
             promptBuilder.appendLine("Generate the final JSON response:")
             
             val promptText = promptBuilder.toString()
+            val modelId = getSelectedModel()
             
             // Step 3: Process with vision model if images present
             val responseText: String = if (imageDataList.isNotEmpty()) {
@@ -243,9 +258,16 @@ class GroqProvider @Inject constructor(
                 visionMessage.role = "user"
                 visionMessage.content = contentParts
                 
-                // Create VisionRequest with Maverick for superior detail
+                // Determine effective vision model
+                // Only use selected model if it is known to support vision, otherwise fallback to Maverick
+                val isVisionCapable = modelId.contains("maverick", ignoreCase = true) || 
+                                     modelId.contains("scout", ignoreCase = true) ||
+                                     modelId.contains("vision", ignoreCase = true)
+                val effectiveVisionModel = if (isVisionCapable) modelId else DEFAULT_MODEL
+
+                // Create VisionRequest
                 val visionRequest = com.groq.sdk.models.vision.VisionRequest()
-                visionRequest.model = VISION_MODEL
+                visionRequest.model = effectiveVisionModel
                 visionRequest.messages = listOf(visionMessage)
                 visionRequest.maxTokens = 8192  // Increased for exhaustive analysis
                 visionRequest.temperature = 0.4  // Slightly higher for more creative/detailed output
@@ -265,9 +287,9 @@ class GroqProvider @Inject constructor(
                     throw Exception("Vision API error: ${response.statusCode}")
                 }
             } else {
-                // Text-only request (bookmarks, audio only) - use Maverick for consistency
+                // Text-only request (bookmarks, audio only)
                 val message = ChatMessage("user", promptText)
-                val request = ChatCompletionRequest(VISION_MODEL, listOf(message))
+                val request = ChatCompletionRequest(modelId, listOf(message))
                 request.maxTokens = 8192
                 request.temperature = 0.4
                 
@@ -298,15 +320,12 @@ class GroqProvider @Inject constructor(
         )
         
         try {
+            val modelId = getSelectedModel()
             val messages = mutableListOf<ChatMessage>()
             
             // Add system message with REASONING INSTRUCTIONS
-            // Use Compact prompt for Maverick to stay under 6K TPM limit
-            val basePrompt = if (CHAT_MODEL.contains("maverick")) {
-                ChatSystemPrompt.generateCompact()
-            } else {
-                systemPrompt
-            }
+            // Use Compact prompt for Maverick to stay under 6K TPM limit - or generally for any high-performance model
+            val basePrompt = systemPrompt
 
             val thinkingPrompt = "$basePrompt\n\n" +
                     "IMPORTANT: You are a high-intelligence multimodal reasoning model.\n" +
@@ -324,8 +343,8 @@ class GroqProvider @Inject constructor(
             // Add current user message
             messages.add(ChatMessage("user", message))
             
-            // Use Scout for text-only chat (cost-effective)
-            val request = ChatCompletionRequest(CHAT_MODEL, messages)
+            // Use selected model for text-only chat
+            val request = ChatCompletionRequest(modelId, messages)
             request.maxTokens = 4096
             request.temperature = 0.7
             
@@ -348,7 +367,7 @@ class GroqProvider @Inject constructor(
             var toolCallCount = 0
             var currentMessages = messages.toMutableList()
             
-            while (toolCallCount < MAX_TOOL_CALLS && response.isSuccessful) {
+            while (toolCallCount < MAX_TOOL_CALLS_INTERNAL && response.isSuccessful) {
                 val assistantMessage = response.data.choices[0].message
                 var content = assistantMessage.content ?: ""
                 
@@ -358,7 +377,6 @@ class GroqProvider @Inject constructor(
                 if (match != null) {
                     val reasoningText = match.groupValues[1].trim()
                     Log.d(TAG, "🧠 REASONING: $reasoningText")
-                    // Remove reasoning from content so user doesn't see it raw (optional, but requested behavior is usually separation)
                     content = reasoningRegex.replace(content, "").trim()
                 }
                 
@@ -368,15 +386,11 @@ class GroqProvider @Inject constructor(
                 
                 Log.d(TAG, "Assistant requested ${assistantMessage.toolCalls.size} tool call(s)")
                 
-                // Add assistant message with tool calls to the history
-                // IMPORTANT: Deep copy via Gson to ensure we detach from any underlying closed streams/response bodies
-                // and have a fresh POJO for the next request.
                 try {
                     val priorMsg = gson.fromJson(gson.toJson(assistantMessage), ChatMessage::class.java)
                     currentMessages.add(priorMsg)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to deep copy assistant message", e)
-                    // Fallback to manual minimal copy if gson fails (unlikely)
                     val fallback = ChatMessage("assistant", assistantMessage.content ?: "")
                     fallback.toolCalls = assistantMessage.toolCalls
                     currentMessages.add(fallback)
@@ -385,7 +399,7 @@ class GroqProvider @Inject constructor(
                 // Execute tools
                 for (toolCall in assistantMessage.toolCalls) {
                     toolCallCount++
-                    if (toolCallCount > MAX_TOOL_CALLS) break
+                    if (toolCallCount > MAX_TOOL_CALLS_INTERNAL) break
                     
                     val toolName = toolCall.function.name
                     val arguments = parseToolArguments(toolCall.function.arguments)
@@ -399,7 +413,7 @@ class GroqProvider @Inject constructor(
                 }
                 
                 // Continue with new request
-                val continueRequest = ChatCompletionRequest(CHAT_MODEL, currentMessages)
+                val continueRequest = ChatCompletionRequest(modelId, currentMessages)
                 continueRequest.maxTokens = 4096
                 continueRequest.temperature = 0.7
                 if (toolExecutor != null) {
@@ -415,11 +429,9 @@ class GroqProvider @Inject constructor(
                      return@withContext Result.failure(Exception("Chat API error (continue): ${response.statusCode}"))
                 }
                 
-                // Process final response logic in next loop iteration or simple return check
                 val finalMsg = response.data.choices[0].message
                 if (finalMsg.toolCalls == null || finalMsg.toolCalls.isEmpty()) {
                      var finalContent = finalMsg.content ?: ""
-                     // Check for reasoning again in final response
                      val finalMatch = reasoningRegex.find(finalContent)
                      if (finalMatch != null) {
                         Log.d(TAG, "🧠 REASONING (Final): ${finalMatch.groupValues[1].trim()}")
@@ -427,7 +439,6 @@ class GroqProvider @Inject constructor(
                      }
                      return@withContext Result.success(finalContent)
                 }
-                // If more tools, loop continues
             } 
             
             return@withContext Result.failure(Exception("Max tool calls exceeded"))
@@ -451,6 +462,8 @@ class GroqProvider @Inject constructor(
         )
         
         try {
+            val modelId = getSelectedModel()
+            
             // Transcribe audio first if present
             var audioTranscript: String? = null
             if (audioData != null) {
@@ -472,9 +485,14 @@ class GroqProvider @Inject constructor(
             }
             
             val responseText: String = if (imageData != null) {
-                // Use vision API with Maverick for superior image understanding
+                // Determine effective vision model
+                val isVisionCapable = modelId.contains("maverick", ignoreCase = true) || 
+                                     modelId.contains("scout", ignoreCase = true) ||
+                                     modelId.contains("vision", ignoreCase = true)
+                val effectiveVisionModel = if (isVisionCapable) modelId else DEFAULT_MODEL
+                
                 val visionRequest = localClient.vision().createVisionRequestWithImageBytes(
-                    VISION_MODEL,
+                    effectiveVisionModel,
                     imageData.bytes,
                     imageData.mimeType,
                     "$systemPrompt\n\n${promptBuilder}\n\nAnalyze this image thoroughly and respond with complete detail."
@@ -495,7 +513,7 @@ class GroqProvider @Inject constructor(
                     ChatMessage("user", promptBuilder.toString())
                 )
                 
-                val request = ChatCompletionRequest(CHAT_MODEL, messages)
+                val request = ChatCompletionRequest(modelId, messages)
                 request.maxTokens = 4096
                 request.temperature = 0.7
                 
@@ -590,8 +608,9 @@ class GroqProvider @Inject constructor(
                     "Use DENSE BULLET POINTS. Avoid conversational filler or long paragraphs. " +
                     "This profile will be used to personalize future interactions.\n\nMemories:\n$memoryText"
             
+            val modelId = getSelectedModel()
             val message = ChatMessage("user", prompt)
-            val request = ChatCompletionRequest(CHAT_MODEL, listOf(message))
+            val request = ChatCompletionRequest(modelId, listOf(message))
             request.maxTokens = 512
             request.temperature = 0.3
             
@@ -617,7 +636,7 @@ class GroqProvider @Inject constructor(
             FileOutputStream(tempFile).use { it.write(audioData.bytes) }
             
             val transcriptionRequest = TranscriptionRequest()
-            transcriptionRequest.model = AUDIO_MODEL
+            transcriptionRequest.model = AUDIO_MODEL_INTERNAL
             transcriptionRequest.file = tempFile.absolutePath
             transcriptionRequest.language = "en"
             transcriptionRequest.temperature = 0.0
