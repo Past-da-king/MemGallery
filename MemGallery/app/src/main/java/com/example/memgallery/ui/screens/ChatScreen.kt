@@ -59,9 +59,12 @@ import androidx.navigation.NavController
 import com.example.memgallery.data.local.entity.ChatEntity
 import com.example.memgallery.data.local.entity.ChatMessageEntity
 import com.example.memgallery.ui.viewmodels.ChatViewModel
+import com.example.memgallery.navigation.Screen
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.memgallery.ui.components.ThinkingProcessAccordion
+import com.example.memgallery.ui.components.ToolExecutionIndicator
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -78,6 +81,7 @@ fun ChatScreen(
     val chats by viewModel.chats.collectAsState()
     val currentMessages by viewModel.currentMessages.collectAsState()
     val currentChatId by viewModel.currentChatId.collectAsState()
+    val displayedMemories by viewModel.displayedMemories.collectAsState()
     val inputMessage by viewModel.inputMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val snackbarMessage by viewModel.snackbarMessage.collectAsState()
@@ -90,6 +94,12 @@ fun ChatScreen(
     // Audio Playback State
     val currentPlayingAudioPath by viewModel.currentPlayingAudioPath.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
+    
+    // Streaming State
+    val isStreaming by viewModel.isStreaming.collectAsState()
+    val streamingContent by viewModel.streamingContent.collectAsState()
+    val currentThought by viewModel.currentThought.collectAsState()
+    val currentTool by viewModel.currentTool.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -306,12 +316,48 @@ fun ChatScreen(
                         reverseLayout = true,
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        if (isLoading) {
-                            item { LoadingIndicator() }
+                        // Streaming Response Item
+                        if (isLoading || isStreaming || currentTool != null) {
+                            item {
+                                Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                    // Tool Indicator
+                                    currentTool?.let { toolName ->
+                                        ToolExecutionIndicator(toolName = toolName)
+                                    }
+                                    
+                                    // Thinking Process
+                                    if (currentThought.isNotEmpty()) {
+                                        ThinkingProcessAccordion(thought = currentThought)
+                                    }
+                                    
+                                    // Streaming Content
+                                    if (streamingContent.isNotEmpty()) {
+                                        MarkdownText(
+                                            markdown = streamingContent,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        )
+                                        // Blinking cursor
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp, 16.dp)
+                                                .background(MaterialTheme.colorScheme.primary)
+                                        )
+                                    } else if (currentThought.isEmpty() && currentTool == null && isLoading) {
+                                        // Loading state if nothing else is showing
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp), 
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                }
+                            }
                         }
                         items(currentMessages.reversed()) { message ->
                             MessageBubble(
                                 message = message,
+                                displayedMemories = displayedMemories,
                                 onSaveAsNote = { viewModel.saveMessageAsNote(message.content) },
                                 onCopy = { 
                                     clipboardManager.setText(AnnotatedString(message.content))
@@ -319,7 +365,8 @@ fun ChatScreen(
                                 },
                                 isPlaying = isPlaying && currentPlayingAudioPath == message.audioFilePath,
                                 onPlayAudio = viewModel::playAudio,
-                                onPauseAudio = viewModel::pauseAudio
+                                onPauseAudio = viewModel::pauseAudio,
+                                onMemoryClick = { memory -> navController.navigate(Screen.Detail.createRoute(memory.id)) }
                             )
                         }
                     }
@@ -654,11 +701,13 @@ fun EmptyStateWelcome() {
 @Composable
 fun MessageBubble(
     message: ChatMessageEntity,
+    displayedMemories: Map<Int, com.example.memgallery.data.local.entity.MemoryEntity> = emptyMap(),
     onSaveAsNote: () -> Unit,
     onCopy: () -> Unit,
     isPlaying: Boolean = false,
     onPlayAudio: (String) -> Unit = {},
-    onPauseAudio: () -> Unit = {}
+    onPauseAudio: () -> Unit = {},
+    onMemoryClick: (com.example.memgallery.data.local.entity.MemoryEntity) -> Unit = {}
 ) {
     val isUser = message.role == "user"
     
@@ -746,7 +795,7 @@ fun MessageBubble(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                MarkdownText(
+                ChatMarkdownText(
                     markdown = message.content,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface
@@ -765,6 +814,30 @@ fun MessageBubble(
                 IconButton(onClick = onSaveAsNote, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Save, "Save as Note", modifier = Modifier.size(16.dp))
                 }
+            }
+
+            // Displayed Memories (if any)
+            if (!message.displayedMemoryIds.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                androidx.compose.foundation.lazy.LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(message.displayedMemoryIds) { id ->
+                        val memory = displayedMemories[id]
+                        if (memory != null) {
+                            Box(modifier = Modifier.width(260.dp)) {
+                                com.example.memgallery.ui.components.MemoryCard(
+                                    memory = memory,
+                                    isSelected = false,
+                                    onClick = onMemoryClick,
+                                    onLongClick = {}
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -950,7 +1023,65 @@ fun ChatMarkdownText(markdown: String, modifier: Modifier = Modifier, style: and
     val context = LocalContext.current
     val onSurfaceColor = MaterialTheme.colorScheme.onBackground
     val markwon = remember {
-        Markwon.builder(context).build()
+        Markwon.builder(context)
+            .usePlugin(io.noties.markwon.image.ImagesPlugin.create { plugin ->
+                plugin.addSchemeHandler(io.noties.markwon.image.network.NetworkSchemeHandler.create())
+                // File scheme handler with assets support
+                plugin.addSchemeHandler(io.noties.markwon.image.file.FileSchemeHandler.createWithAssets(context))
+                // Explicit file scheme handler for local app files
+                plugin.addSchemeHandler(object : io.noties.markwon.image.SchemeHandler() {
+                    override fun handle(raw: String, uri: Uri): io.noties.markwon.image.ImageItem {
+                        return try {
+                            val path = uri.path ?: throw IllegalArgumentException("No path in URI")
+                            val file = java.io.File(path)
+                            if (file.exists() && file.canRead()) {
+                                io.noties.markwon.image.ImageItem.withDecodingNeeded(
+                                    "file",
+                                    java.io.BufferedInputStream(java.io.FileInputStream(file))
+                                )
+                            } else {
+                                // Try as content URI fallback for file:// paths that don't exist
+                                io.noties.markwon.image.ImageItem.withDecodingNeeded(
+                                    "file",
+                                    java.io.ByteArrayInputStream(ByteArray(0))
+                                )
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("ChatMarkdownText", "Failed to load file image: $raw", e)
+                            io.noties.markwon.image.ImageItem.withDecodingNeeded(
+                                "file",
+                                java.io.ByteArrayInputStream(ByteArray(0))
+                            )
+                        }
+                    }
+
+                    override fun supportedSchemes(): MutableCollection<String> {
+                        return mutableListOf("file")
+                    }
+                })
+                // Content scheme handler for content:// URIs
+                plugin.addSchemeHandler(object : io.noties.markwon.image.SchemeHandler() {
+                    override fun handle(raw: String, uri: Uri): io.noties.markwon.image.ImageItem {
+                        val inputStream = context.contentResolver.openInputStream(uri)
+                        return if (inputStream != null) {
+                            io.noties.markwon.image.ImageItem.withDecodingNeeded(
+                                "content",
+                                java.io.BufferedInputStream(inputStream)
+                            )
+                        } else {
+                            io.noties.markwon.image.ImageItem.withDecodingNeeded(
+                                "content",
+                                java.io.ByteArrayInputStream(ByteArray(0))
+                            )
+                        }
+                    }
+
+                    override fun supportedSchemes(): MutableCollection<String> {
+                        return mutableListOf("content")
+                    }
+                })
+            })
+            .build()
     }
 
     AndroidView(

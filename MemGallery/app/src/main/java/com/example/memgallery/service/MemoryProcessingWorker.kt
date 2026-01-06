@@ -71,9 +71,12 @@ class MemoryProcessingWorker @AssistedInject constructor(
             val processingMemory = memory.copy(status = "PROCESSING")
             memoryDao.updateMemory(processingMemory)
 
+            // Use imageUris if available, otherwise fallback to single imageUri wrapped in list
+            val imagesToProcess = memory.imageUris ?: listOfNotNull(memory.imageUri)
+
             val result = memoryRepository.processMemoryWithAI(
                 memoryId = memory.id,
-                imageUri = memory.imageUri,
+                imageUris = imagesToProcess,
                 audioUri = memory.audioFilePath,
                 userText = memory.userText,
                 bookmarkUrl = memory.bookmarkUrl,

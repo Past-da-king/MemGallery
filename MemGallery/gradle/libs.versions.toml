@@ -22,6 +22,7 @@ accompanistFlowlayout = "0.32.0"
 hiltWork = "1.3.0"
 hiltWorkCompiler = "1.3.0"
 work = "2.10.0"
+groqSdk = "1.0.4"
 
 
 [libraries]
@@ -59,6 +60,7 @@ accompanist-flowlayout = { group = "com.google.accompanist", name = "accompanist
 androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltWorkCompiler" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+groq-sdk = { group = "io.github.debajitkumarphukan", name = "groq-java-sdk", version.ref = "groqSdk" }
 
 
 [plugins]

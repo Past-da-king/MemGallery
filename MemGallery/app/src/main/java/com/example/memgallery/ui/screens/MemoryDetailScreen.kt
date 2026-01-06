@@ -114,7 +114,7 @@ fun MemoryDetailContent(
     modifier: Modifier = Modifier
 ) {
     var showFullscreenImage by remember { mutableStateOf(false) }
-    var fullscreenImageUri by remember { mutableStateOf<String?>(null) }
+    var fullscreenInitialIndex by remember { mutableStateOf(0) }
     val context = LocalContext.current
     var showAddTaskSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -124,7 +124,7 @@ fun MemoryDetailContent(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenHeightPx = with(density) { maxHeight.toPx() }
-        val hasImage = memory.imageUri != null
+        val hasImage = memory.imageUri != null || !memory.imageUris.isNullOrEmpty()
         
         // Anchors:
         // Top (Expanded): 0f (Sheet covers everything)
@@ -168,15 +168,50 @@ fun MemoryDetailContent(
             }
         }
 
-        // 1. Background Image (Fixed)
-        if (memory.imageUri != null) {
+        // 1. Background Image (Fixed) - Carousel if multiple
+        val imageUris = memory.imageUris ?: listOfNotNull(memory.imageUri)
+        if (imageUris.isNotEmpty()) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Image(
-                    painter = rememberAsyncImagePainter(model = memory.imageUri),
-                    contentDescription = memory.aiTitle,
-                    contentScale = ContentScale.Crop,
+                val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { imageUris.size })
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier.fillMaxSize()
-                )
+                ) { page ->
+                    Image(
+                        painter = rememberAsyncImagePainter(model = imageUris[page]),
+                        contentDescription = memory.aiTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { 
+                                fullscreenInitialIndex = page
+                                showFullscreenImage = true 
+                            }
+                    )
+                }
+                
+                // Page Indicator
+                if (imageUris.size > 1) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 100.dp) // Adjust based on sheet position logic
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(imageUris.size) { iteration ->
+                            val color = if (pagerState.currentPage == iteration) Color.White else Color.White.copy(alpha = 0.5f)
+                            Box(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .size(8.dp)
+                            )
+                        }
+                    }
+                }
+
                 // Gradient overlay
                 Box(
                     modifier = Modifier
@@ -451,13 +486,17 @@ fun MemoryDetailContent(
             }
         }
 
-        if (showFullscreenImage && fullscreenImageUri != null) {
-            FullscreenImageViewer(
-                imageUri = fullscreenImageUri!!,
-                onDismissRequest = { showFullscreenImage = false },
-                memoryTitle = memory.aiTitle ?: "Memory",
-                creationTimestamp = memory.creationTimestamp
-            )
+        if (showFullscreenImage) {
+            val uris = memory.imageUris ?: listOfNotNull(memory.imageUri)
+            if (uris.isNotEmpty()) {
+                FullscreenImageViewer(
+                    imageUris = uris,
+                    initialIndex = fullscreenInitialIndex,
+                    onDismissRequest = { showFullscreenImage = false },
+                    memoryTitle = memory.aiTitle ?: "Memory",
+                    creationTimestamp = memory.creationTimestamp
+                )
+            }
         }
         
         if (showAddTaskSheet) {

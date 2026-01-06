@@ -48,7 +48,8 @@ class FileUtils @Inject constructor(@ApplicationContext private val context: Con
                     else -> ""
                 }
                 val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-                val fileName = "${fileType.uppercase()}_$timeStamp$fileExtension"
+                val uuid = java.util.UUID.randomUUID().toString().substring(0, 8)
+                val fileName = "${fileType.uppercase()}_${timeStamp}_${uuid}$fileExtension"
                 val file = File(context.filesDir, fileName)
                 Log.d(TAG, "Creating new file at: ${file.absolutePath}")
                 val outputStream = FileOutputStream(file)

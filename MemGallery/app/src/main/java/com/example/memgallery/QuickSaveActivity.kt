@@ -70,7 +70,7 @@ class QuickSaveActivity : ComponentActivity() {
 
                 // Save to database
                 memoryRepository.savePendingMemory(
-                    imageUri = imageUri,
+                    imageUris = listOfNotNull(imageUri),
                     audioUri = null,
                     userText = userText,
                     bookmarkUrl = bookmarkUrl

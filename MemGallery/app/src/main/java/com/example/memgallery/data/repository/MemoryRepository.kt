@@ -40,6 +40,10 @@ class MemoryRepository @Inject constructor(
         return memoryDao.getMemoryById(id)
     }
 
+    fun getMemoriesByIds(ids: List<Int>): Flow<List<MemoryEntity>> {
+        return memoryDao.getMemoriesByIds(ids)
+    }
+
     // Collection Methods
     fun getAllCollections(): Flow<List<com.example.memgallery.data.local.entity.CollectionEntity>> {
         return collectionDao.getAllCollections()
@@ -74,12 +78,12 @@ class MemoryRepository @Inject constructor(
     }
 
     suspend fun savePendingMemory(
-        imageUri: String?,
+        imageUris: List<String> = emptyList(),
         audioUri: String?,
         userText: String?,
         bookmarkUrl: String? = null
     ): Result<Long> = try {
-        Log.d(TAG, "savePendingMemory called with imageUri: $imageUri, audioUri: $audioUri, userText: $userText, bookmarkUrl: $bookmarkUrl")
+        Log.d(TAG, "savePendingMemory called with imageUris count: ${imageUris.size}, audioUri: $audioUri, userText: $userText, bookmarkUrl: $bookmarkUrl")
 
         // Extract URL metadata if bookmarkUrl is present
         var bookmarkTitle: String? = null
@@ -115,18 +119,28 @@ class MemoryRepository @Inject constructor(
         }
 
         // Create permanent copies for storage
-        var permanentImageUri = imageUri?.let {
-            Log.d(TAG, "Copying image to internal storage from: $it")
-            val newUri = fileUtils.copyFileToInternalStorage(Uri.parse(it), "image")
-            Log.d(TAG, "Image copied to: $newUri")
-            newUri?.toString()
+        val permanentImageUris = mutableListOf<String>()
+        
+        for (uriString in imageUris) {
+            try {
+                Log.d(TAG, "Copying image to internal storage from: $uriString")
+                val newUri = fileUtils.copyFileToInternalStorage(Uri.parse(uriString), "image")
+                if (newUri != null) {
+                    Log.d(TAG, "Image copied to: $newUri")
+                    permanentImageUris.add(newUri.toString())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to copy image: $uriString", e)
+            }
         }
 
-        // If no main image provided but we have a bookmark image, use it as the main image
-        if (permanentImageUri == null && bookmarkImageUrl != null) {
-             permanentImageUri = bookmarkImageUrl
-             Log.d(TAG, "Using bookmark image as main image: $permanentImageUri")
+        // If no main images provided but we have a bookmark image, use it as a main image
+        if (permanentImageUris.isEmpty() && bookmarkImageUrl != null) {
+             permanentImageUris.add(bookmarkImageUrl)
+             Log.d(TAG, "Using bookmark image as main image: $bookmarkImageUrl")
         }
+        
+        val primaryImageUri = permanentImageUris.firstOrNull()
 
         val permanentAudioUri = audioUri?.let {
             Log.d(TAG, "Copying audio to internal storage from: $it")
@@ -137,7 +151,8 @@ class MemoryRepository @Inject constructor(
 
         val memoryEntity = MemoryEntity(
             userText = userText,
-            imageUri = permanentImageUri,
+            imageUri = primaryImageUri,
+            imageUris = permanentImageUris,
             audioFilePath = permanentAudioUri,
             bookmarkUrl = bookmarkUrl,
             bookmarkTitle = bookmarkTitle,
@@ -186,7 +201,7 @@ class MemoryRepository @Inject constructor(
 
     suspend fun processMemoryWithAI(
         memoryId: Int,
-        imageUri: String?,
+        imageUris: List<String> = emptyList(),
         audioUri: String?,
         userText: String?,
         bookmarkUrl: String? = null,
@@ -194,7 +209,7 @@ class MemoryRepository @Inject constructor(
         bookmarkDescription: String? = null,
         bookmarkImageUrl: String? = null
     ): Result<com.example.memgallery.data.remote.dto.AiAnalysisDto> {
-        Log.d(TAG, "processMemoryWithAI started for memoryId: $memoryId")
+        Log.d(TAG, "processMemoryWithAI started for memoryId: $memoryId with ${imageUris.size} images")
         if (!geminiService.isEnabled()) {
             Log.d(TAG, "GeminiService not enabled. Attempting to initialize with stored API key.")
             val apiKey = settingsRepository.apiKeyFlow.first()
@@ -210,7 +225,7 @@ class MemoryRepository @Inject constructor(
         val existingCollections = collectionDao.getAllCollections().first().map { "${it.name}: ${it.description}" }
 
         val analysisResult = geminiService.processMemory(
-            imageUri, 
+            imageUris, 
             audioUri, 
             userText,
             bookmarkUrl,

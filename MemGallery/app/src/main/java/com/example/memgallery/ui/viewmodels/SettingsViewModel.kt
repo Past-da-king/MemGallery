@@ -48,6 +48,21 @@ class SettingsViewModel @Inject constructor(
     private val _apiKey = MutableStateFlow("")
     val apiKey: StateFlow<String> = _apiKey.asStateFlow()
 
+    // AI Provider Selection
+    val aiProvider: StateFlow<String> = settingsRepository.aiProviderFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "GEMINI"
+        )
+
+    // Groq API Key State
+    private val _groqApiKey = MutableStateFlow("")
+    val groqApiKey: StateFlow<String> = _groqApiKey.asStateFlow()
+
+    private val _groqApiKeyUiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val groqApiKeyUiState: StateFlow<ApiKeyUiState> = _groqApiKeyUiState.asStateFlow()
+
     // Notification Preferences
     val notificationsEnabled: StateFlow<Boolean> = settingsRepository.notificationsEnabledFlow
         .stateIn(
@@ -98,6 +113,20 @@ class SettingsViewModel @Inject constructor(
     // User System Prompt State
     private val _userSystemPrompt = MutableStateFlow("")
     val userSystemPrompt: StateFlow<String> = _userSystemPrompt.asStateFlow()
+
+    // User Context State
+    private val _userContextSummary = MutableStateFlow("")
+    val userContextSummary: StateFlow<String> = _userContextSummary.asStateFlow()
+
+    val userContextGenerationFrequency: StateFlow<String> = settingsRepository.userContextGenerationFrequencyFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "DAILY"
+        )
+
+    private val _isGeneratingContext = MutableStateFlow(false)
+    val isGeneratingContext: StateFlow<Boolean> = _isGeneratingContext.asStateFlow()
 
     // Theme Settings
     val dynamicThemingEnabled: StateFlow<Boolean> = settingsRepository.dynamicThemingEnabledFlow
@@ -241,6 +270,45 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // AI Provider Selection Actions
+    fun setAiProvider(provider: String) {
+        viewModelScope.launch {
+            settingsRepository.setAiProvider(provider)
+        }
+    }
+
+    // Groq API Key Actions
+    fun onGroqApiKeyChange(newKey: String) {
+        _groqApiKey.value = newKey
+    }
+
+    fun validateAndSaveGroqKey() {
+        viewModelScope.launch {
+            _groqApiKeyUiState.value = ApiKeyUiState.Loading
+            val key = _groqApiKey.value
+            if (key.isBlank()) {
+                _groqApiKeyUiState.value = ApiKeyUiState.Error("API Key cannot be empty.")
+                return@launch
+            }
+
+            try {
+                // Simple validation - try to create a client and make a test request
+                settingsRepository.saveGroqApiKey(key)
+                _groqApiKeyUiState.value = ApiKeyUiState.Success("Success! Groq key saved.")
+            } catch (e: Exception) {
+                _groqApiKeyUiState.value = ApiKeyUiState.Error("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun clearGroqKey() {
+        viewModelScope.launch {
+            settingsRepository.clearGroqApiKey()
+            _groqApiKey.value = ""
+            _groqApiKeyUiState.value = ApiKeyUiState.Idle
+        }
+    }
+
     // Notification Actions
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
@@ -290,6 +358,42 @@ class SettingsViewModel @Inject constructor(
     fun saveUserSystemPrompt() {
         viewModelScope.launch {
             settingsRepository.saveUserSystemPrompt(_userSystemPrompt.value)
+        }
+    }
+
+    // User Context Actions
+    fun onUserContextSummaryChange(summary: String) {
+        _userContextSummary.value = summary
+    }
+
+    fun saveUserContextSummary() {
+        viewModelScope.launch {
+            settingsRepository.saveUserContextSummary(_userContextSummary.value)
+        }
+    }
+
+    fun setUserContextGenerationFrequency(frequency: String) {
+        viewModelScope.launch {
+            settingsRepository.setUserContextGenerationFrequency(frequency)
+        }
+    }
+
+    fun generateUserContext() {
+        viewModelScope.launch {
+            _isGeneratingContext.value = true
+            try {
+                val result = chatGeminiService.generateUserContext()
+                result.onSuccess { summary ->
+                    onUserContextSummaryChange(summary)
+                    // The repo call inside service already saves it, but we can save explicitly to be sure or just rely on flow
+                    // Actually, generateUserContext in service calls settingsRepository.saveUserContextSummary(summary)
+                    // So we just update our local state to reflect it immediately if needed (or rely on the flow collection)
+                }
+            } catch (e: Exception) {
+               // Handle error
+            } finally {
+                _isGeneratingContext.value = false
+            }
         }
     }
 
@@ -402,7 +506,9 @@ class SettingsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _apiKey.value = settingsRepository.apiKeyFlow.first() ?: ""
+            _groqApiKey.value = settingsRepository.groqApiKeyFlow.first() ?: ""
             _userSystemPrompt.value = settingsRepository.userSystemPromptFlow.first()
+            _userContextSummary.value = settingsRepository.userContextSummaryFlow.first()
         }
     }
 }

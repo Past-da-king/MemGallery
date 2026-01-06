@@ -28,4 +28,7 @@ interface MemoryDao {
 
     @Query("SELECT * FROM memories WHERE id = :id")
     fun getMemoryById(id: Int): Flow<MemoryEntity?>
+
+    @Query("SELECT * FROM memories WHERE id IN (:ids)")
+    fun getMemoriesByIds(ids: List<Int>): Flow<List<MemoryEntity>>
 }

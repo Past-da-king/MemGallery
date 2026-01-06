@@ -22,10 +22,10 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         com.example.memgallery.data.local.entity.ChatEntity::class,
         com.example.memgallery.data.local.entity.ChatMessageEntity::class
     ], 
-    version = 14, 
+    version = 16, 
     exportSchema = false
 )
-@TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class)
+@TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class, com.example.memgallery.data.local.converters.IntListConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
     abstract fun taskDao(): TaskDao
@@ -33,6 +33,21 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatDao(): com.example.memgallery.data.local.dao.ChatDao
 
     companion object {
+        val MIGRATION_14_15 = object : androidx.room.migration.Migration(14, 15) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add imageUris column
+                try {
+                    database.execSQL("ALTER TABLE memories ADD COLUMN imageUris TEXT")
+                    
+                    // Migrate existing imageUri to imageUris as a JSON list
+                    // We use a simple string concatenation assuming URIs don't contain double quotes
+                    database.execSQL("UPDATE memories SET imageUris = '[\"' || imageUri || '\"]' WHERE imageUri IS NOT NULL AND imageUri != ''")
+                } catch (e: Exception) {
+                    android.util.Log.e("Migration_14_15", "Error migrating imageUris", e)
+                }
+            }
+        }
+
         val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
             override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE memories ADD COLUMN bookmarkUrl TEXT")
@@ -169,6 +184,21 @@ abstract class AppDatabase : RoomDatabase() {
                 } catch (e: android.database.sqlite.SQLiteException) {
                     if (e.message?.contains("duplicate column name") == true) {
                         android.util.Log.w("Migration_13_14", "Column already exists, skipping: ${e.message}")
+                    } else {
+                        throw e
+                    }
+                }
+            }
+        }
+
+        val MIGRATION_15_16 = object : androidx.room.migration.Migration(15, 16) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add displayedMemoryIds column to chat_messages table
+                try {
+                    database.execSQL("ALTER TABLE chat_messages ADD COLUMN displayedMemoryIds TEXT")
+                } catch (e: android.database.sqlite.SQLiteException) {
+                    if (e.message?.contains("duplicate column name") == true) {
+                        android.util.Log.w("Migration_15_16", "Column already exists, skipping: ${e.message}")
                     } else {
                         throw e
                     }

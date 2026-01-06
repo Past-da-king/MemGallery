@@ -10,32 +10,46 @@ import com.example.memgallery.data.local.dao.CollectionDao
 import com.example.memgallery.data.local.dao.MemoryDao
 import com.example.memgallery.data.local.dao.TaskDao
 import com.example.memgallery.data.local.entity.ChatMessageEntity
+import com.example.memgallery.data.remote.ai.AIProviderFactory
+import com.example.memgallery.data.remote.ai.AudioData
+import com.example.memgallery.data.remote.ai.ChatToolsExecutor
+import com.example.memgallery.data.remote.ai.ImageData
 import com.example.memgallery.data.repository.SettingsRepository
-import com.google.genai.Client
-import com.google.genai.types.Content
-import com.google.genai.types.GenerateContentConfig
-import com.google.genai.types.Part
-import com.google.genai.types.Tool
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
+sealed class ChatStreamEvent {
+    data class Thinking(val text: String) : ChatStreamEvent()
+    data class Content(val text: String) : ChatStreamEvent()
+    data object Done : ChatStreamEvent()
+    data class Error(val error: Throwable) : ChatStreamEvent()
+}
+
 private const val TAG = "ChatGeminiService"
 
+/**
+ * Service for chat interactions with AI.
+ * Now uses AIProviderFactory to support both Gemini and Groq providers.
+ */
 @Singleton
 class ChatGeminiService @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val providerFactory: AIProviderFactory,
     private val settingsRepository: SettingsRepository,
     private val memoryDao: MemoryDao,
     private val collectionDao: CollectionDao,
     private val chatDao: ChatDao,
     private val taskDao: TaskDao
 ) {
-    private var client: Client? = null
+    private val toolExecutor = ChatToolsExecutor()
 
     init {
         // Initialize ChatTools with DAOs
@@ -44,106 +58,114 @@ class ChatGeminiService @Inject constructor(
         ChatTools.taskDao = taskDao
     }
 
+    /**
+     * Initialize the current provider.
+     * Kept for backward compatibility.
+     */
     fun initialize(apiKey: String) {
-        client = Client.builder().apiKey(apiKey).build()
-        
-        // Initialize the search client for ChatTools
-        try {
-            val searchClient = Client.builder().apiKey(apiKey).build()
-            ChatTools.searchClient = searchClient
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing search client", e)
+        kotlinx.coroutines.runBlocking {
+            providerFactory.initializeCurrentProvider()
+            // Also initialize search client for ChatTools if using Gemini
+            try {
+                val provider = providerFactory.getProvider()
+                if (provider.providerName == "Gemini") {
+                    // Initialize search client for web search tool
+                    val searchClient = com.google.genai.Client.builder()
+                        .apiKey(apiKey)
+                        .build()
+                    ChatTools.searchClient = searchClient
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error initializing search client", e)
+            }
         }
     }
 
+    /**
+     * Generate user context from memories.
+     */
     suspend fun generateUserContext(): Result<String> = withContext(Dispatchers.IO) {
-        val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client not initialized"))
+        val provider = try {
+            providerFactory.getProvider()
+        } catch (e: Exception) {
+            return@withContext Result.failure(IllegalStateException("Provider not initialized"))
+        }
+
+        if (!provider.isEnabled()) {
+            providerFactory.initializeCurrentProvider()
+        }
 
         try {
-            val memories = memoryDao.getAllMemories().first()
+            // Get only the most recent 50 memories to avoid token bloat
+            val memories = memoryDao.getAllMemories().first().takeLast(50)
             if (memories.isEmpty()) return@withContext Result.success("No memories available yet.")
 
             val memoryText = memories.joinToString("\n\n") { memory ->
                 "Title: ${memory.aiTitle}\nSummary: ${memory.aiSummary}\nTags: ${memory.aiTags?.joinToString()}"
             }
 
-            val prompt = "Analyze the following user memories and create a detailed user context profile. " +
-                    "Summarize their interests, habits, important events, and preferences based on these memories. " +
-                    "This profile will be used to personalize future interactions.\n\nMemories:\n$memoryText"
-
-            val response = localClient.models.generateContent("gemini-2.5-flash", prompt, null)
-            val summary = response.text() ?: "Could not generate summary."
-
-            settingsRepository.saveUserContextSummary(summary)
-            Result.success(summary)
+            val result = provider.generateUserContext(memoryText)
+            
+            result.onSuccess { summary ->
+                settingsRepository.saveUserContextSummary(summary)
+            }
+            
+            result
         } catch (e: Exception) {
+            Log.e(TAG, "Error generating user context", e)
             Result.failure(e)
         }
     }
 
+    /**
+     * Send a text message to the chat.
+     */
     suspend fun sendMessage(chatId: Int, message: String): Result<String> = withContext(Dispatchers.IO) {
-        if (client == null) {
-            val apiKey = settingsRepository.apiKeyFlow.first()
+        val provider = try {
+            providerFactory.getProvider()
+        } catch (e: Exception) {
+            val apiKey = providerFactory.getApiKey()
             if (!apiKey.isNullOrBlank()) {
-                initialize(apiKey)
+                providerFactory.initializeCurrentProvider()
+                providerFactory.getProvider()
+            } else {
+                return@withContext Result.failure(IllegalStateException("Provider not configured"))
             }
         }
-        val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client not initialized"))
 
         try {
-            Log.d(TAG, "Sending message: $message")
+            Log.d(TAG, "Sending message using ${provider.providerName}: $message")
             
-            // 1. Get Chat History
-            val history = chatDao.getMessagesForChat(chatId).first()
-            
-            // 2. Build System Instruction with comprehensive context
-            val userContext = settingsRepository.userContextSummaryFlow.first()
-            
-            // Use the dedicated system prompt with current date/time
-            val baseInstruction = ChatSystemPrompt.generate()
-            
-            val systemInstruction = if (userContext.isNotBlank()) {
-                "$baseInstruction\n\n## USER CONTEXT\n$userContext"
-            } else {
-                baseInstruction
-            }
-
-            // 3. Prepare Tools (just 2 now: queryDatabase and webSearch)
-            val queryDatabaseMethod = ChatTools::class.java.getMethod(
-                "queryDatabase", 
-                String::class.java, 
-                String::class.java, 
-                String::class.java
-            )
-            val webSearchMethod = ChatTools::class.java.getMethod("webSearch", String::class.java)
-
-            val tools = Tool.builder()
-                .functions(queryDatabaseMethod, webSearchMethod)
-                .build()
-
-            val config = GenerateContentConfig.builder()
-                .tools(tools)
-                .systemInstruction(Content.fromParts(Part.fromText(systemInstruction)))
-                .build()
-            
-            // 4. Build Content History
+            // Get Chat History (last 10 messages to prevent token bloat)
+            val history = chatDao.getMessagesForChat(chatId).first().takeLast(10)
             val historyText = history.joinToString("\n") { "${it.role}: ${it.content}" }
-            val fullPrompt = if (historyText.isNotEmpty()) {
-                "Previous conversation:\n$historyText\n\nUser: $message"
-            } else {
-                message
+            
+            // Build System Instruction
+            val systemPrompt = buildSystemPrompt()
+            
+            // Clear displayed memory IDs before each request
+            ChatTools.clearDisplayedMemoryIds()
+            
+            Log.i(TAG, "Sending message with ${provider.providerName}")
+            
+            val result = provider.sendMessage(
+                conversationHistory = historyText,
+                message = message,
+                systemPrompt = systemPrompt,
+                toolExecutor = toolExecutor
+            )
+            
+            result.onSuccess { responseText ->
+                Log.d(TAG, "Received response: $responseText")
+                chatDao.insertMessage(ChatMessageEntity(
+                    chatId = chatId, 
+                    role = "model", 
+                    content = responseText,
+                    displayedMemoryIds = ChatTools.lastDisplayedMemoryIds
+                ))
             }
-
-            // 5. Send Request
-            val response = localClient.models.generateContent("gemini-2.5-flash", fullPrompt, config)
             
-            val responseText = response.text() ?: "I'm sorry, I couldn't generate a response."
-            Log.d(TAG, "Received response: $responseText")
-            
-            // 6. Save AI Response to DB (user message already saved by ViewModel)
-            chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "model", content = responseText))
-
-            Result.success(responseText)
+            result
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in sendMessage", e)
@@ -152,8 +174,7 @@ class ChatGeminiService @Inject constructor(
     }
 
     /**
-     * Send a message with optional media attachments (audio, image, PDF)
-     * Uses the same pattern as GeminiService.processMemory for handling media
+     * Send a message with optional media attachments.
      */
     suspend fun sendMessageWithMedia(
         chatId: Int,
@@ -161,125 +182,269 @@ class ChatGeminiService @Inject constructor(
         audioUri: String? = null,
         imageUri: String? = null
     ): Result<String> = withContext(Dispatchers.IO) {
-        if (client == null) {
-            val apiKey = settingsRepository.apiKeyFlow.first()
+        val provider = try {
+            providerFactory.getProvider()
+        } catch (e: Exception) {
+            val apiKey = providerFactory.getApiKey()
             if (!apiKey.isNullOrBlank()) {
-                initialize(apiKey)
+                providerFactory.initializeCurrentProvider()
+                providerFactory.getProvider()
+            } else {
+                return@withContext Result.failure(IllegalStateException("Provider not configured"))
             }
         }
-        val localClient = client ?: return@withContext Result.failure(IllegalStateException("Gemini client not initialized"))
 
         try {
             Log.d(TAG, "Sending message with media - audio: $audioUri, image: $imageUri")
             
-            // 1. Get Chat History
-            val history = chatDao.getMessagesForChat(chatId).first()
-            
-            // 2. Build System Instruction
-            val userContext = settingsRepository.userContextSummaryFlow.first()
-            val baseInstruction = """
-You are a helpful AI assistant with FULL READ ACCESS to the user's personal data.
-When the user sends you media (audio, images, documents), analyze them carefully and respond helpfully.
-For audio: Transcribe and respond to the content.
-For images/documents: Analyze the content and respond to any questions about it.
-Use markdown formatting in responses. Be helpful and conversational.
-""".trimIndent()
-            
-            val systemInstruction = if (userContext.isNotBlank()) {
-                "$baseInstruction\n\n## USER CONTEXT\n$userContext"
-            } else {
-                baseInstruction
-            }
-
-            // 3. Prepare Tools
-            val queryDatabaseMethod = ChatTools::class.java.getMethod(
-                "queryDatabase", 
-                String::class.java, 
-                String::class.java, 
-                String::class.java
-            )
-            val webSearchMethod = ChatTools::class.java.getMethod("webSearch", String::class.java)
-
-            val tools = Tool.builder()
-                .functions(queryDatabaseMethod, webSearchMethod)
-                .build()
-
-            val config = GenerateContentConfig.builder()
-                .tools(tools)
-                .systemInstruction(Content.fromParts(Part.fromText(systemInstruction)))
-                .build()
-            
-            // 4. Build multimodal content parts
-            val parts = mutableListOf<Part>()
-            
-            // Add chat history context
+            // Get Chat History (last 20 messages)
+            val history = chatDao.getMessagesForChat(chatId).first().takeLast(20)
             val historyText = history.joinToString("\n") { "${it.role}: ${it.content}" }
-            if (historyText.isNotEmpty()) {
-                parts.add(Part.fromText("Previous conversation:\n$historyText\n\n"))
-            }
             
-            // Add audio if present
-            if (audioUri != null) {
-                Log.d(TAG, "Processing audio URI: $audioUri")
+            // Build System Instruction
+            val systemPrompt = buildSystemPrompt()
+            
+            // Clear displayed memory IDs
+            ChatTools.clearDisplayedMemoryIds()
+            
+            // Convert audio URI to AudioData
+            val audioData = if (audioUri != null) {
                 val audioBytes = getBytesFromUri(audioUri)
                 if (audioBytes != null) {
                     val parsedUri = Uri.parse(audioUri)
-                    val mimeType = if (parsedUri.scheme == "content") {
-                        context.contentResolver.getType(parsedUri) ?: "audio/m4a"
-                    } else {
-                        "audio/m4a"
-                    }
-                    parts.add(Part.fromBytes(audioBytes, mimeType))
-                    parts.add(Part.fromText("The user sent an audio message. Please transcribe and respond to it."))
-                }
-            }
+                    val mimeType = context.contentResolver.getType(parsedUri) ?: "audio/m4a"
+                    AudioData(audioBytes, mimeType)
+                } else null
+            } else null
             
-            // Add image/document if present
-            if (imageUri != null) {
-                Log.d(TAG, "Processing image/document URI: $imageUri")
-                val parsedUri = Uri.parse(imageUri)
-                val mimeType = context.contentResolver.getType(parsedUri) ?: "image/jpeg"
-                
+            // Convert image URI to ImageData
+            val imageData = if (imageUri != null) {
                 val mediaBytes = getBytesFromUri(imageUri)
                 if (mediaBytes != null) {
-                    // If it's an image, resize it like GeminiService does
+                    val parsedUri = Uri.parse(imageUri)
+                    val mimeType = context.contentResolver.getType(parsedUri) ?: "image/jpeg"
+                    
                     if (mimeType.startsWith("image/")) {
                         val bitmap = BitmapFactory.decodeByteArray(mediaBytes, 0, mediaBytes.size)
                         if (bitmap != null) {
                             val resizedBitmap = resizeBitmap(bitmap, 1024)
                             val outputStream = ByteArrayOutputStream()
                             resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-                            val resizedBytes = outputStream.toByteArray()
-                            parts.add(Part.fromBytes(resizedBytes, "image/jpeg"))
-                        }
+                            ImageData(outputStream.toByteArray(), "image/jpeg")
+                        } else null
                     } else {
-                        // For PDFs and other documents, send as-is
-                        parts.add(Part.fromBytes(mediaBytes, mimeType))
+                        // For PDFs and other documents
+                        ImageData(mediaBytes, mimeType)
                     }
-                    parts.add(Part.fromText("The user sent an attachment. Please analyze it."))
-                }
+                } else null
+            } else null
+            
+            Log.i(TAG, "Sending message with media using ${provider.providerName}")
+            
+            val result = provider.sendMessageWithMedia(
+                conversationHistory = historyText,
+                message = message,
+                audioData = audioData,
+                imageData = imageData,
+                systemPrompt = systemPrompt,
+                toolExecutor = toolExecutor
+            )
+            
+            result.onSuccess { responseText ->
+                Log.d(TAG, "Received response: $responseText")
+                chatDao.insertMessage(ChatMessageEntity(
+                    chatId = chatId, 
+                    role = "model", 
+                    content = responseText,
+                    displayedMemoryIds = ChatTools.lastDisplayedMemoryIds
+                ))
             }
             
-            // Add user message if present
-            if (!message.isNullOrBlank()) {
-                parts.add(Part.fromText("User: $message"))
-            }
-            
-            // 5. Send Request
-            val multimodalContent = Content.fromParts(*parts.toTypedArray())
-            val response = localClient.models.generateContent("gemini-2.5-flash", multimodalContent, config)
-            
-            val responseText = response.text() ?: "I'm sorry, I couldn't generate a response."
-            Log.d(TAG, "Received response: $responseText")
-            
-            // 6. Save AI Response to DB (user message already saved by ViewModel)
-            chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "model", content = responseText))
-
-            Result.success(responseText)
+            result
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in sendMessageWithMedia", e)
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Stream a chat response.
+     */
+    fun sendMessageStream(chatId: Int, message: String): Flow<ChatStreamEvent> = flow {
+        val provider = try {
+            providerFactory.getProvider()
+        } catch (e: Exception) {
+            emit(ChatStreamEvent.Error(IllegalStateException("Provider not initialized")))
+            return@flow
+        }
+        
+        if (!provider.isEnabled()) {
+            val initialized = kotlinx.coroutines.runBlocking { providerFactory.initializeCurrentProvider() }
+            if (!initialized) {
+                emit(ChatStreamEvent.Error(IllegalStateException("Provider not configured")))
+                return@flow
+            }
+        }
+
+        try {
+            Log.d(TAG, "Starting streaming message for chat: $chatId using ${provider.providerName}")
+            
+            // Get Chat History (last 20 messages)
+            val history = chatDao.getMessagesForChat(chatId).first().takeLast(20)
+            val historyText = history.joinToString("\n") { "${it.role}: ${it.content}" }
+            
+            // Build System Instruction
+            val systemPrompt = buildSystemPrompt()
+            
+            // Clear displayed memory IDs
+            ChatTools.clearDisplayedMemoryIds()
+            
+            val fullResponseBuilder = StringBuilder()
+            
+            provider.sendMessageStream(
+                conversationHistory = historyText,
+                message = message,
+                systemPrompt = systemPrompt,
+                toolExecutor = toolExecutor
+            ).collect { event ->
+                when (event) {
+                    is ChatStreamEvent.Content -> {
+                        fullResponseBuilder.append(event.text)
+                        emit(event)
+                    }
+                    is ChatStreamEvent.Done -> {
+                        // Save full response to DB
+                        val finalResponse = fullResponseBuilder.toString()
+                        if (finalResponse.isNotEmpty()) {
+                            chatDao.insertMessage(ChatMessageEntity(
+                                chatId = chatId, 
+                                role = "model", 
+                                content = finalResponse,
+                                displayedMemoryIds = ChatTools.lastDisplayedMemoryIds
+                            ))
+                        }
+                        emit(event)
+                    }
+                    else -> emit(event)
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in sendMessageStream", e)
+            emit(ChatStreamEvent.Error(e))
+        }
+    }
+
+    /**
+     * Stream a chat response with media.
+     */
+    fun sendMessageWithMediaStream(chatId: Int, message: String?, audioUri: String?, imageUri: String?): Flow<ChatStreamEvent> = flow {
+        val provider = try {
+            providerFactory.getProvider()
+        } catch (e: Exception) {
+            emit(ChatStreamEvent.Error(IllegalStateException("Provider not initialized")))
+            return@flow
+        }
+        
+        if (!provider.isEnabled()) {
+            val initialized = kotlinx.coroutines.runBlocking { providerFactory.initializeCurrentProvider() }
+            if (!initialized) {
+                emit(ChatStreamEvent.Error(IllegalStateException("Provider not configured")))
+                return@flow
+            }
+        }
+
+        try {
+            Log.d(TAG, "Starting streaming with media: audio=$audioUri, image=$imageUri")
+            
+            // Get Chat History (last 20 messages)
+            val history = chatDao.getMessagesForChat(chatId).first().takeLast(20)
+            val historyText = history.joinToString("\n") { "${it.role}: ${it.content}" }
+            
+            // Build System Instruction
+            val systemPrompt = buildSystemPrompt()
+            
+            // Clear displayed memory IDs
+            ChatTools.clearDisplayedMemoryIds()
+            
+            // Convert media
+            val audioData = audioUri?.let { uri ->
+                getBytesFromUri(uri)?.let { bytes ->
+                    val mimeType = context.contentResolver.getType(Uri.parse(uri)) ?: "audio/m4a"
+                    AudioData(bytes, mimeType)
+                }
+            }
+            
+            val imageData = imageUri?.let { uri ->
+                getBytesFromUri(uri)?.let { bytes ->
+                    val parsedUri = Uri.parse(uri)
+                    val mimeType = context.contentResolver.getType(parsedUri) ?: "image/jpeg"
+                    if (mimeType.startsWith("image/")) {
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.let { bitmap ->
+                            val resizedBitmap = resizeBitmap(bitmap, 1024)
+                            val outputStream = ByteArrayOutputStream()
+                            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                            ImageData(outputStream.toByteArray(), "image/jpeg")
+                        }
+                    } else {
+                        ImageData(bytes, mimeType)
+                    }
+                }
+            }
+            
+            val fullResponseBuilder = StringBuilder()
+            
+            provider.sendMessageWithMediaStream(
+                conversationHistory = historyText,
+                message = message,
+                audioData = audioData,
+                imageData = imageData,
+                systemPrompt = systemPrompt,
+                toolExecutor = toolExecutor
+            ).collect { event ->
+                when (event) {
+                    is ChatStreamEvent.Content -> {
+                        fullResponseBuilder.append(event.text)
+                        emit(event)
+                    }
+                    is ChatStreamEvent.Done -> {
+                        val finalResponse = fullResponseBuilder.toString()
+                        if (finalResponse.isNotEmpty()) {
+                            chatDao.insertMessage(ChatMessageEntity(
+                                chatId = chatId, 
+                                role = "model", 
+                                content = finalResponse,
+                                displayedMemoryIds = ChatTools.lastDisplayedMemoryIds
+                            ))
+                        }
+                        emit(event)
+                    }
+                    else -> emit(event)
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in sendMessageWithMediaStream", e)
+            emit(ChatStreamEvent.Error(e))
+        }
+    }
+
+    private suspend fun buildSystemPrompt(): String {
+        val userContext = settingsRepository.userContextSummaryFlow.first()
+        val provider = providerFactory.getProvider()
+        
+        // Use compact prompt if the provider is currently using a model with tight limits (like Maverick)
+        val baseInstruction = if (provider.providerName == "Groq") {
+            ChatSystemPrompt.generateCompact()
+        } else {
+            ChatSystemPrompt.generate()
+        }
+        
+        return if (userContext.isNotBlank()) {
+            "$baseInstruction\n\n## USER CONTEXT\n$userContext"
+        } else {
+            baseInstruction
         }
     }
 

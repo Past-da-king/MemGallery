@@ -10,7 +10,8 @@ data class MemoryEntity(
 
     // User-provided inputs
     val userText: String?,
-    val imageUri: String?, // Stores the local content URI of the image
+    val imageUri: String?, // Stores the local content URI of the image (Primary/Cover)
+    val imageUris: List<String>? = null, // Stores all image URIs
     val audioFilePath: String?, // Stores the local file path of the recording
     
     // Bookmark Data

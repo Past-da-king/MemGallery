@@ -7,6 +7,7 @@ import com.example.memgallery.data.local.dao.TaskDao
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.local.entity.TaskEntity
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
@@ -19,7 +20,20 @@ object ChatTools {
     lateinit var memoryDao: MemoryDao
     lateinit var collectionDao: CollectionDao
     lateinit var taskDao: TaskDao
-    lateinit var searchClient: com.google.genai.Client
+    var searchClient: com.google.genai.Client? = null
+    
+    // State holder for memory IDs to display in chat UI after AI response
+    var lastDisplayedMemoryIds: List<Int> = emptyList()
+        private set
+    
+    // Tool Event System for UI Feedback
+    sealed class ToolEvent {
+        data class Started(val toolName: String, val input: String) : ToolEvent()
+        data class Finished(val toolName: String, val result: String) : ToolEvent()
+    }
+    
+    private val _toolEvents = kotlinx.coroutines.flow.MutableSharedFlow<ToolEvent>(extraBufferCapacity = 10)
+    val toolEvents: kotlinx.coroutines.flow.SharedFlow<ToolEvent> = _toolEvents.asSharedFlow()
     
     private val gson = Gson()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
@@ -27,22 +41,16 @@ object ChatTools {
 
     /**
      * Unified database query function for AI read-only access.
-     * 
-     * @param table - "memories", "tasks", or "collections"
-     * @param filters - JSON string with optional filters:
-     *   - id: Int - Get specific record by ID
-     *   - search: String - Text search in title/summary/tags
-     *   - dateFrom/dateTo: String (YYYY-MM-DD) - Date range filter
-     *   - completed: Boolean - For tasks only
-     *   - dueDate: String - For tasks only
-     *   - priority: String - For tasks (LOW/MEDIUM/HIGH)
-     *   - collectionName: String - Get memories in a collection
-     *   - limit: Int - Max results (default 20)
-     * @param fields - "all" or comma-separated field names like "id,title,summary"
      */
     @JvmStatic
     fun queryDatabase(table: String, filters: String, fields: String): String {
-        Log.d(TAG, "queryDatabase called: table=$table, filters=$filters, fields=$fields")
+        Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.i(TAG, "🔧 TOOL CALL: queryDatabase")
+        Log.i(TAG, "📥 INPUT: table='$table', filters='$filters', fields='$fields'")
+        
+        // Emit Started Event
+        _toolEvents.tryEmit(ToolEvent.Started("Querying Database", "Table: $table"))
+        
         return runBlocking {
             try {
                 val filterMap = parseFilters(filters)
@@ -54,11 +62,27 @@ object ChatTools {
                     "collections" -> queryCollections(filterMap, fields, limit)
                     else -> "Unknown table: $table. Valid tables: 'memories', 'tasks', 'collections'."
                 }
-                Log.d(TAG, "Query result length: ${result.length}")
-                result
+                
+                // Truncate result to prevent token limit/timeout issues (max ~3000 chars)
+                val truncatedResult = if (result.length > 3000) {
+                    result.take(3000) + "\n...[Result truncated to save tokens. Refine query for more specifics.]"
+                } else {
+                    result
+                }
+                
+                Log.i(TAG, "📤 RESULT (${truncatedResult.length} chars):")
+                Log.i(TAG, truncatedResult)
+                Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                
+                // Emit Finished Event
+                _toolEvents.tryEmit(ToolEvent.Finished("Querying Database", "Found ${result.length} chars of data"))
+                
+                truncatedResult
             } catch (e: Exception) {
-                Log.e(TAG, "Query error", e)
-                "Query error: ${e.message}"
+                Log.e(TAG, "❌ TOOL ERROR: queryDatabase failed", e)
+                val errorMsg = "Query error: ${e.message}"
+                _toolEvents.tryEmit(ToolEvent.Finished("Querying Database", "Failed: ${e.message}"))
+                errorMsg
             }
         }
     }
@@ -88,11 +112,11 @@ object ChatTools {
         // Date range filter
         filters["dateFrom"]?.let { date ->
             val ts = parseDate(date.toString())
-            memories = memories.filter { it.creationTimestamp >= ts }
+            if (ts > 0) memories = memories.filter { it.creationTimestamp >= ts }
         }
         filters["dateTo"]?.let { date ->
-            val ts = parseDate(date.toString()) + 86400000 // Include end date
-            memories = memories.filter { it.creationTimestamp <= ts }
+            val ts = parseDate(date.toString())
+            if (ts > 0) memories = memories.filter { it.creationTimestamp <= (ts + 86400000) } // Include end date
         }
         
         // Collection filter
@@ -107,10 +131,27 @@ object ChatTools {
             }
         }
         
-        memories = memories.take(limit)
+        // Ordering
+        val orderBy = filters["orderBy"]?.toString()?.lowercase() ?: "date_desc" // Default to newest
+        memories = when (orderBy) {
+            "date_asc" -> memories.sortedBy { it.creationTimestamp }
+            "date_desc" -> memories.sortedByDescending { it.creationTimestamp }
+            "title_asc" -> memories.sortedBy { it.aiTitle }
+            else -> memories.sortedByDescending { it.creationTimestamp }
+        }
+
+        // Offset & Limit
+        val offset = (filters["offset"] as? Number)?.toInt() ?: 0
+        val safeLimit = limit.coerceAtMost(20) // Cap default limit at 20
+        
+        if (offset >= memories.size) return "No memories found (Offset $offset is beyond total ${memories.size})."
+        
+        memories = memories.drop(offset).take(safeLimit)
+        
         if (memories.isEmpty()) return "No memories found matching the criteria."
         
-        return formatMemories(memories, fields)
+        val countInfo = if (offset > 0) "[Showing items ${offset + 1}-${offset + memories.size}]" else ""
+        return "$countInfo\n" + formatMemories(memories, fields)
     }
 
     private suspend fun queryTasks(filters: Map<String, Any?>, fields: String, limit: Int): String {
@@ -193,6 +234,15 @@ object ChatTools {
                         m.bookmarkDescription?.let { d -> appendLine("Description: $d") }
                     }
                 }
+                // Image URIs for AI to reference in Markdown
+                val hasImageField = showAll || fieldList.any { it.replace("_", "") == "imageuri" } || "media" in fieldList || "image" in fieldList
+                if (hasImageField) {
+                    m.imageUri?.let { appendLine("\n**Image URI:** $it") }
+                    m.imageUris?.takeIf { it.size > 1 }?.let { 
+                        appendLine("**All Image URIs:** ${it.joinToString(", ")}")
+                    }
+                    m.bookmarkImageUrl?.let { appendLine("**Bookmark Preview Image:** $it") }
+                }
             }
         }
     }
@@ -220,7 +270,12 @@ object ChatTools {
      */
     @JvmStatic
     fun webSearch(query: String): String {
-        Log.d(TAG, "webSearch called: query=$query")
+        Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.i(TAG, "🔧 TOOL CALL: webSearch")
+        Log.i(TAG, "📥 INPUT: query='$query'")
+        
+        _toolEvents.tryEmit(ToolEvent.Started("Searching Web", query))
+        
         return runBlocking {
             try {
                 val tool = com.google.genai.types.Tool.builder()
@@ -231,13 +286,135 @@ object ChatTools {
                     .tools(tool)
                     .build()
 
-                val response = searchClient.models.generateContent("gemini-2.5-flash", query, config)
-                response.text() ?: "No results found."
+                val client = searchClient ?: return@runBlocking "Web search is currently unavailable. This feature requires the Gemini provider."
+
+                val response = client.models.generateContent("gemini-2.5-flash", query, config)
+                val result = response.text() ?: "No results found."
+                Log.i(TAG, "📤 RESULT (${result.length} chars):")
+                result.chunked(1000).forEachIndexed { index, chunk ->
+                    Log.i(TAG, "    [Part $index]: $chunk")
+                }
+                Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                
+                _toolEvents.tryEmit(ToolEvent.Finished("Searching Web", "Completed"))
+                
+                result
             } catch (e: Exception) {
-                Log.e(TAG, "Web search error", e)
-                "Error searching web: ${e.message}"
+                Log.e(TAG, "❌ TOOL ERROR: webSearch failed", e)
+                val errorMsg = "Error searching web: ${e.message}"
+                _toolEvents.tryEmit(ToolEvent.Finished("Searching Web", "Failed"))
+                errorMsg
             }
         }
+    }
+
+    /**
+     * Display memory cards in the chat UI.
+     * This tool signals the UI to show interactive memory cards after the AI's text response.
+     * 
+     * @param memoryIds - JSON array of memory IDs to display, e.g., "[1, 5, 12]"
+     * @return Confirmation message for the AI
+     */
+    @JvmStatic
+    fun displayMemoriesById(memoryIds: String): String {
+        Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.i(TAG, "🔧 TOOL CALL: displayMemoriesById")
+        Log.i(TAG, "📥 INPUT: memoryIds='$memoryIds'")
+        
+        _toolEvents.tryEmit(ToolEvent.Started("Displaying Memories", memoryIds))
+        
+        return runBlocking {
+            try {
+                val ids = parseMemoryIds(memoryIds)
+                if (ids.isEmpty()) {
+                    val errorResult = "Error: No valid memory IDs provided. Use format: [1, 2, 3]"
+                    Log.w(TAG, "📤 RESULT: $errorResult")
+                    Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    _toolEvents.tryEmit(ToolEvent.Finished("Displaying Memories", "Invalid IDs"))
+                    return@runBlocking errorResult
+                }
+                
+                // Verify memories exist
+                val memories = memoryDao.getAllMemories().first()
+                val validIds = ids.filter { id -> memories.any { it.id == id } }
+                
+                if (validIds.isEmpty()) {
+                    val errorResult = "Error: None of the specified memory IDs exist in the database."
+                    Log.w(TAG, "📤 RESULT: $errorResult")
+                    Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    _toolEvents.tryEmit(ToolEvent.Finished("Displaying Memories", "No matching memories"))
+                    return@runBlocking errorResult
+                }
+                
+                // Store for UI to pick up
+                lastDisplayedMemoryIds = validIds
+                
+                val result = "Successfully queued ${validIds.size} memories for display: ${validIds.joinToString(", ")}. The user will see interactive memory cards below your response."
+                Log.i(TAG, "📤 RESULT: $result")
+                Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                
+                _toolEvents.tryEmit(ToolEvent.Finished("Displaying Memories", "Showing ${validIds.size} items"))
+                
+                result
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ TOOL ERROR: displayMemoriesById failed", e)
+                _toolEvents.tryEmit(ToolEvent.Finished("Displaying Memories", "Failed"))
+                "Error displaying memories: ${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * Clears the displayed memory IDs. Call this before each new AI request.
+     */
+    fun clearDisplayedMemoryIds() {
+        lastDisplayedMemoryIds = emptyList()
+    }
+    
+    private fun parseMemoryIds(json: String): List<Int> {
+        return try {
+            val cleaned = json.trim().removeSurrounding("[", "]")
+            if (cleaned.isBlank()) emptyList()
+            else cleaned.split(",").mapNotNull { it.trim().toIntOrNull() }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse memory IDs: $json", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Get the database schema (tables and fields).
+     * Helps the AI understand available data structures.
+     */
+    @JvmStatic
+    fun getDatabaseSchema(): String {
+        Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.i(TAG, "🔧 TOOL CALL: getDatabaseSchema")
+        
+        _toolEvents.tryEmit(ToolEvent.Started("Getting DB Schema", "all tables"))
+        
+        val schema = """
+            Available Tables and Fields:
+            
+            1. 'memories' - User's stored memories (images, audio, text, bookmarks)
+               Fields: id, userText, aiTitle, aiSummary, aiTags (List), aiImageAnalysis, aiAudioTranscription, type (IMAGE/TEXT/AUDIO/BOOKMARK), status, creationTimestamp, imageUri, imageUris (List), bookmarkUrl, bookmarkTitle, bookmarkDescription, bookmarkImageUrl
+            
+            2. 'tasks' - Tasks and events linked to memories or standalone
+               Fields: id, memoryId, title, description, dueDate (YYYY-MM-DD), dueTime, isCompleted, priority (LOW/MED/HIGH), type (TODO/EVENT)
+            
+            3. 'collections' - Groups of memories
+               Fields: id, name, description
+            
+            Use 'queryDatabase' to access data in these tables. 
+            IMPORTANT: When querying fields, normalization happens automatically (e.g., 'image_uri' becomes 'imageuri').
+        """.trimIndent()
+        
+        Log.i(TAG, "📤 RESULT: Schema returned")
+        Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        
+        _toolEvents.tryEmit(ToolEvent.Finished("Getting DB Schema", "Returned 3 tables"))
+        
+        return schema
     }
 
     // Helper functions

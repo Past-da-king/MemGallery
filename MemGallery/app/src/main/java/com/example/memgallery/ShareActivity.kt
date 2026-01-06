@@ -96,7 +96,7 @@ class ShareActivity : ComponentActivity() {
 
                     // Save to database
                     memoryRepository.savePendingMemory(
-                        imageUri = imageUri,
+                        imageUris = listOfNotNull(imageUri),
                         audioUri = null,
                         userText = text,
                         bookmarkUrl = bookmarkUrl

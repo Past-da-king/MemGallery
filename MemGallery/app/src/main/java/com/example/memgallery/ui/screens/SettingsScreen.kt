@@ -116,19 +116,83 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // API Key Card
+            // AI Provider & API Configuration Card
             SettingsCard(
                 icon = Icons.Default.Key,
-                title = "API Configuration",
-                description = "Configure your Gemini API key"
+                title = "AI Configuration",
+                description = "Choose your AI provider and configure API keys"
             ) {
-                ApiKeySection(
-                    apiKey = apiKey,
-                    uiState = apiKeyUiState,
-                    onApiKeyChange = viewModel::onApiKeyChange,
-                    onValidate = viewModel::validateAndSaveKey,
-                    onClear = viewModel::clearKey
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Provider Selector
+                    val aiProvider by viewModel.aiProvider.collectAsState()
+                    
+                    Text(
+                        "AI Provider",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                            onClick = { viewModel.setAiProvider("GEMINI") },
+                            selected = aiProvider == "GEMINI"
+                        ) {
+                            Text("Gemini")
+                        }
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                            onClick = { viewModel.setAiProvider("GROQ") },
+                            selected = aiProvider == "GROQ"
+                        ) {
+                            Text("Groq")
+                        }
+                    }
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    
+                    // Show appropriate API key section based on selected provider
+                    if (aiProvider == "GEMINI") {
+                        Text(
+                            "Gemini API Key",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        ApiKeySection(
+                            apiKey = apiKey,
+                            uiState = apiKeyUiState,
+                            onApiKeyChange = viewModel::onApiKeyChange,
+                            onValidate = viewModel::validateAndSaveKey,
+                            onClear = viewModel::clearKey
+                        )
+                    } else {
+                        val groqApiKey by viewModel.groqApiKey.collectAsState()
+                        val groqApiKeyUiState by viewModel.groqApiKeyUiState.collectAsState()
+                        
+                        Text(
+                            "Groq API Key",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        Text(
+                            "Uses LLaMA 4 Scout for vision & Whisper v3 for audio",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        GroqApiKeySection(
+                            apiKey = groqApiKey,
+                            uiState = groqApiKeyUiState,
+                            onApiKeyChange = viewModel::onGroqApiKeyChange,
+                            onValidate = viewModel::validateAndSaveGroqKey,
+                            onClear = viewModel::clearGroqKey
+                        )
+                    }
+                }
             }
             
             // Appearance Card
@@ -585,6 +649,170 @@ fun ApiKeySection(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Validate")
+            }
+
+            OutlinedButton(
+                onClick = onClear,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                enabled = apiKey.isNotBlank()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Clear,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Clear")
+            }
+        }
+    }
+}
+
+@Composable
+fun GroqApiKeySection(
+    apiKey: String,
+    uiState: ApiKeyUiState,
+    onApiKeyChange: (String) -> Unit,
+    onValidate: () -> Unit,
+    onClear: () -> Unit
+) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = onApiKeyChange,
+            label = { Text("Groq API Key") },
+            placeholder = { Text("gsk_...") },
+            singleLine = true,
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.VpnKey,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary
+                )
+            },
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = image,
+                        contentDescription = "Toggle visibility",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Status Messages
+        when (uiState) {
+            is ApiKeyUiState.Success -> {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = "Success",
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            uiState.message,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            is ApiKeyUiState.Error -> {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            uiState.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            is ApiKeyUiState.Loading -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Saving...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            else -> {}
+        }
+
+        // Action Buttons
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            FilledTonalButton(
+                onClick = onValidate,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                enabled = apiKey.isNotBlank(),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Save")
             }
 
             OutlinedButton(

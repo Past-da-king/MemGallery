@@ -27,8 +27,8 @@ class MemoryCreationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<MemoryCreationUiState>(MemoryCreationUiState.Idle)
     val uiState: StateFlow<MemoryCreationUiState> = _uiState.asStateFlow()
 
-    private val _draftImageUri = MutableStateFlow<String?>(null)
-    val draftImageUri: StateFlow<String?> = _draftImageUri.asStateFlow()
+    private val _draftImageUris = MutableStateFlow<List<String>>(emptyList())
+    val draftImageUris: StateFlow<List<String>> = _draftImageUris.asStateFlow()
 
     private val _draftAudioUri = MutableStateFlow<String?>(null)
     val draftAudioUri: StateFlow<String?> = _draftAudioUri.asStateFlow()
@@ -39,8 +39,16 @@ class MemoryCreationViewModel @Inject constructor(
     private val _draftBookmarkUrl = MutableStateFlow<String?>(null)
     val draftBookmarkUrl: StateFlow<String?> = _draftBookmarkUrl.asStateFlow()
 
-    fun setDraftImageUri(uri: String?) {
-        _draftImageUri.value = uri
+    fun addDraftImageUri(uri: String) {
+        _draftImageUris.value = _draftImageUris.value + uri
+    }
+
+    fun removeDraftImageUri(uri: String) {
+        _draftImageUris.value = _draftImageUris.value - uri
+    }
+    
+    fun setDraftImageUris(uris: List<String>) {
+        _draftImageUris.value = uris
     }
 
     fun setDraftAudioUri(uri: String?) {
@@ -57,10 +65,10 @@ class MemoryCreationViewModel @Inject constructor(
             viewModelScope.launch {
                 try {
                     val metadata = urlMetadataExtractor.extract(url)
-                    if (metadata.imageUrl != null && _draftImageUri.value == null) {
+                    if (metadata.imageUrl != null && _draftImageUris.value.isEmpty()) {
                         val localUri = fileUtils.downloadImageFromUrl(metadata.imageUrl)
                         if (localUri != null) {
-                            _draftImageUri.value = localUri.toString()
+                            addDraftImageUri(localUri.toString())
                         }
                     }
                 } catch (e: Exception) {
@@ -71,12 +79,12 @@ class MemoryCreationViewModel @Inject constructor(
     }
 
     fun createMemory() {
-        val imageUri = _draftImageUri.value
+        val imageUris = _draftImageUris.value
         val audioUri = _draftAudioUri.value
         val userText = _draftUserText.value
         val bookmarkUrl = _draftBookmarkUrl.value
 
-        if (imageUri == null && audioUri == null && userText.isNullOrBlank() && bookmarkUrl.isNullOrBlank()) {
+        if (imageUris.isEmpty() && audioUri == null && userText.isNullOrBlank() && bookmarkUrl.isNullOrBlank()) {
             _uiState.value = MemoryCreationUiState.Error("At least one input is required.")
             return
         }
@@ -85,7 +93,7 @@ class MemoryCreationViewModel @Inject constructor(
             _uiState.value = MemoryCreationUiState.Loading
 
             val result = memoryRepository.savePendingMemory(
-                imageUri = imageUri,
+                imageUris = imageUris,
                 audioUri = audioUri,
                 userText = userText,
                 bookmarkUrl = bookmarkUrl
@@ -101,7 +109,7 @@ class MemoryCreationViewModel @Inject constructor(
     
     fun resetState() {
         _uiState.value = MemoryCreationUiState.Idle
-        _draftImageUri.value = null
+        _draftImageUris.value = emptyList()
         _draftAudioUri.value = null
         _draftUserText.value = null
         _draftBookmarkUrl.value = null

@@ -50,7 +50,8 @@ import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun FullscreenImageViewer(
-    imageUri: String,
+    imageUris: List<String>,
+    initialIndex: Int = 0,
     onDismissRequest: () -> Unit,
     memoryTitle: String,
     creationTimestamp: Long
@@ -60,6 +61,10 @@ fun FullscreenImageViewer(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         var showUiOverlay by remember { mutableStateOf(true) }
+        val pagerState = androidx.compose.foundation.pager.rememberPagerState(
+            initialPage = initialIndex,
+            pageCount = { imageUris.size }
+        )
 
         LaunchedEffect(showUiOverlay) {
             if (showUiOverlay) {
@@ -73,14 +78,19 @@ fun FullscreenImageViewer(
             color = Color.Black
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Image(
-                    painter = rememberAsyncImagePainter(model = imageUri),
-                    contentDescription = memoryTitle,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { showUiOverlay = !showUiOverlay },
-                    contentScale = ContentScale.Fit
-                )
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    Image(
+                        painter = rememberAsyncImagePainter(model = imageUris[page]),
+                        contentDescription = "$memoryTitle ${page + 1}",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { showUiOverlay = !showUiOverlay },
+                        contentScale = ContentScale.Fit
+                    )
+                }
 
                 AnimatedVisibility(
                     visible = showUiOverlay,
@@ -170,9 +180,15 @@ fun FullscreenImageViewer(
                                 .padding(16.dp)
                         ) {
                             Text(
+                                text = "Image ${pagerState.currentPage + 1} of ${imageUris.size}",
+                                style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
+                                color = Color.White,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            Text(
                                 text = "Captured ${SimpleDateFormat("MMM dd, yyyy", Locale.US).format(Date(creationTimestamp))}",
                                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                                color = Color.White
+                                color = Color.White.copy(alpha = 0.8f)
                             )
                         }
                     }

@@ -50,7 +50,7 @@ fun PostCaptureScreen(
     val isEditMode = memoryId != null
     val memory by updateViewModel.memory.collectAsState()
 
-    val draftImageUri by creationViewModel.draftImageUri.collectAsState()
+    val draftImageUris by creationViewModel.draftImageUris.collectAsState()
     val draftAudioUri by creationViewModel.draftAudioUri.collectAsState()
     val draftUserText by creationViewModel.draftUserText.collectAsState()
     val draftBookmarkUrl by creationViewModel.draftBookmarkUrl.collectAsState()
@@ -61,7 +61,6 @@ fun PostCaptureScreen(
     var showAddImageSheet by remember { mutableStateOf(false) }
     var showUrlSheet by remember { mutableStateOf(false) }
     var tempUrl by remember { mutableStateOf("") }
-    val coroutineScope = rememberCoroutineScope()
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(openUrlSheet) {
@@ -71,9 +70,11 @@ fun PostCaptureScreen(
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { creationViewModel.setDraftImageUri(it.toString()) }
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        uris.forEach { uri ->
+            creationViewModel.addDraftImageUri(uri.toString())
+        }
         showAddImageSheet = false
     }
 
@@ -81,7 +82,7 @@ fun PostCaptureScreen(
         contract = ActivityResultContracts.TakePicture(),
         onResult = { success ->
             if (success) {
-                tempImageUri?.let { creationViewModel.setDraftImageUri(it.toString()) }
+                tempImageUri?.let { creationViewModel.addDraftImageUri(it.toString()) }
             }
             showAddImageSheet = false
         }
@@ -95,7 +96,11 @@ fun PostCaptureScreen(
 
     LaunchedEffect(memory) {
         if (isEditMode && memory != null) {
-            if (initialImageUri == null) creationViewModel.setDraftImageUri(memory!!.imageUri)
+            if (initialImageUri == null) {
+                // Handle migration from single imageUri to list
+                val uris = memory!!.imageUris ?: listOfNotNull(memory!!.imageUri)
+                creationViewModel.setDraftImageUris(uris)
+            }
             if (initialAudioUri == null) creationViewModel.setDraftAudioUri(memory!!.audioFilePath)
             if (initialUserText == null) creationViewModel.setDraftUserText(memory!!.userText)
             if (initialBookmarkUrl == null) creationViewModel.setDraftBookmarkUrl(memory!!.bookmarkUrl)
@@ -104,7 +109,9 @@ fun PostCaptureScreen(
 
     // Set initial draft values from navigation arguments
     LaunchedEffect(initialImageUri, initialAudioUri, initialUserText, initialBookmarkUrl) {
-        if (initialImageUri != null) creationViewModel.setDraftImageUri(initialImageUri)
+        if (initialImageUri != null && draftImageUris.isEmpty()) {
+             creationViewModel.addDraftImageUri(initialImageUri)
+        }
         if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
         if (initialBookmarkUrl != null) creationViewModel.setDraftBookmarkUrl(initialBookmarkUrl)
         if (initialUserText != null) {
@@ -157,25 +164,86 @@ fun PostCaptureScreen(
                     .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable(enabled = draftImageUri == null && !isEditMode) {
-                            showAddImageSheet = true
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (draftImageUri != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(model = Uri.parse(draftImageUri!!)),
-                            contentDescription = "Captured Image",
+                // Image Carousel or Add Button
+                if (draftImageUris.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        androidx.compose.foundation.lazy.LazyRow(
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(8.dp)
+                        ) {
+                            items(draftImageUris.size) { index ->
+                                val uri = draftImageUris[index]
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .aspectRatio(0.8f) // Portrait aspect ratio
+                                        .clip(RoundedCornerShape(12.dp))
+                                ) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = Uri.parse(uri)),
+                                        contentDescription = "Captured Image $index",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    
+                                    // Delete Button Overlay
+                                    IconButton(
+                                        onClick = { creationViewModel.removeDraftImageUri(uri) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .size(32.dp)
+                                            .background(Color.Black.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close, 
+                                            contentDescription = "Remove Image", 
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Add more images button at the end
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .aspectRatio(0.8f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                        .clickable { showAddImageSheet = true },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.Add, contentDescription = "Add More")
+                                        Text("Add", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Empty State - Add Image Button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable(enabled = !isEditMode) {
+                                showAddImageSheet = true
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 imageVector = Icons.Default.AddAPhoto,
@@ -184,7 +252,7 @@ fun PostCaptureScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Tap to add an image", style = MaterialTheme.typography.bodyLarge)
+                            Text("Tap to add images", style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -223,7 +291,7 @@ fun PostCaptureScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
+                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUris.firstOrNull(), audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -234,7 +302,7 @@ fun PostCaptureScreen(
                     Text("Audio")
                 }
                 Button(
-                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUri, audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
+                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUris.firstOrNull(), audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
@@ -264,7 +332,8 @@ fun PostCaptureScreen(
                         memory?.let { existingMemory ->
                             val updatedMemory = existingMemory.copy(
                                 userText = draftUserText,
-                                imageUri = draftImageUri,
+                                imageUri = draftImageUris.firstOrNull(), // Backward compatibility
+                                imageUris = draftImageUris,
                                 audioFilePath = draftAudioUri,
                                 bookmarkUrl = draftBookmarkUrl
                             )

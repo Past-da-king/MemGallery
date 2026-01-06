@@ -22,7 +22,7 @@ interface CollectionDao {
 
     @Transaction
     @Query("""
-        SELECT * FROM memories 
+        SELECT memories.* FROM memories 
         INNER JOIN memory_collection_cross_ref ON memories.id = memory_collection_cross_ref.memoryId 
         WHERE memory_collection_cross_ref.collectionId = :collectionId
         ORDER BY creationTimestamp DESC

@@ -27,7 +27,7 @@ class BookmarkInputViewModel @Inject constructor(
         viewModelScope.launch {
             _isSaving.value = true
             val result = memoryRepository.savePendingMemory(
-                imageUri = null,
+                imageUris = emptyList(),
                 audioUri = null,
                 userText = userNote.takeIf { it.isNotBlank() },
                 bookmarkUrl = url

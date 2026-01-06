@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -48,6 +49,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val SHOW_HIGHLIGHTS = booleanPreferencesKey("show_highlights")
         val USER_SYSTEM_PROMPT = stringPreferencesKey("user_system_prompt")
         val USER_CONTEXT_SUMMARY = stringPreferencesKey("user_context_summary")
+        val USER_CONTEXT_GENERATION_FREQUENCY = stringPreferencesKey("user_context_generation_frequency") // "ALWAYS", "DAILY", "WEEKLY", "MANUAL"
+        val LAST_CONTEXT_GENERATION_TIMESTAMP = longPreferencesKey("last_context_generation_timestamp")
         
         // Edge Gesture
         val EDGE_GESTURE_ENABLED = booleanPreferencesKey("edge_gesture_enabled")
@@ -68,6 +71,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val POST_CAPTURE_BEHAVIOR = stringPreferencesKey("post_capture_behavior") // "BACKGROUND", "FOREGROUND"
         val AUTO_REMINDERS_ENABLED = booleanPreferencesKey("auto_reminders_enabled")
         val OVERLAY_STYLE = stringPreferencesKey("overlay_style") // "EDGE", "BALL"
+        
+        // AI Provider
+        val AI_PROVIDER = stringPreferencesKey("ai_provider") // "GEMINI", "GROQ"
     }
 
     init {
@@ -102,6 +108,37 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun clearApiKey() {
         with(encryptedPrefs.edit()) {
             remove("api_key_secure")
+            apply()
+        }
+    }
+
+    // AI Provider Selection
+    val aiProviderFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.AI_PROVIDER] ?: "GEMINI"
+        }
+
+    suspend fun setAiProvider(provider: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.AI_PROVIDER] = provider
+        }
+    }
+
+    // Groq API Key (encrypted)
+    val groqApiKeyFlow: Flow<String?> = flow {
+        emit(encryptedPrefs.getString("groq_api_key_secure", null))
+    }
+
+    suspend fun saveGroqApiKey(apiKey: String) {
+        with(encryptedPrefs.edit()) {
+            putString("groq_api_key_secure", apiKey)
+            apply()
+        }
+    }
+
+    suspend fun clearGroqApiKey() {
+        with(encryptedPrefs.edit()) {
+            remove("groq_api_key_secure")
             apply()
         }
     }
@@ -254,6 +291,30 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun saveUserContextSummary(summary: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.USER_CONTEXT_SUMMARY] = summary
+            settings[PreferencesKeys.LAST_CONTEXT_GENERATION_TIMESTAMP] = System.currentTimeMillis()
+        }
+    }
+
+    // User Context Configuration
+    val userContextGenerationFrequencyFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.USER_CONTEXT_GENERATION_FREQUENCY] ?: "DAILY"
+        }
+
+    suspend fun setUserContextGenerationFrequency(frequency: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.USER_CONTEXT_GENERATION_FREQUENCY] = frequency
+        }
+    }
+
+    val lastContextGenerationTimestampFlow: Flow<Long> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.LAST_CONTEXT_GENERATION_TIMESTAMP] ?: 0L
+        }
+
+    suspend fun setLastContextGenerationTimestamp(timestamp: Long) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.LAST_CONTEXT_GENERATION_TIMESTAMP] = timestamp
         }
     }
 

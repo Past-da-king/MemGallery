@@ -162,7 +162,7 @@ class OverlayService : Service() {
             // Always save the memory first
             android.util.Log.d("OverlayService", "Attempting to save URL: $url")
             val result = memoryRepository.savePendingMemory(
-                imageUri = null,
+                imageUris = emptyList(),
                 audioUri = null,
                 userText = null,
                 bookmarkUrl = url
@@ -222,7 +222,7 @@ class OverlayService : Service() {
             
             // Always save the memory first
             val result = memoryRepository.savePendingMemory(
-                imageUri = null,
+                imageUris = emptyList(),
                 audioUri = null,
                 userText = text
             )
@@ -260,7 +260,7 @@ class OverlayService : Service() {
             // Always save the memory first
             val uri = Uri.fromFile(java.io.File(path)).toString()
             val result = memoryRepository.savePendingMemory(
-                imageUri = null,
+                imageUris = emptyList(),
                 audioUri = uri,
                 userText = null
             )

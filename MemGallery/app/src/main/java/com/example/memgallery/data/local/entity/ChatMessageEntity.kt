@@ -25,5 +25,6 @@ data class ChatMessageEntity(
     val content: String,
     val audioFilePath: String? = null, // Path to audio file attachment
     val imageUri: String? = null,      // URI of image/document attachment
+    val displayedMemoryIds: List<Int>? = null, // Memory IDs to display as cards (from displayMemoriesById tool)
     val timestamp: Long = System.currentTimeMillis()
 )

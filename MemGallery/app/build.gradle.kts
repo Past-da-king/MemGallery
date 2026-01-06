@@ -24,8 +24,8 @@ android {
         applicationId = "com.example.memgallery"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.0.5"
+        versionCode = 8
+        versionName = "0.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -72,6 +72,14 @@ android {
 
 configurations.all {
     exclude(group = "org.jetbrains", module = "annotations-java5")
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin-stdlib")) {
+            useVersion("2.0.21")
+        }
+        if (requested.group == "com.squareup.okhttp3") {
+            useVersion("4.12.0")
+        }
+    }
 }
 
 dependencies {
@@ -106,6 +114,12 @@ dependencies {
 
     // Gson
     implementation(libs.gson)
+
+    // Groq SDK
+    // Groq SDK
+    implementation(libs.groq.sdk) {
+        exclude(group = "org.jetbrains.kotlin")
+    }
 
     // Coil
     implementation(libs.coil.compose)

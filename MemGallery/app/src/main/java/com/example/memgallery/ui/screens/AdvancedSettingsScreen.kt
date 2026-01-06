@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.service.EdgeGestureService
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +62,15 @@ fun AdvancedSettingsScreen(
     val postCaptureBehavior by viewModel.postCaptureBehavior.collectAsState()
     val autoRemindersEnabled by viewModel.autoRemindersEnabled.collectAsState()
     val overlayStyle by viewModel.overlayStyle.collectAsState()
+
+    // User Context State
+    val userContextSummary by viewModel.userContextSummary.collectAsState()
+    val userContextFrequency by viewModel.userContextGenerationFrequency.collectAsState()
+    val isGeneratingContext by viewModel.isGeneratingContext.collectAsState()
+    
+    // Editor States
+    var showSystemPromptEditor by remember { mutableStateOf(false) }
+    var showUserContextEditor by remember { mutableStateOf(false) }
 
     // Permission Handling
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -102,26 +116,176 @@ fun AdvancedSettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    OutlinedTextField(
-                        value = userSystemPrompt,
-                        onValueChange = viewModel::onUserSystemPromptChange,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp),
-                        placeholder = { Text("e.g., 'Be sarcastic', 'Focus on technical details', 'Use bullet points only'") },
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = {
-                            viewModel.saveUserSystemPrompt()
-                            android.widget.Toast.makeText(context, "Saved!", android.widget.Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.align(Alignment.End)
+                    // Preview Card
+                    Surface(
+                        onClick = { showSystemPromptEditor = true },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
-                        Text("Save Prompt")
+                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                            if (userSystemPrompt.isBlank()) {
+                                Text(
+                                    "Tap to set a custom persona...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontStyle = FontStyle.Italic
+                                )
+                            } else {
+                                Text(
+                                    userSystemPrompt,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 3,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Edit Prompt", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                     }
                 }
+            }
+
+            if (showSystemPromptEditor) {
+                FullScreenTextEditor(
+                    title = "System Prompt",
+                    initialText = userSystemPrompt,
+                    placeholder = "e.g., 'Be sarcastic', 'Focus on technical details'",
+                    onDismiss = { showSystemPromptEditor = false },
+                    onSave = {
+                        viewModel.onUserSystemPromptChange(it)
+                        viewModel.saveUserSystemPrompt()
+                        showSystemPromptEditor = false
+                        android.widget.Toast.makeText(context, "Persona Saved", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+
+
+
+            // 1.5 User Context & Memory Section
+            SettingsCard(
+                icon = Icons.Default.Memory,
+                title = "User Context & Memory",
+                description = "Manage what the AI knows"
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Context Summary Field
+                    Text(
+                        "User Context Summary",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    // Preview Card
+                    Surface(
+                        onClick = { showUserContextEditor = true },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                            if (userContextSummary.isBlank()) {
+                                Text(
+                                    "No context generated yet. Tap to edit manually or generate below.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontStyle = FontStyle.Italic
+                                )
+                            } else {
+                                Text(
+                                    userContextSummary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 5,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Open Full Editor", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = viewModel::generateUserContext,
+                            enabled = !isGeneratingContext
+                        ) {
+                            if (isGeneratingContext) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Generating...")
+                            } else {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Regenerate Context")
+                            }
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    // Frequency Settings
+                    Text(
+                        "Auto-Generation Frequency",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "How often should the AI scan your memories to update its context?",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        val options = listOf("Always", "Daily", "Weekly", "Manual")
+                        val values = listOf("ALWAYS", "DAILY", "WEEKLY", "MANUAL")
+                        values.forEachIndexed { index, value ->
+                            SegmentedButton(
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                onClick = { viewModel.setUserContextGenerationFrequency(value) },
+                                selected = userContextFrequency == value
+                            ) {
+                                Text(
+                                    options[index],
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (showUserContextEditor) {
+                FullScreenTextEditor(
+                    title = "User Context",
+                    initialText = userContextSummary,
+                    placeholder = "Enter your custom context here...",
+                    onDismiss = { showUserContextEditor = false },
+                    onSave = {
+                        viewModel.onUserContextSummaryChange(it)
+                        viewModel.saveUserContextSummary()
+                        showUserContextEditor = false
+                        android.widget.Toast.makeText(context, "User Context Saved", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
 
             // 2. Behavior Configuration Section
@@ -392,6 +556,78 @@ fun ActionDropdown(
                         onActionSelected(key)
                         expanded = false
                     }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FullScreenTextEditor(
+    title: String,
+    initialText: String,
+    placeholder: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(initialText) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(title) },
+                    navigationIcon = {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { onSave(text) }) {
+                            Icon(Icons.Default.Check, contentDescription = "Save")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.fillMaxSize(),
+                    placeholder = {
+                        Text(
+                            placeholder,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    },
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.5
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    )
                 )
             }
         }
