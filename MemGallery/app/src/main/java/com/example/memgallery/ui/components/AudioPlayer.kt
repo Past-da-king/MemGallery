@@ -12,6 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.io.IOException
@@ -19,85 +25,78 @@ import java.io.IOException
 @Composable
 fun AudioPlayer(
     audioUri: String,
+    isPlaying: Boolean,
+    progress: Float,
+    durationString: String,
+    currentPositionString: String,
+    onPlayClick: () -> Unit,
+    onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    var isPlaying by remember { mutableStateOf(false) }
-    var progress by remember { mutableStateOf(0f) }
-    var duration by remember { mutableStateOf(0) }
-    val mediaPlayer = remember { MediaPlayer() }
+    // Gradient colors for premium look
+    val gradientBrush = Brush.horizontalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.surfaceContainer
+        )
+    )
 
-    // Initialize and manage MediaPlayer lifecycle
-    DisposableEffect(audioUri) {
-        try {
-            mediaPlayer.setDataSource(context, Uri.parse(audioUri))
-            mediaPlayer.prepareAsync()
-            mediaPlayer.setOnPreparedListener { mp ->
-                duration = mp.duration
-            }
-            mediaPlayer.setOnCompletionListener {
-                isPlaying = false
-                progress = 0f
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-            // Handle error, e.g., show a Toast
-        }
-
-        onDispose {
-            mediaPlayer.release()
-        }
-    }
-
-    // Update progress slider
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            while (isActive && isPlaying) {
-                progress = mediaPlayer.currentPosition.toFloat() / duration.toFloat()
-                delay(50) // Update every 50ms
-            }
-        }
-    }
-
-    Card(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent, // Use background for gradient
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .background(gradientBrush)
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = {
-                if (isPlaying) {
-                    mediaPlayer.pause()
-                } else {
-                    mediaPlayer.start()
-                }
-                isPlaying = !isPlaying
-            }) {
+            // Play/Pause Button
+            IconButton(
+                onClick = onPlayClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play"
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
             Column(modifier = Modifier.weight(1f)) {
-                Text("Audio Note", style = MaterialTheme.typography.titleMedium)
+                // Waveform-like slider area
                 Slider(
                     value = progress,
-                    onValueChange = { newProgress ->
-                        progress = newProgress
-                        mediaPlayer.seekTo((duration * newProgress).toInt())
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = duration > 0
+                    onValueChange = onSeek,
+                    modifier = Modifier.fillMaxWidth().height(20.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                    )
                 )
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(formatTime(mediaPlayer.currentPosition), style = MaterialTheme.typography.bodySmall)
-                    Text(formatTime(duration), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        currentPositionString, 
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        durationString, 
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

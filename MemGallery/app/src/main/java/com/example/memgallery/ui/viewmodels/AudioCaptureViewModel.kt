@@ -122,11 +122,16 @@ class AudioCaptureViewModel @Inject constructor(
                 // Poll amplitude
                 mediaRecorder?.maxAmplitude?.let { maxAmp ->
                     // Normalize amplitude (empirically, max is usually around 32767)
-                    val normalized = (maxAmp / 32767f).coerceIn(0f, 1f)
+                    // Use sqrt to boost lower amplitudes for better visualization
+                    val rawNorm = (maxAmp / 32767f).coerceIn(0f, 1f)
+                    val fastLog = sqrt(rawNorm)
+                    
                     // Update list: remove first, add new
                     val currentList = _amplitudes.value.toMutableList()
-                    currentList.removeAt(0)
-                    currentList.add(normalized)
+                    if (currentList.isNotEmpty()) {
+                        currentList.removeAt(0)
+                    }
+                    currentList.add(fastLog)
                     _amplitudes.value = currentList
                 }
 

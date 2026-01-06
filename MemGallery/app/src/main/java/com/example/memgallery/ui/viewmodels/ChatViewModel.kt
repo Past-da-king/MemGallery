@@ -477,6 +477,17 @@ class ChatViewModel @Inject constructor(
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
     
+    private val _audioProgress = MutableStateFlow(0f)
+    val audioProgress = _audioProgress.asStateFlow()
+    
+    private val _audioCurrentTime = MutableStateFlow("00:00")
+    val audioCurrentTime = _audioCurrentTime.asStateFlow()
+    
+    private val _audioTotalTime = MutableStateFlow("00:00")
+    val audioTotalTime = _audioTotalTime.asStateFlow()
+    
+    private var playbackJob: kotlinx.coroutines.Job? = null
+    
     fun playAudio(path: String) {
         if (_currentPlayingAudioPath.value == path && _isPlaying.value) {
             pauseAudio()
@@ -496,6 +507,9 @@ class ChatViewModel @Inject constructor(
             }
             _currentPlayingAudioPath.value = path
             _isPlaying.value = true
+            
+            // Start progress polling
+            startProgressPolling()
         } catch (e: Exception) {
             android.util.Log.e("ChatViewModel", "Failed to play audio: $path", e)
             _snackbarMessage.value = "Failed to play audio"
@@ -522,6 +536,45 @@ class ChatViewModel @Inject constructor(
         mediaPlayer = null
         _currentPlayingAudioPath.value = null
         _isPlaying.value = false
+        _audioProgress.value = 0f
+        _audioCurrentTime.value = "00:00"
+        playbackJob?.cancel()
+    }
+    
+    private fun startProgressPolling() {
+        playbackJob?.cancel()
+        playbackJob = viewModelScope.launch {
+            while (_isPlaying.value && mediaPlayer != null) {
+                try {
+                    val current = mediaPlayer!!.currentPosition
+                    val total = mediaPlayer!!.duration
+                    if (total > 0) {
+                        _audioProgress.value = current.toFloat() / total.toFloat()
+                        _audioCurrentTime.value = formatTime(current)
+                        _audioTotalTime.value = formatTime(total)
+                    }
+                } catch (e: Exception) {
+                    // Handle illegal state if player released
+                }
+                kotlinx.coroutines.delay(100)
+            }
+        }
+    }
+    
+    fun seekAudio(progress: Float) {
+        mediaPlayer?.let { player ->
+            if (player.isPlaying || _isPlaying.value) {
+                val newPos = (player.duration * progress).toInt()
+                player.seekTo(newPos)
+                _audioProgress.value = progress
+            }
+        }
+    }
+    
+    private fun formatTime(ms: Int): String {
+        val seconds = (ms / 1000) % 60
+        val minutes = (ms / (1000 * 60)) % 60
+        return String.format("%02d:%02d", minutes, seconds)
     }
     
     override fun onCleared() {

@@ -72,6 +72,10 @@ fun MemoryDetailScreen(
 ) {
     viewModel.loadMemory(memoryId)
     val memory by viewModel.memory.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState()
+    val audioProgress by viewModel.audioProgress.collectAsState()
+    val audioCurrentTime by viewModel.audioCurrentTime.collectAsState()
+    val audioTotalTime by viewModel.audioTotalTime.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -130,7 +134,14 @@ fun MemoryDetailScreen(
                 bottomPadding = padding.calculateBottomPadding(),
                 onCreateTask = { title, desc, date, time, type ->
                     viewModel.createTask(it.id, title, desc, date, time, type)
-                }
+                },
+                isPlaying = isPlaying,
+                audioProgress = audioProgress,
+                audioCurrentTime = audioCurrentTime,
+                audioTotalTime = audioTotalTime,
+                onPlayAudio = viewModel::playAudio,
+                onPauseAudio = viewModel::pauseAudio,
+                onSeekAudio = viewModel::seekAudio
             )
         } ?: run {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -149,6 +160,13 @@ fun MemoryDetailContent(
     onEdit: () -> Unit,
     onCreateTask: (String, String, String?, String?, String) -> Unit,
     bottomPadding: Dp,
+    isPlaying: Boolean = false,
+    audioProgress: Float = 0f,
+    audioCurrentTime: String = "00:00",
+    audioTotalTime: String = "00:00",
+    onPlayAudio: (String) -> Unit = {},
+    onPauseAudio: () -> Unit = {},
+    onSeekAudio: (Float) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFullscreenImage by remember { mutableStateOf(false) }
@@ -402,7 +420,15 @@ fun MemoryDetailContent(
                     // Audio Player
                     if (memory.audioFilePath != null) {
                         item {
-                            AudioPlayer(audioUri = memory.audioFilePath)
+                            AudioPlayer(
+                                audioUri = memory.audioFilePath,
+                                isPlaying = isPlaying,
+                                progress = audioProgress,
+                                durationString = audioTotalTime,
+                                currentPositionString = audioCurrentTime,
+                                onPlayClick = { if (isPlaying) onPauseAudio() else onPlayAudio(memory.audioFilePath) },
+                                onSeek = onSeekAudio
+                            )
                             Spacer(modifier = Modifier.height(24.dp))
                         }
                     }

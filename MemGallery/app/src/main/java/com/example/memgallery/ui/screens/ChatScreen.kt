@@ -74,7 +74,8 @@ import java.util.*
 @Composable
 fun ChatScreen(
     navController: NavController,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: ChatViewModel = hiltViewModel(),
+    audioViewModel: com.example.memgallery.ui.viewmodels.AudioCaptureViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -94,6 +95,9 @@ fun ChatScreen(
     // Audio Playback State
     val currentPlayingAudioPath by viewModel.currentPlayingAudioPath.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
+    val audioProgress by viewModel.audioProgress.collectAsState()
+    val audioCurrentTime by viewModel.audioCurrentTime.collectAsState()
+    val audioTotalTime by viewModel.audioTotalTime.collectAsState()
     
     // Streaming State
     val isStreaming by viewModel.isStreaming.collectAsState()
@@ -104,10 +108,12 @@ fun ChatScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Audio recording state
-    var isRecording by remember { mutableStateOf(false) }
-    var recordingAmplitudes by remember { mutableStateOf(List(30) { 0f }) }
-    var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
-    var recordingFile by remember { mutableStateOf<File?>(null) }
+    // Audio recording state from ViewModel
+    val isRecording by audioViewModel.isRecording.collectAsState()
+    val recordingTime by audioViewModel.recordingTime.collectAsState()
+    val recordingAmplitudes by audioViewModel.amplitudes.collectAsState()
+    val recordedFilePath by audioViewModel.recordedFilePath.collectAsState()
+    val recordingError by audioViewModel.error.collectAsState()
 
     // Image/Document picker
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -141,31 +147,23 @@ fun ChatScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            try {
-                val (recorder, file) = startAudioRecording(context)
-                mediaRecorder = recorder
-                recordingFile = file
-                isRecording = true
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            audioViewModel.startRecording()
         }
     }
 
-    // Audio Amplitude Polling
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            while (true) {
-                delay(50) // Update every 50ms
-                mediaRecorder?.maxAmplitude?.let { maxAmp ->
-                    // Normalize amplitude (0-32767) to 0-1 range with some boosting
-                    val norm = (maxAmp / 32767f).coerceIn(0f, 1f)
-                    // Add to list and keep size constant
-                    recordingAmplitudes = (recordingAmplitudes + norm).takeLast(40)
-                }
-            }
-        } else {
-            recordingAmplitudes = List(40) { 0f }
+    // Handle finished recording
+    LaunchedEffect(recordedFilePath) {
+        recordedFilePath?.let { path ->
+            viewModel.sendAudioMessage(path)
+            // Reset (optional, depending on VM behavior, but VM clears it usually on new start or we can ignore duplicates)
+        }
+    }
+    
+    // Handle recording errors
+    LaunchedEffect(recordingError) {
+        recordingError?.let {
+            snackbarHostState.showSnackbar(it)
+            audioViewModel.clearError()
         }
     }
 
@@ -201,42 +199,21 @@ fun ChatScreen(
                 onSend = { viewModel.sendMessage() },
                 onAttachClick = { showAttachMenu = true },
                 onMicClick = {
-                    if (isRecording) {
-                        // Stop recording
-                        try {
-                            mediaRecorder?.stop()
-                            mediaRecorder?.release()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                        mediaRecorder = null
-                        isRecording = false
-                        
-                        // Send the file
-                        recordingFile?.absolutePath?.let { path ->
-                            viewModel.sendAudioMessage(path)
-                        }
-                        recordingFile = null
-                    } else {
-                        // Check permission and start recording
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
-                            == PackageManager.PERMISSION_GRANTED) {
-                            try {
-                                val (recorder, file) = startAudioRecording(context)
-                                mediaRecorder = recorder
-                                recordingFile = file
-                                isRecording = true
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
+                        if (isRecording) {
+                            audioViewModel.stopRecording()
                         } else {
-                            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
+                                == PackageManager.PERMISSION_GRANTED) {
+                                audioViewModel.startRecording()
+                            } else {
+                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
                         }
-                    }
                 },
                 isLoading = isLoading,
                 isRecording = isRecording,
-                recordingAmplitudes = recordingAmplitudes
+                recordingAmplitudes = recordingAmplitudes,
+                recordingDurationSeconds = recordingTime
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -325,8 +302,8 @@ fun ChatScreen(
                                         ToolExecutionIndicator(toolName = toolName)
                                     }
                                     
-                                    // Thinking Process
-                                    if (currentThought.isNotEmpty()) {
+                                    // Thinking Process - Hide when content starts streaming to prevent clutter
+                                    if (currentThought.isNotEmpty() && streamingContent.isEmpty()) {
                                         ThinkingProcessAccordion(thought = currentThought)
                                     }
                                     
@@ -364,8 +341,12 @@ fun ChatScreen(
                                     scope.launch { snackbarHostState.showSnackbar("Copied to clipboard") }
                                 },
                                 isPlaying = isPlaying && currentPlayingAudioPath == message.audioFilePath,
+                                audioProgress = if (currentPlayingAudioPath == message.audioFilePath) audioProgress else 0f,
+                                audioCurrentTime = if (currentPlayingAudioPath == message.audioFilePath) audioCurrentTime else "00:00",
+                                audioTotalTime = if (currentPlayingAudioPath == message.audioFilePath) audioTotalTime else "00:00",
                                 onPlayAudio = viewModel::playAudio,
                                 onPauseAudio = viewModel::pauseAudio,
+                                onSeekAudio = viewModel::seekAudio,
                                 onMemoryClick = { memory -> navController.navigate(Screen.Detail.createRoute(memory.id)) }
                             )
                         }
@@ -439,7 +420,8 @@ fun EnhancedChatInputBar(
     onMicClick: () -> Unit,
     isLoading: Boolean,
     isRecording: Boolean,
-    recordingAmplitudes: List<Float>
+    recordingAmplitudes: List<Float>,
+    recordingDurationSeconds: Long = 0L
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -527,7 +509,7 @@ fun EnhancedChatInputBar(
                             Spacer(modifier = Modifier.width(12.dp))
                             
                             Text(
-                                text = formatDuration(recordingAmplitudes.size * 50L), // Approx duration
+                                text = formatDuration(recordingDurationSeconds * 1000), 
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -705,8 +687,12 @@ fun MessageBubble(
     onSaveAsNote: () -> Unit,
     onCopy: () -> Unit,
     isPlaying: Boolean = false,
+    audioProgress: Float = 0f,
+    audioCurrentTime: String = "00:00",
+    audioTotalTime: String = "00:00",
     onPlayAudio: (String) -> Unit = {},
     onPauseAudio: () -> Unit = {},
+    onSeekAudio: (Float) -> Unit = {},
     onMemoryClick: (com.example.memgallery.data.local.entity.MemoryEntity) -> Unit = {}
 ) {
     val isUser = message.role == "user"
@@ -724,11 +710,16 @@ fun MessageBubble(
         ) {
             // Audio Player
             if (message.audioFilePath != null) {
-                AudioPlayerBubble(
-                    audioPath = message.audioFilePath,
+                com.example.memgallery.ui.components.AudioPlayer(
+                    audioUri = message.audioFilePath,
                     isPlaying = isPlaying,
-                    onPlay = { onPlayAudio(message.audioFilePath) },
-                    onPause = onPauseAudio
+                    progress = audioProgress,
+                    durationString = audioTotalTime,
+                    currentPositionString = audioCurrentTime,
+                    onPlayClick = { 
+                        if (isPlaying) onPauseAudio() else onPlayAudio(message.audioFilePath)
+                    },
+                    onSeek = onSeekAudio
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
@@ -844,59 +835,7 @@ fun MessageBubble(
 }
 
 
-@Composable
-fun AudioPlayerBubble(
-    audioPath: String,
-    isPlaying: Boolean,
-    onPlay: () -> Unit,
-    onPause: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        modifier = Modifier.width(200.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = { if (isPlaying) onPause() else onPlay() },
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape)
-            ) {
-                Icon(
-                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            // Visual waveform representation
-            Row(
-                modifier = Modifier.weight(1f).height(24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                repeat(15) {
-                    Box(
-                        modifier = Modifier
-                            .width(3.dp)
-                            .height((10..24).random().dp)
-                            .background(
-                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f),
-                                CircleShape
-                            )
-                    )
-                }
-            }
-        }
-    }
-}
+
 
 @Composable
 fun PremiumAttachmentSheet(
