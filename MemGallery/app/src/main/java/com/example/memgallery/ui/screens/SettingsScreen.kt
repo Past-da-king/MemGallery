@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.ui.viewmodels.ApiKeyUiState
+import com.example.memgallery.ui.viewmodels.BackupUiState
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +49,7 @@ fun SettingsScreen(
     val notificationFilter by viewModel.notificationFilter.collectAsState()
     val showInShareSheet by viewModel.showInShareSheet.collectAsState()
     val taskScreenEnabled by viewModel.taskScreenEnabled.collectAsState()
+    val backupUiState by viewModel.backupUiState.collectAsState()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -84,6 +86,32 @@ fun SettingsScreen(
             if (!allGranted) {
                 permissionLauncher.launch(permissionsToRequest.toTypedArray())
             }
+        }
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        uri?.let { viewModel.exportBackup(it) }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.importBackup(it) }
+    }
+
+    LaunchedEffect(backupUiState) {
+        when (val state = backupUiState) {
+            is BackupUiState.Success -> {
+                android.widget.Toast.makeText(context, state.message, android.widget.Toast.LENGTH_LONG).show()
+                viewModel.resetBackupState()
+            }
+            is BackupUiState.Error -> {
+                android.widget.Toast.makeText(context, state.message, android.widget.Toast.LENGTH_LONG).show()
+                viewModel.resetBackupState()
+            }
+            else -> {}
         }
     }
 
@@ -283,6 +311,42 @@ fun SettingsScreen(
                 }
             }
 
+            // Data Management Card
+            SettingsCard(
+                icon = Icons.Default.Save,
+                title = "Data Management",
+                description = "Backup and restore your memories"
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { 
+                            val fileName = "memgallery_backup_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())}.zip"
+                            exportLauncher.launch(fileName) 
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Export Backup")
+                    }
+
+                    OutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/zip")) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Import Backup")
+                    }
+                    
+                    if (backupUiState is BackupUiState.Loading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                    }
+                }
+            }
+
             // Notifications Card
             SettingsCard(
                 icon = Icons.Default.Notifications,
@@ -335,6 +399,54 @@ fun SettingsScreen(
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
+                        }
+                    }
+                }
+            }
+            
+            // Support & Feedback Card
+            SettingsCard(
+                icon = Icons.Default.Info,
+                title = "Support",
+                description = "Get help and provide feedback"
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { navController.navigate("feedback") }
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(40.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.BugReport,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+                        
+                        Column {
+                            Text(
+                                "Send Feedback",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Report bugs or suggest new features",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }

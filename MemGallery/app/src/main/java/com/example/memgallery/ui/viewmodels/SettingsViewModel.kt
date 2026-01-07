@@ -26,13 +26,26 @@ sealed interface ApiKeyUiState {
     data class Error(val message: String) : ApiKeyUiState
 }
 
+sealed interface BackupUiState {
+    object Idle : BackupUiState
+    object Loading : BackupUiState
+    data class Success(val message: String) : BackupUiState
+    data class Error(val message: String) : BackupUiState
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val geminiService: GeminiService,
-    private val chatGeminiService: com.example.memgallery.data.remote.ChatGeminiService
+    private val chatGeminiService: com.example.memgallery.data.remote.ChatGeminiService,
+    private val backupRepository: com.example.memgallery.data.repository.BackupRepository
 ) : ViewModel() {
+
+    // Backup State
+    private val _backupUiState = MutableStateFlow<BackupUiState>(BackupUiState.Idle)
+    val backupUiState: StateFlow<BackupUiState> = _backupUiState.asStateFlow()
+
 
     val autoIndexScreenshots: StateFlow<Boolean> = settingsRepository.autoIndexScreenshotsFlow
         .stateIn(
@@ -537,5 +550,36 @@ class SettingsViewModel @Inject constructor(
             _userSystemPrompt.value = settingsRepository.userSystemPromptFlow.first()
             _userContextSummary.value = settingsRepository.userContextSummaryFlow.first()
         }
+    }
+
+    // Backup Actions
+    fun exportBackup(uri: android.net.Uri) {
+        viewModelScope.launch {
+            _backupUiState.value = BackupUiState.Loading
+            backupRepository.exportBackup(uri).collect { result ->
+                result.onSuccess {
+                    _backupUiState.value = BackupUiState.Success("Backup exported successfully!")
+                }.onFailure { e ->
+                    _backupUiState.value = BackupUiState.Error("Export failed: ${e.localizedMessage}")
+                }
+            }
+        }
+    }
+
+    fun importBackup(uri: android.net.Uri) {
+        viewModelScope.launch {
+            _backupUiState.value = BackupUiState.Loading
+            backupRepository.importBackup(uri).collect { result ->
+                result.onSuccess { count ->
+                    _backupUiState.value = BackupUiState.Success("Imported $count memories successfully!")
+                }.onFailure { e ->
+                    _backupUiState.value = BackupUiState.Error("Import failed: ${e.localizedMessage}")
+                }
+            }
+        }
+    }
+
+    fun resetBackupState() {
+        _backupUiState.value = BackupUiState.Idle
     }
 }

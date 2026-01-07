@@ -12,6 +12,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import com.example.memgallery.data.remote.github.GitHubService
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -68,4 +74,28 @@ object AppModule {
     fun provideChatDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.ChatDao {
         return appDatabase.chatDao()
     }
+    @Provides
+    @Singleton
+    fun provideGitHubService(): GitHubService {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (com.example.memgallery.BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.BASIC
+            }
+            // Important: Redact the auth token so it never appears in logs
+            redactHeader("Authorization")
+        }
+        val client = OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .build()
+            
+        return Retrofit.Builder()
+            .baseUrl("https://api.github.com/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(GitHubService::class.java)
+    }
 }
+

@@ -66,6 +66,8 @@ sealed class Screen(val route: String) {
     object PostCaptureUrl : Screen("post_capture_url?openUrlSheet={openUrlSheet}") {
         fun createRoute(openUrlSheet: Boolean = false) = "post_capture_url?openUrlSheet=$openUrlSheet"
     }
+
+    object Feedback : Screen("feedback")
 }
 
 @Composable
@@ -289,6 +291,15 @@ fun AppNavigation(
         ) { backStackEntry ->
              val openAddSheet = backStackEntry.arguments?.getBoolean("openAddSheet") ?: false
              HomeScreen(navController = navController, openAddTaskSheet = openAddSheet, forceTaskPage = true)
+        }
+        composable(
+            route = Screen.Feedback.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) {
+            FeedbackScreen(navController = navController)
         }
     }
 }
