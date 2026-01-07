@@ -203,26 +203,26 @@
     </nav>
 
     <div class="container">
-        <h1>MECHANICAL<br>ARCHITECTURE.</h1>
-        <p class="intro">A deep-cycle forensic audit of the MemGallery hardware/software synergy. No marketing. Only
-            engineering.</p>
+        <h1>HOW IT<br>WORKS.</h1>
+        <p class="intro">A look at the technology that keeps your memories safe, organized, and private. No marketing
+            fluff—just the details.</p>
 
         <section class="feature-depth">
-            <h2>The Task Intelligence Pipeline</h2>
-            <p style="margin-bottom: 2rem;">Unlike basic todo apps, MemGallery uses a multi-stage user-approval pipeline
-                to prevent database pollution.</p>
+            <h2>Smart Task Management</h2>
+            <p style="margin-bottom: 2rem;">MemGallery doesn't just save notes; it helps you stay on top of things by
+                suggesting tasks from your memories.</p>
 
             <div class="mechanical-box">
                 <h3>The Lifecycle of a Task</h3>
                 <div class="flow-container">
-                    <div class="flow-step">Capture triggering -> MemoryEntity created in Room DB</div>
-                    <div class="flow-step">AI Inference -> Maverick-128e detects Intent and creates ActionDto</div>
-                    <div class="flow-step">Review Sheet -> User verifies, edits, or deletes the proposed Task</div>
-                    <div class="flow-step">Persistence -> Approved Task committed to TaskEntity v16</div>
-                    <div class="flow-step">Ecosystem Export -> Native ACTION_INSERT Intent pushes to Google Tasks</div>
+                    <div class="flow-step">You save a memory (text, image, or voice)</div>
+                    <div class="flow-step">The AI scans it for important dates or things to do</div>
+                    <div class="flow-step">You review the suggested task in a simple popup</div>
+                    <div class="flow-step">Once approved, it's saved securely on your phone</div>
+                    <div class="flow-step">You can even export tasks to your Google Calendar or Tasks</div>
                 </div>
 
-                <span class="code-title">ActionHandler.kt Implementation</span>
+                <span class="code-title">How we handle your tasks</span>
                 <pre><code>
 fun createCalendarEventIntent(action: ActionDto): Intent {
     return Intent(Intent.ACTION_INSERT).apply {
@@ -240,35 +240,34 @@ fun createCalendarEventIntent(action: ActionDto): Intent {
         </section>
 
         <section class="feature-depth">
-            <h2>Dual-Engine Inference</h2>
-            <p style="margin-bottom: 2rem;">Why do we use two providers? Because speed and depth are mutually exclusive
-                at the edge.</p>
+            <h2>AI Technology</h2>
+            <p style="margin-bottom: 2rem;">We use two different AI systems to give you a balance of depth and speed.
+            </p>
 
             <div class="tech-grid">
                 <div class="tech-card">
-                    <h4>Gemini 1.5 Pro</h4>
-                    <p>Reserved for <b>"Global Semantic Retrieval."</b> When the AI tool <code>queryDatabase</code> is
-                        called, Gemini scans your entire memory history with its 128k context window to find non-obvious
-                        links.</p>
+                    <h4>Gemini 2.5 Flash</h4>
+                    <p>This is the all-in-one brain. It hears your voice, sees your images, and reads your text all at
+                        once. It's perfect for finding hidden patterns in your history.</p>
                 </div>
                 <div class="tech-card">
-                    <h4>Llama-4 Maverick</h4>
-                    <p>Reserved for <b>"High-Fidelity Analysis."</b> Powered by Groq LPUs, it processes image/audio
-                        captures in <50ms, achieving real-time tagging accuracy that outperforms cloud models.</p>
+                    <h4>Groq Engine</h4>
+                    <p>This is built for pure speed. It uses specialized models to transcribe your voice recordings and
+                        analyze images in less than a second.</p>
                 </div>
             </div>
         </section>
 
         <section class="feature-depth">
-            <h2>Hardware Sovereignty</h2>
-            <p style="margin-bottom: 2rem;">MemGallery lives in the Android hardware enclave.</p>
+            <h2>Security & Privacy</h2>
+            <p style="margin-bottom: 2rem;">MemGallery is built to keep your data private by design.</p>
 
             <div class="mechanical-box">
-                <h3>EncryptedSharedPreferences Protocol</h3>
-                <p style="margin-bottom: 2rem; color: var(--text-dim);">We don't just "save" keys. We lock them in
-                    hardware.</p>
+                <h3>Locked in Hardware</h3>
+                <p style="margin-bottom: 2rem; color: var(--text-dim);">We don't just "save" your API keys. We lock them
+                    in your phone's secure hardware enclave.</p>
 
-                <span class="code-title">SettingsRepository.kt Sec Ops</span>
+                <span class="code-title">Security Implementation</span>
                 <pre><code>
 private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 private val encryptedPrefs = EncryptedSharedPreferences.create(
@@ -280,34 +279,32 @@ private val encryptedPrefs = EncryptedSharedPreferences.create(
 )
                 </code></pre>
                 <div class="flow-container">
-                    <div class="flow-step">MasterKey generated in TEE (Trusted Execution Environment)</div>
-                    <div class="flow-step">AES256_SIV scheme encrypts the Preference Key itself</div>
-                    <div class="flow-step">AES256_GCM scheme encrypts the API Key value</div>
-                    <div class="flow-step">Keys only valid when the TEE-bound app signature matches</div>
+                    <div class="flow-step">A master key is generated inside your phone's secure hardware</div>
+                    <div class="flow-step">Your settings and API keys are double-encrypted</div>
+                    <div class="flow-step">Access is only granted when the app signature matches exactly</div>
+                    <div class="flow-step">Your private keys never leave the secure hardware area</div>
                 </div>
             </div>
         </section>
 
         <section class="feature-depth">
-            <h2>Physics & Overlays</h2>
+            <h2>System Integration</h2>
             <div class="tech-grid">
                 <div class="tech-card">
-                    <h4>AccessibilityService</h4>
-                    <p>How the Edge Gesture works. MemGallery requests <code>BIND_ACCESSIBILITY_SERVICE</code> to draw a
-                        floating window over all other apps. It samples screen coordinates to detect swipe events
-                        without interrupting your background apps.</p>
+                    <h4>Edge Gestures</h4>
+                    <p>This is how you access the app quickly. MemGallery uses a system service to place an invisible
+                        handle on your screen edge, letting you swipe to capture anything instantly.</p>
                 </div>
                 <div class="tech-card">
-                    <h4>FileObserver</h4>
-                    <p>The Screenshot Observer monitors <code>/DCIM/Screenshots</code>. When a <code>MOVED_TO</code> or
-                        <code>CREATE</code> bit is flipped in the Linux kernel, MemGallery wakes the AI engine to index
-                        the new image instantly.</p>
+                    <h4>Live Monitoring</h4>
+                    <p>The app monitors your screenshots folder. When you take a screenshot, MemGallery wakes the AI to
+                        index the image so you can search for it later.</p>
                 </div>
             </div>
         </section>
 
         <footer>
-            V0.0.8_MECHANICAL_MANIFEST // BUILT_WITH_PRECISION // PAST9
+            V0.0.8 // BUILT BY PAST // MEMGALLERY
         </footer>
     </div>
 </body>
