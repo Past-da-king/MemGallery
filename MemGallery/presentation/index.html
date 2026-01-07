@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemGallery — Your AI-Powered Second Brain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        dark: {
+                            900: '#0a0a0c',
+                            800: '#121216',
+                            700: '#1a1a20',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a0a0c;
+            color: #e2e8f0;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-hover:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #6d28d9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        .phone-container {
+            position: relative;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .phone-container:hover {
+            transform: scale(1.02) rotateY(-5deg);
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+    </style>
+</head>
+
+<body class="antialiased overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full z-50 glass border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <span class="text-white font-bold text-xl">M</span>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-white">MemGallery</span>
+            </div>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#features" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Features</a>
+                <a href="#ai" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">AI Engine</a>
+                <a href="#license" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">License</a>
+                <a href="#" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-full text-sm font-semibold transition-all shadow-lg shadow-brand-500/20">Download APK</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-40 pb-20 px-6 overflow-hidden">
+        <div class="glow w-[500px] h-[500px] bg-brand-600 -top-20 -left-20 animate-pulse-slow"></div>
+        <div class="glow w-[400px] h-[400px] bg-purple-600 bottom-0 right-0 opacity-10"></div>
+
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+            <div class="flex-1 text-center lg:text-left">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold mb-6">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                    </span>
+                    VERSION 0.0.8 IS LIVE
+                </div>
+                <h1 class="text-5xl md:text-7xl font-bold mb-8 leading-[1.1]">
+                    Your Mind, <br>
+                    <span class="gradient-text">Augmented by AI.</span>
+                </h1>
+                <p class="text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                    MemGallery is your secure, private "second brain." Capture everything from voice memos to screenshots, and let our proactive AI organize, summarize, and turn your memories into action.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                    <button class="w-full sm:w-auto px-8 py-4 bg-white text-black rounded-2xl font-bold hover:bg-gray-200 transition-all">Get Started</button>
+                    <button class="w-full sm:w-auto px-8 py-4 glass text-white rounded-2xl font-bold border border-white/10 hover:border-white/20 transition-all">View on GitHub</button>
+                </div>
+            </div>
+
+            <div class="flex-1 w-full max-w-[500px] lg:max-w-none">
+                <div class="relative phone-container mx-auto">
+                    <!-- Placeholder for actual mockup or illustration -->
+                    <div class="w-full aspect-[9/19] rounded-[3rem] border-[12px] border-dark-800 bg-dark-900 shadow-2xl relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-b from-brand-900/20 to-transparent"></div>
+                        <div class="p-8 h-full flex flex-col gap-6">
+                            <div class="h-8 w-1/2 bg-white/5 rounded-lg"></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="aspect-square bg-white/5 rounded-2xl border border-white/5 animate-pulse"></div>
+                                <div class="aspect-square bg-white/5 rounded-2xl border border-white/5 delay-75 animate-pulse"></div>
+                                <div class="aspect-square bg-white/5 rounded-2xl border border-white/5 delay-150 animate-pulse"></div>
+                                <div class="aspect-square bg-white/5 rounded-2xl border border-white/5 delay-300 animate-pulse"></div>
+                            </div>
+                            <div class="mt-auto h-20 w-full glass rounded-2xl p-4 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-brand-600"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-2 w-3/4 bg-white/20 rounded"></div>
+                                    <div class="h-2 w-1/2 bg-white/10 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Accent elements -->
+                    <div class="absolute -right-8 top-1/4 glass p-4 rounded-2xl shadow-xl hidden md:block border-brand-500/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">✅</div>
+                            <span class="text-sm font-medium">Task Created</span>
+                        </div>
+                    </div>
+                    <div class="absolute -left-12 bottom-1/4 glass p-4 rounded-2xl shadow-xl hidden md:block border-brand-500/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">🤖</div>
+                            <span class="text-sm font-medium font-sans">Title: "Beach Trip"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-bold mb-4">Features for the <span class="gradient-text">Modern Mind</span></h2>
+                <p class="text-gray-400">Everything you need to capture, organize, and retrieve information effortlessly.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Multi-modal -->
+                <div class="feature-card glass p-8 rounded-[2rem] border border-white/5">
+                    <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-2xl mb-6">📸</div>
+                    <h3 class="text-xl font-bold mb-4">Multi-Modal Capture</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        Snap photos, record voice notes, or save web bookmarks. MemGallery captures the context instantly using advanced metadata extraction.
+                    </p>
+                </div>
+                <!-- Proactive AI -->
+                <div class="feature-card glass p-8 rounded-[2rem] border border-white/5">
+                    <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-2xl mb-6">🧠</div>
+                    <h3 class="text-xl font-bold mb-4">Proactive AI Assistant</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        A unified chat with access to your local database. Ask questions, get summaries, or even search the web—all from one conversation.
+                    </p>
+                </div>
+                <!-- Auto-Tasks -->
+                <div class="feature-card glass p-8 rounded-[2rem] border border-white/5">
+                    <div class="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center text-2xl mb-6">✅</div>
+                    <h3 class="text-xl font-bold mb-4">AI Task Management</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        Turn insights into action. The AI automatically identifies to-dos and events in your memories and creates them for you.
+                    </p>
+                </div>
+                <!-- Privacy -->
+                <div class="feature-card glass p-8 rounded-[2rem] border border-white/5">
+                    <div class="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-2xl mb-6">🛡️</div>
+                    <h3 class="text-xl font-bold mb-4">Privacy by Default</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        Your data stays on your device. Local SQLite storage with encrypted sensitive data—no cloud sync unless you want it.
+                    </p>
+                </div>
+                <!-- Multi-Provider -->
+                <div class="feature-card glass p-8 rounded-[2rem] border border-white/5">
+                    <div class="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center text-2xl mb-6">⚡</div>
+                    <h3 class="text-xl font-bold mb-4">Multi-Provider AI</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        Choose your engine. Support for Google Gemini (Flash & Pro) and Groq's lightning-fast Llama models.
+                    </p>
+                </div>
+                <!-- Customization -->
+                <div class="feature-card glass p-8 rounded-[2rem] border border-white/5">
+                    <div class="w-14 h-14 bg-cyan-500/10 rounded-2xl flex items-center justify-center text-2xl mb-6">🎨</div>
+                    <h3 class="text-xl font-bold mb-4">Premium Design</h3>
+                    <div class="text-gray-400 leading-relaxed text-sm">
+                        Full Material You support, AMOLED black mode, and dynamic glassmorphism aesthetics.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Showcase -->
+    <section id="ai" class="py-24 glass relative overflow-hidden border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="flex-1">
+                    <h2 class="text-4xl font-bold mb-6">A Smarter <span class="gradient-text">Conversation</span></h2>
+                    <p class="text-lg text-gray-400 mb-8 leading-relaxed">
+                        MemGallery's Chat isn't just a chatbot; it's a window into your knowledge. Using **Function Calling**, the AI can browse your memories, find relevant images, and even display them as interactive cards.
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-600/20 text-brand-500 flex items-center justify-center text-xs mt-1">✓</div>
+                            <div>
+                                <h4 class="font-bold">Natural Language Queries</h4>
+                                <p class="text-sm text-gray-400">"Find those notes from the meeting last Tuesday."</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-600/20 text-brand-500 flex items-center justify-center text-xs mt-1">✓</div>
+                            <div>
+                                <h4 class="font-bold">Visual Retrieval</h4>
+                                <p class="text-sm text-gray-400">"Show me the photo of the contract I signed."</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-600/20 text-brand-500 flex items-center justify-center text-xs mt-1">✓</div>
+                            <div>
+                                <h4 class="font-bold">Database Schema Awareness</h4>
+                                <p class="text-sm text-gray-400">The AI understands tables like 'memories', 'tasks', and 'collections' natively.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="flex-1 glass p-2 rounded-[2.5rem] border border-white/10">
+                    <div class="bg-dark-900 rounded-[2.2rem] p-6 font-mono text-sm overflow-hidden">
+                        <div class="text-brand-400 mb-2">// AI is thinking...</div>
+                        <div class="text-white mb-4">Searching memories for 'vacation' filters...</div>
+                        <div class="text-gray-500 mb-4">
+                            <ctrl42>call:queryDatabase({<br>
+                            &nbsp;&nbsp;table: "memories",<br>
+                            &nbsp;&nbsp;filters: '{"search": "vacation"}',<br>
+                            &nbsp;&nbsp;fields: "all"<br>
+                            })
+                        </div>
+                        <div class="text-green-400 mb-4">Result: 3 memories found.</div>
+                        <div class="text-gray-500">
+                            displayMemoriesById("[12, 45, 88]")
+                        </div>
+                        <div class="mt-6 flex gap-3">
+                            <div class="w-1/3 aspect-[3/4] rounded-lg bg-white/5 border border-white/10"></div>
+                            <div class="w-1/3 aspect-[3/4] rounded-lg bg-white/5 border border-white/10"></div>
+                            <div class="w-1/3 aspect-[3/4] rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- License Section -->
+    <section id="license" class="py-24 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass p-12 rounded-[3rem] border border-white/5 text-center">
+                <div class="w-20 h-20 bg-gray-500/10 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-8">📄</div>
+                <h2 class="text-4xl font-bold mb-6">License & Usage</h2>
+                <div class="text-left space-y-6 text-gray-400 leading-relaxed">
+                    <p>
+                        MemGallery is released under the **MIT License**. This means you are free to use, modify, and distribute the software, provided that the original copyright notice and permission notice are included.
+                    </p>
+                    <div class="bg-white/5 p-6 rounded-2xl font-mono text-xs text-brand-300 border border-white/5">
+                        Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files...
+                    </div>
+                    <h4 class="font-bold text-white mt-8">Enterprise & Seat Licensing</h4>
+                    <p>
+                        For commercial use or seat-based licensing, MemGallery offers a premium tier that includes dedicated support, cloud sync options, and advanced security configurations. Please contact our team for details.
+                    </p>
+                    <h4 class="font-bold text-white mt-8">Attribution</h4>
+                    <p>
+                        This project utilizes several open-source libraries including Hilt, Room, Coil, and Markwon. We thank the respective maintainers for their invaluable contributions to the Android ecosystem.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold">M</span>
+                </div>
+                <span class="text-lg font-bold text-white">MemGallery</span>
+            </div>
+            <p class="text-gray-500 text-sm">© 2026 MemGallery Team. All rights reserved.</p>
+            <div class="mt-8 flex justify-center gap-6">
+                <a href="#" class="text-gray-500 hover:text-white transition-colors">Twitter</a>
+                <a href="#" class="text-gray-500 hover:text-white transition-colors">GitHub</a>
+                <a href="#" class="text-gray-500 hover:text-white transition-colors">Discord</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

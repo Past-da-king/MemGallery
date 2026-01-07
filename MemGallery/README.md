@@ -1,51 +1,87 @@
-# MemGallery 🎨
+# MemGallery 🎨 — The Augmented Intelligence Vault
 
-MemGallery is a smart, private, AI-powered "second brain" for your memories. It allows you to capture, process, and recall everything that's important to you, from photos and voice notes to web links and screenshots.
+[![Version](https://img.shields.io/badge/Version-0.0.8--alpha-blueviolet?style=for-the-badge)](https://github.com/Past-da-king/MemGallery)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](details.html#license)
+[![Platform](https://img.shields.io/badge/Platform-Android_12+-black?style=for-the-badge&logo=android)](https://developer.android.com/about/versions/12)
 
-Harnessing the power of Google's Gemini AI, MemGallery automatically analyzes your content to provide titles, summaries, searchable tags, and even suggests actionable items like creating calendar events or to-do list items.
+**MemGallery** is an ultra-private, local-first intelligence engine designed to serve as a high-fidelity "second brain." It leverages multi-modal LLMs (**Gemini v2.0** and **Groq Maverick**) to index, reason over, and proactively manage your personal knowledge.
 
-## ✨ Features
+---
 
-- **Multi-Modal Capture**: Save memories using:
-  - **Text Notes**: Quickly jot down thoughts.
-  - **Images**: Upload from your gallery or take a photo directly.
-  - **Audio**: Record voice notes and memos.
-  - **Bookmarks**: Save web links for later.
-- **AI-Powered Analysis**: Your content is automatically processed to generate:
-  - Concise Titles & Summaries
-  - Exhaustive, Searchable Tags
-  - Detailed Image and Audio Transcriptions
-  - Actionable Suggestions (Events, To-Dos, Reminders)
-- **Quick Capture**:
-  - **Overlay**: An overlay service lets you create a memory from anywhere in the OS.
-  - **Quick Settings Tile**: A dedicated tile to instantly launch the capture overlay.
-  - **Screenshot Detection**: Automatically detects and offers to save new screenshots.
-- **Integrated Task Manager**: View and manage all AI-generated tasks and events in one place.
-- **Advanced Customization**:
-  - **Theming**: Supports system-wide dark/light mode, Dynamic Color (Android 12+), custom accent colors, and an AMOLED-friendly pure black mode.
-  - **Custom AI Instructions**: Fine-tune the AI's behavior and tone with your own system prompts in the Advanced Settings.
-- **Secure & Private**:
-  - Your data is stored locally on your device.
-  - Sensitive information like API keys are stored securely using Android's `EncryptedSharedPreferences`.
+## 🏗️ Technical Architecture
 
-## 🛠️ Setup
+MemGallery is built on a modern MVVM stack with a heavy emphasis on **AI Tool-Calling (Function Calling)**. Unlike traditional apps, the AI has a "live" window into your structured data.
 
-1.  **Clone the repository.**
-2.  **Open in Android Studio** (latest stable version recommended).
-3.  **Get a Gemini API Key**:
-    - Visit [aistudio.google.com](https://aistudio.google.com).
-    - Sign in and create a new API key.
-    - Launch the app for the first time and complete the onboarding process by entering your API key when prompted.
-4.  **Build and run** the app.
+### 🧠 Proactive Reasoning Engine
+The AI Assistant uses a custom tooling layer (`ChatTools.kt`) to interact with the Room database. It can perform:
+- **Semantic Retrieval**: Querying by concept rather than keyword.
+- **Relational Filtering**: Accessing collections, tasks, and memory metadata.
+- **Interactive Injection**: Programmatically requesting the UI to display memory cards.
 
-## ✍️ Signing
+#### Example Tool Interaction (JSON):
+```json
+{
+  "call": "queryDatabase",
+  "arguments": {
+    "table": "memories",
+    "filters": "{ \"search\": \"contract\", \"status\": \"ACTIVE\" }",
+    "fields": "title, summary, imageUri"
+  }
+}
+```
 
-The project is configured to use a `release-key.jks` file for release builds. Passwords and key aliases are loaded from your project's `local.properties` file:
+---
+
+## ✨ Core Feature Set
+
+- **⚡ Dual AI Ingestion**: Configure **Google Gemini** for high-reasoning tasks or **Groq (Llama-3)** for sub-second forensic analysis.
+- **🎙️ Whisper Transcription**: Automated processing of `.m4a` and `.wav` voice memos with semantic tagging.
+- **📸 Forensic Vision**: Detailed analysis of OCR text, screenshot context, and visual elements.
+- **🛡️ The "Zero Cloud" Mandate**: NO telemetry, NO cloud sync, NO external trackers. All persistence is strictly local via SQLite.
+- **✅ Intent-to-Task Logic**: Automatic detection of TODOs, EVENTs, and REMINDERs from natural language capture.
+
+---
+
+## 🚀 Professional Setup Guide
+
+### 1. Requirements
+- **JDK 17+**
+- **Android Studio Koala+**
+- **Android 12 (API 31)** or higher.
+
+### 2. Environment Configuration
+Create a `local.properties` file in the project root with your signing and token configuration:
 
 ```properties
-# In local.properties
-storePassword=YOUR_STORE_PASSWORD
-keyAlias=YOUR_KEY_ALIAS
-keyPassword=YOUR_KEY_PASSWORD
+# AI Provider Keys
+# Get them from https://aistudio.google.com and https://console.groq.com
+GEMINI_API_KEY=your_gemini_key
+GROQ_API_KEY=your_groq_key
+
+# CI/CD & Feedback (Optional)
+GITHUB_TOKEN=your_github_token # For secure log reporting
+
+# Signing Configuration
+storePassword=your_password
+keyAlias=your_alias
+keyPassword=your_alias_password
 ```
-This ensures your signing keys are kept secure and are not checked into version control.
+
+### 3. Build & Deploy
+```bash
+./gradlew assembleRelease
+```
+*Note: For the best experience, ensure "Dynamic Color" is enabled in Android Settings to activate the Material You theme engine.*
+
+---
+
+## 📜 Legal & Attribution
+
+MemGallery is open-sourced under the **MIT License**. We prioritize transparency and user sovereignty over data. 
+
+- **Detailed Features & Architecture**: [Technical Deep-Dive](details.html)
+- **Security Protocols**: [Privacy & Security Policy](details.html#privacy)
+- **License Details**: [MIT Full Text](details.html#license)
+
+---
+*Powered by Artificial Intelligence. Controlled by Human Sovereignty.*

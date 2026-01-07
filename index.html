@@ -4,533 +4,491 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MemGallery - Your External Brain</title>
-    <meta name="description"
-        content="MemGallery is an AI-powered memory assistant. Capture, process, and recall everything with Gemini AI.">
-    <link rel="icon" type="image/png" href="images/icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>MemGallery | The Absolute Memory Pipeline</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;400;900&family=JetBrains+Mono:wght@200;700&display=swap"
         rel="stylesheet">
     <style>
         :root {
-            --primary: #D0BCFF;
-            --primary-glow: rgba(208, 188, 255, 0.4);
-            --accent: #8C25F4;
-            --accent-glow: rgba(140, 37, 244, 0.4);
-            --background: #050505;
-            --surface: rgba(20, 20, 20, 0.6);
-            --surface-highlight: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
-            --text-main: #FFFFFF;
-            --text-muted: #A0A0A0;
-            --gradient-main: linear-gradient(135deg, #FFF 0%, #A0A0A0 100%);
-            --gradient-accent: linear-gradient(135deg, #D0BCFF 0%, #8C25F4 100%);
+            --bg: #000000;
+            --accent: #10b981;
+            /* Emerald */
+            --secondary: #8b5cf6;
+            /* Violet */
+            --text-h: #ffffff;
+            --text-p: rgba(255, 255, 255, 0.4);
+            --border: rgba(255, 255, 255, 0.05);
+            --glow: rgba(16, 185, 129, 0.2);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            cursor: none;
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--background);
-            color: var(--text-main);
+            background: var(--bg);
+            color: var(--text-h);
+            font-family: 'Outfit', sans-serif;
             overflow-x: hidden;
-            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Background Effects */
-        .bg-glow {
+        /* Custom Cursor */
+        #cursor {
             position: fixed;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(140, 37, 244, 0.15) 0%, transparent 70%);
+            width: 20px;
+            height: 20px;
+            background: #fff;
             border-radius: 50%;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: -1;
-            filter: blur(80px);
-            animation: pulse 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 99999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
         }
 
-        .bg-glow-2 {
+        /* Background Noise & Grid */
+        .noise {
             position: fixed;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(50, 50, 100, 0.2) 0%, transparent 70%);
-            border-radius: 50%;
-            bottom: -100px;
-            right: -100px;
-            z-index: -1;
-            filter: blur(60px);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
         }
 
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 0.8;
-                transform: translateX(-50%) scale(1);
-            }
-
-            50% {
-                opacity: 0.5;
-                transform: translateX(-50%) scale(1.1);
-            }
+        .grid-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.3;
+            pointer-events: none;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
         }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate {
-            opacity: 0;
-            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
-
-        .delay-1 {
-            animation-delay: 0.1s;
-        }
-
-        .delay-2 {
-            animation-delay: 0.2s;
-        }
-
-        .delay-3 {
-            animation-delay: 0.3s;
-        }
-
-        .delay-4 {
-            animation-delay: 0.4s;
-        }
-
-        /* Header */
-        header {
+        /* Navigation */
+        nav {
             position: fixed;
             top: 0;
             width: 100%;
-            padding: 1.5rem 2rem;
+            padding: 2.5rem 5vw;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
-            backdrop-filter: blur(20px);
-            background: rgba(5, 5, 5, 0.5);
-            border-bottom: 1px solid var(--border);
+            z-index: 2000;
         }
 
-        .logo {
+        .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 1.2rem;
             text-decoration: none;
-            color: var(--text-main);
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
-            font-size: 1.25rem;
-            letter-spacing: -0.02em;
         }
 
-        .logo img {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+        .logo-box {
+            width: 54px;
+            height: 54px;
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px var(--glow);
         }
 
-        .nav-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border);
-            padding: 0.5rem 1rem;
+        .logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .brand-name {
+            font-weight: 900;
+            font-size: 2rem;
+            letter-spacing: -3px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .btn-dl {
+            padding: 0.8rem 2rem;
+            background: #fff;
+            color: #000;
             border-radius: 100px;
-            color: var(--text-main);
+            font-weight: 900;
             text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            transition: 0.3s;
         }
 
-        .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
+        .btn-dl:hover {
+            transform: scale(1.1) rotate(-2deg);
         }
 
-        /* Hero Section */
+        /* Hero: Massive Typography */
         .hero {
-            min-height: 100vh;
+            height: 120vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 8rem 2rem 4rem;
             position: relative;
+            padding: 0 5vw;
         }
 
-        .hero-badge {
-            background: rgba(140, 37, 244, 0.1);
-            border: 1px solid rgba(140, 37, 244, 0.3);
-            color: #D0BCFF;
-            padding: 0.4rem 1rem;
-            border-radius: 100px;
-            font-size: 0.85rem;
-            font-weight: 600;
+        .hero-title {
+            font-size: clamp(5rem, 18vw, 15rem);
+            font-weight: 900;
+            line-height: 0.75;
+            letter-spacing: -0.07em;
+            text-align: center;
             margin-bottom: 2rem;
-            display: inline-block;
-        }
-
-        .hero h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: clamp(3rem, 8vw, 5rem);
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: var(--gradient-main);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.03em;
-            max-width: 1000px;
-        }
-
-        .hero h1 span {
-            background: var(--gradient-accent);
+            background: linear-gradient(to bottom, #fff 40%, rgba(255, 255, 255, 0));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin-bottom: 3rem;
-        }
-
-        .cta-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 6rem;
-        }
-
-        .primary-btn {
-            background: #FFFFFF;
-            color: #000000;
-            padding: 1rem 2rem;
-            border-radius: 16px;
-            text-decoration: none;
+        .hero-tagline {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            margin-bottom: 5rem;
             font-weight: 700;
-            font-size: 1rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Float Section: 3D Phones */
+        .showcase-v3d {
+            height: 100vh;
+            position: relative;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
+            perspective: 2000px;
         }
 
-        .primary-btn:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(255, 255, 255, 0.2);
+        .phone-cluster {
+            display: flex;
+            gap: 4rem;
+            transform: rotateY(-20deg) rotateX(10deg);
         }
 
-        /* Showcase Section */
-        .showcase {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto 8rem;
-            padding: 0 2rem;
-            perspective: 1000px;
-        }
-
-        .showcase-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            align-items: center;
-        }
-
-        .screenshot-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 10px;
-            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        .phone-wireframe {
+            width: 320px;
+            height: 640px;
+            background: #0a0a0a;
+            border: 4px solid var(--border);
+            border-radius: 40px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 100px 200px rgba(0, 0, 0, 0.8);
+            transition: 0.8s cubic-bezier(0.2, 1, 0.2, 1);
         }
 
-        .screenshot-card img {
-            width: 100%;
-            height: auto;
-            border-radius: 16px;
-            display: block;
-        }
-
-        .screenshot-card:nth-child(1) {
-            transform: translateY(40px) rotateY(10deg);
-        }
-
-        .screenshot-card:nth-child(2) {
-            transform: scale(1.1);
-            z-index: 10;
-            box-shadow: 0 30px 60px rgba(140, 37, 244, 0.2);
-            border-color: rgba(140, 37, 244, 0.3);
-        }
-
-        .screenshot-card:nth-child(3) {
-            transform: translateY(40px) rotateY(-10deg);
-        }
-
-        .screenshot-card:hover {
-            transform: translateY(-10px) scale(1.05) rotateY(0);
-            z-index: 20;
+        .phone-wireframe:hover {
+            transform: translateZ(100px) translateY(-50px);
             border-color: var(--accent);
         }
 
-        /* Bento Grid Features */
-        .features {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 4rem 2rem;
+        .phone-wireframe img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
-        .section-title {
-            text-align: center;
-            font-family: 'Outfit', sans-serif;
-            font-size: 2.5rem;
-            margin-bottom: 4rem;
-            background: var(--gradient-main);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .phone-label {
+            position: absolute;
+            bottom: 3rem;
+            left: -4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-p);
+            transform: rotate(-90deg);
+            white-space: nowrap;
         }
 
-        .bento-grid {
+        /* Mechanical Deep Dive */
+        .tech-obsidian {
+            padding: 20rem 5vw;
+            background: #000;
+        }
+
+        .tech-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 300px);
+            grid-template-columns: 1fr 1fr;
+            gap: 10rem;
+            align-items: center;
+            margin-bottom: 20rem;
+        }
+
+        .tech-content h2 {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 0.8;
+            letter-spacing: -0.04em;
+            margin-bottom: 3rem;
+        }
+
+        .tech-content p {
+            font-size: 1.5rem;
+            color: var(--text-p);
+            font-weight: 300;
+            line-height: 1.5;
+            margin-bottom: 3rem;
+        }
+
+        .tech-mechanics {
+            padding: 2.5rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .tech-mechanics span {
+            color: var(--accent);
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .tech-visual {
+            position: relative;
+        }
+
+        .tech-visual img {
+            width: 100%;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            filter: grayscale(1);
+            transition: 0.5s;
+        }
+
+        .tech-visual:hover img {
+            filter: grayscale(0);
+        }
+
+        /* The Multi-Image Chat visual styling */
+        .chat-dual-visual {
+            display: flex;
             gap: 1.5rem;
         }
 
-        .bento-card {
-            background: var(--surface);
+        .chat-dual-visual img {
+            width: calc(50% - 0.75rem);
+            border-radius: 30px;
             border: 1px solid var(--border);
-            border-radius: 32px;
-            padding: 2.5rem;
+            filter: grayscale(1);
+            transition: 0.5s;
+        }
+
+        .chat-dual-visual:hover img {
+            filter: grayscale(0);
+        }
+
+        /* The Parallax Strip */
+        .parallax-banner {
+            height: 80vh;
+            margin: 10rem 0;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('images/banner1 (1).png');
+            background-size: cover;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .parallax-banner h2 {
+            font-size: 10rem;
+            font-weight: 900;
+            letter-spacing: -0.08em;
+        }
+
+        /* Footer: Finality */
+        footer {
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .bento-card:hover {
-            background: var(--surface-highlight);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .bento-card.large {
-            grid-column: span 2;
-        }
-
-        .bento-card.tall {
-            grid-row: span 2;
-        }
-
-        .bento-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
             justify-content: center;
-            border-radius: 16px;
-        }
-
-        .bento-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #FFF;
-        }
-
-        .bento-desc {
-            color: var(--text-muted);
-            font-size: 1rem;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--text-muted);
+            align-items: center;
             border-top: 1px solid var(--border);
-            margin-top: 4rem;
-            background: rgba(5, 5, 5, 0.8);
         }
 
+        .footer-logo-massive {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 3rem;
+            filter: saturate(0);
+            transition: 0.5s;
+        }
+
+        .footer-logo-massive:hover {
+            filter: saturate(1);
+            transform: rotate(180deg);
+        }
+
+        .footer-text {
+            font-size: 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-p);
+        }
+
+        /* Mobile Adjustments */
         @media (max-width: 1024px) {
-            .showcase-grid {
-                grid-template-columns: 1fr;
-                gap: 3rem;
+            .hero-title {
+                font-size: 10rem;
             }
 
-            .screenshot-card:nth-child(1),
-            .screenshot-card:nth-child(2),
-            .screenshot-card:nth-child(3) {
+            .tech-row {
+                grid-template-columns: 1fr;
+                gap: 5rem;
+            }
+
+            .phone-cluster {
+                flex-direction: column;
                 transform: none;
             }
 
-            .bento-grid {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto;
+            .chat-dual-visual {
+                flex-direction: column;
             }
 
-            .bento-card.large,
-            .bento-card.tall {
-                grid-column: span 1;
-                grid-row: span 1;
-                min-height: 300px;
+            .chat-dual-visual img {
+                width: 100%;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="bg-glow"></div>
-    <div class="bg-glow-2"></div>
+    <div id="cursor"></div>
+    <div class="noise"></div>
+    <div class="grid-mesh"></div>
 
-    <header class="animate">
-        <a href="#" class="logo">
-            <img src="images/icon.png" alt="Logo">
-            MemGallery
+    <nav>
+        <a href="index.html" class="brand">
+            <div class="logo-box"><img src="images/icon.png" alt="MemGallery Logo"></div>
+            <span class="brand-name">MemGallery</span>
         </a>
-        <a href="https://github.com/Past-da-king/MemGallery" class="nav-btn">
-            <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
-                <path
-                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            Star on GitHub
-        </a>
-    </header>
+        <a href="https://github.com/Past-da-king/MemGallery/releases" class="btn-dl">DOWNLOAD_V0.0.8</a>
+    </nav>
 
-    <section class="hero">
-        <div class="hero-badge animate delay-1">✨ Alpha v0.0.3 Available</div>
-        <h1 class="animate delay-2">Your External Brain<br><span>Powered by AI</span></h1>
-        <p class="animate delay-3">Capture screenshots, voice notes, and photos. Let Gemini AI organize, analyze, and
-            remember everything for you.</p>
+    <main>
+        <section class="hero">
+            <span class="hero-tagline">SMART_LOCAL_MEMORY_PIPELINE</span>
+            <h1 class="hero-title">INDEX<br>YOUR<br>LIFE</h1>
+        </section>
 
-        <div class="cta-group animate delay-4">
-            <a href="https://github.com/Past-da-king/MemGallery/releases" class="primary-btn">
-                Download APK
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-            </a>
-        </div>
-    </section>
+        <section class="showcase-v3d">
+            <div class="phone-cluster">
+                <div class="phone-wireframe">
+                    <span class="phone-label">// NATIVE_MOBILE_VAULT</span>
+                    <img src="images/gallery.jpg" alt="Gallery View">
+                </div>
+                <div class="phone-wireframe" style="margin-top: 10rem;">
+                    <span class="phone-label">// AI_REASONING_CORE</span>
+                    <img src="images/memdetail.jpg" alt="Memory Detail View">
+                </div>
+                <div class="phone-wireframe" style="margin-top: -5rem;">
+                    <span class="phone-label">// PROACTIVE_TASK_GATING</span>
+                    <img src="images/tasks.jpg" alt="Task Manager View">
+                </div>
+            </div>
+        </section>
 
-    <section class="showcase animate delay-4">
-        <div class="showcase-grid">
-            <div class="screenshot-card">
-                <img src="images/gallery.jpg" alt="Gallery Screen">
-            </div>
-            <div class="screenshot-card">
-                <img src="images/memdetail.jpg" alt="Memory Detail Screen">
-            </div>
-            <div class="screenshot-card">
-                <img src="images/tasks.jpg" alt="Tasks Screen">
-            </div>
-        </div>
-    </section>
+        <section class="parallax-banner">
+            <h2>PRIVATE</h2>
+        </section>
 
-    <section class="features">
-        <h2 class="section-title">Everything you need to remember</h2>
-        <div class="bento-grid">
-            <div class="bento-card large">
-                <div>
-                    <div class="bento-icon">🧠</div>
-                    <h3 class="bento-title">Gemini AI Integration</h3>
-                    <p class="bento-desc">Powered by Google's Gemini 2.5 Flash. It sees, hears, and understands your
-                        memories to extract meaning, titles, and summaries automatically.</p>
+        <section class="tech-obsidian">
+            <!-- New Chat Section -->
+            <div class="tech-row">
+                <div class="tech-content">
+                    <h2>Conversational<br>Intelligence</h2>
+                    <p>The AI Chat isn't just a text box—it's a high-fidelity interface to your local memory vault.
+                        Query, recall, and visualize your history instantly.</p>
+                    <div class="tech-mechanics">
+                        <span>CHAT_PROTOCOL_CAPABILITIES</span>
+                        - <b>Memory Retrieval:</b> Deep-search your database with natural language.<br>
+                        - <b>Visual Embedding:</b> AI can fetch and embed images from your memories directly into
+                        response bubbles.<br>
+                        - <b>Interactive Display:</b> Trigger high-res "Memory Cards" within the chat for forensic
+                        inspection.
+                    </div>
+                </div>
+                <div class="chat-dual-visual">
+                    <img src="images/CHATIMAGE.jpg" alt="AI Image Embedding in Chat">
+                    <img src="images/CHATMemory.jpg" alt="Memory Display Card in Chat">
                 </div>
             </div>
-            <div class="bento-card">
-                <div>
-                    <div class="bento-icon">📸</div>
-                    <h3 class="bento-title">Smart Capture</h3>
-                    <p class="bento-desc">Background service automatically detects screenshots. Capture voice notes and
-                        photos instantly.</p>
+
+            <div class="tech-row">
+                <div class="tech-visual">
+                    <img src="images/capture.jpg" alt="Capture Interface">
+                </div>
+                <div class="tech-content" style="text-align: right;">
+                    <h2>Multi-Modal<br>Capture</h2>
+                    <p>Not just notes. MemGallery ingests forensic-level images, Whisper-Large audio, and structured web
+                        bookmarks.</p>
+                    <div class="tech-mechanics">
+                        <span style="text-align: right;">INGESTION_PROTOCOL_ACTIVE</span>
+                        AI-powered forensic image analysis correlates data across multi-image sets. Real-time audio
+                        transcription extracts actionable intent instantly.
+                    </div>
                 </div>
             </div>
-            <div class="bento-card">
-                <div>
-                    <div class="bento-icon">🔍</div>
-                    <h3 class="bento-title">Semantic Search</h3>
-                    <p class="bento-desc">Forget keywords. Search by description: "The recipe mom sent me" or "That blue
-                        shirt I liked".</p>
+
+            <div class="tech-row">
+                <div class="tech-visual">
+                    <img src="images/post_capture.jpg" alt="Review Interface">
+                </div>
+                <div class="tech-content" style="text-align: right;">
+                    <h2 style="margin-right: -2rem;">Local-First<br>Intelligence</h2>
+                    <p>Absolute privacy by design. All memory keys and AI insights stay inside your hardware enclave.
+                    </p>
+                    <div class="tech-mechanics">
+                        <span style="text-align: right;">ENCRYPTION_VAULT_AES256</span>
+                        Zero telemetry. All data is trapped in an encrypted Room SQLite database. Your API keys are
+                        locked in the Android KeyStore.
+                    </div>
                 </div>
             </div>
-            <div class="bento-card large">
-                <div>
-                    <div class="bento-icon">⚡</div>
-                    <h3 class="bento-title">Actionable Insights</h3>
-                    <p class="bento-desc">AI detects dates, locations, and tasks from your content, offering one-click
-                        actions to add to your calendar or maps.</p>
-                </div>
-            </div>
-            <div class="bento-card">
-                <div>
-                    <div class="bento-icon">🔒</div>
-                    <h3 class="bento-title">Private by Design</h3>
-                    <p class="bento-desc">Your data lives on your device. Local database storage with secure AI
-                        processing.</p>
-                </div>
-            </div>
-            <div class="bento-card">
-                <div>
-                    <div class="bento-icon">🎨</div>
-                    <h3 class="bento-title">Material You</h3>
-                    <p class="bento-desc">Beautiful, modern Android UI that adapts to your device's theme and supports
-                        dark mode.</p>
-                </div>
-            </div>
-            <div class="bento-card">
-                <div>
-                    <div class="bento-icon">📱</div>
-                    <h3 class="bento-title">Offline First</h3>
-                    <p class="bento-desc">Access your memories anytime, anywhere. AI processing syncs when you're back
-                        online.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
     <footer>
-        <p>&copy; 2024 MemGallery. Open Source under MIT License.</p>
+        <img src="images/icon.png" alt="MemGallery Logo" class="footer-logo-massive">
+        <h2 style="font-size: 4rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 2rem;">BUILD_0.0.8</h2>
+        <a href="https://github.com/Past-da-king/MemGallery/releases" class="btn-dl"
+            style="padding: 2rem 5rem; font-size: 1.5rem;">GET_MEMGALLERY</a>
+        <p class="footer-text" style="margin-top: 5rem;">© 2026 // ZERO_TELEMETRY // LOCAL_PROCESSING // MEMGALLERY</p>
     </footer>
+
+    <script>
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Hover Effect
+        const links = document.querySelectorAll('a, .phone-wireframe, .chat-dual-visual img');
+        links.forEach(link => {
+            link.addEventListener('mouseenter', () => cursor.style.transform = 'scale(4)');
+            link.addEventListener('mouseleave', () => cursor.style.transform = 'scale(1)');
+        });
+    </script>
 </body>
 
 </html>
