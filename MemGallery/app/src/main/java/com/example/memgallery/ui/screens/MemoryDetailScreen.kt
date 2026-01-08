@@ -78,46 +78,48 @@ fun MemoryDetailScreen(
     val audioTotalTime by viewModel.audioTotalTime.collectAsState()
     val context = LocalContext.current
 
+    val shareMemory = { mem: MemoryEntity ->
+        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            
+            val sb = StringBuilder()
+            if (!mem.aiTitle.isNullOrBlank()) sb.append(mem.aiTitle).append("\n\n")
+            if (!mem.aiSummary.isNullOrBlank()) sb.append(mem.aiSummary).append("\n\n")
+            if (!mem.userText.isNullOrBlank()) sb.append("Note: ").append(mem.userText).append("\n\n")
+            if (!mem.bookmarkUrl.isNullOrBlank()) sb.append(mem.bookmarkUrl)
+            
+            putExtra(android.content.Intent.EXTRA_TEXT, sb.toString())
+            
+            // Share image if available
+            val imageUriString = mem.imageUri ?: mem.imageUris?.firstOrNull()
+            if (imageUriString != null) {
+                try {
+                    val uri = android.net.Uri.parse(imageUriString)
+                    val shareUri = if (uri.scheme == "file") {
+                        androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            java.io.File(uri.path!!)
+                        )
+                    } else {
+                        uri
+                    }
+                    putExtra(android.content.Intent.EXTRA_STREAM, shareUri)
+                    type = "image/*"
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Memory"))
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    memory?.let { mem ->
-                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            
-                            val sb = StringBuilder()
-                            if (!mem.aiTitle.isNullOrBlank()) sb.append(mem.aiTitle).append("\n\n")
-                            if (!mem.aiSummary.isNullOrBlank()) sb.append(mem.aiSummary).append("\n\n")
-                            if (!mem.userText.isNullOrBlank()) sb.append("Note: ").append(mem.userText).append("\n\n")
-                            if (!mem.bookmarkUrl.isNullOrBlank()) sb.append(mem.bookmarkUrl)
-                            
-                            putExtra(android.content.Intent.EXTRA_TEXT, sb.toString())
-                            
-                            // Share image if available
-                            val imageUriString = mem.imageUri ?: mem.imageUris?.firstOrNull()
-                            if (imageUriString != null) {
-                                try {
-                                    val uri = android.net.Uri.parse(imageUriString)
-                                    val shareUri = if (uri.scheme == "file") {
-                                        androidx.core.content.FileProvider.getUriForFile(
-                                            context,
-                                            "${context.packageName}.provider",
-                                            java.io.File(uri.path!!)
-                                        )
-                                    } else {
-                                        uri
-                                    }
-                                    putExtra(android.content.Intent.EXTRA_STREAM, shareUri)
-                                    type = "image/*"
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                            }
-                        }
-                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Memory"))
-                    }
+                    memory?.let { shareMemory(it) }
                 },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -131,6 +133,7 @@ fun MemoryDetailScreen(
                 memory = it,
                 onNavigateUp = { navController.navigateUp() },
                 onEdit = { navController.navigate("post_capture_edit/${it.id}") },
+                onShare = { shareMemory(it) },
                 bottomPadding = padding.calculateBottomPadding(),
                 onCreateTask = { title, desc, date, time, type ->
                     viewModel.createTask(it.id, title, desc, date, time, type)
@@ -158,6 +161,7 @@ fun MemoryDetailContent(
     memory: MemoryEntity,
     onNavigateUp: () -> Unit,
     onEdit: () -> Unit,
+    onShare: () -> Unit,
     onCreateTask: (String, String, String?, String?, String) -> Unit,
     bottomPadding: Dp,
     isPlaying: Boolean = false,
@@ -557,6 +561,8 @@ fun MemoryDetailContent(
                     imageUris = uris,
                     initialIndex = fullscreenInitialIndex,
                     onDismissRequest = { showFullscreenImage = false },
+                    onShare = onShare,
+                    onEdit = onEdit,
                     memoryTitle = memory.aiTitle ?: "Memory",
                     creationTimestamp = memory.creationTimestamp
                 )
