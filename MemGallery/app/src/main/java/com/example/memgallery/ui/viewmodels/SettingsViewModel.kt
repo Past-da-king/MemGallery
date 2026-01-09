@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.memgallery.data.remote.GeminiService
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.service.EdgeGestureService
+import com.example.memgallery.BuildConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,8 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val geminiService: GeminiService,
     private val chatGeminiService: com.example.memgallery.data.remote.ChatGeminiService,
-    private val backupRepository: com.example.memgallery.data.repository.BackupRepository
+    private val backupRepository: com.example.memgallery.data.repository.BackupRepository,
+    private val githubService: com.example.memgallery.data.remote.github.GitHubService
 ) : ViewModel() {
 
     // Backup State
@@ -260,6 +262,19 @@ class SettingsViewModel @Inject constructor(
 
     private val _localModelImportState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle) // Reuse ApiKeyUiState for simplicity or create new
     val localModelImportState: StateFlow<ApiKeyUiState> = _localModelImportState.asStateFlow()
+
+    // Version Information
+    val latestAvailableVersion: StateFlow<String?> = settingsRepository.latestAvailableVersionFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    val latestChangeLog: StateFlow<String?> = settingsRepository.latestChangeLogFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    val hasShownUpdateLog: StateFlow<Boolean> = settingsRepository.hasShownUpdateLogFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
+
+    private val _updateCheckState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val updateCheckState: StateFlow<ApiKeyUiState> = _updateCheckState.asStateFlow()
 
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
@@ -669,5 +684,53 @@ class SettingsViewModel @Inject constructor(
 
     fun resetBackupState() {
         _backupUiState.value = BackupUiState.Idle
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch {
+            _updateCheckState.value = ApiKeyUiState.Loading
+            try {
+                val response = githubService.getLatestRelease()
+                if (response.isSuccessful) {
+                    val latestRelease = response.body()
+                    if (latestRelease != null) {
+                        settingsRepository.setLatestAvailableVersion(latestRelease.tagName)
+                        settingsRepository.setLatestChangeLog(latestRelease.body)
+                        
+                        val isNewer = isNewerVersion(latestRelease.tagName, BuildConfig.VERSION_NAME)
+                        if (isNewer) {
+                            _updateCheckState.value = ApiKeyUiState.Success("New version ${latestRelease.tagName} available!")
+                        } else {
+                            _updateCheckState.value = ApiKeyUiState.Success("App is up to date.")
+                        }
+                    } else {
+                        _updateCheckState.value = ApiKeyUiState.Error("Failed to parse release data.")
+                    }
+                } else {
+                    _updateCheckState.value = ApiKeyUiState.Error("Failed to check for updates: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                _updateCheckState.value = ApiKeyUiState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
+    private fun isNewerVersion(latest: String, current: String): Boolean {
+        val latestClean = latest.removePrefix("v").split(".")
+        val currentClean = current.removePrefix("v").split(".")
+
+        for (i in 0 until minOf(latestClean.size, currentClean.size)) {
+            val l = latestClean[i].toIntOrNull() ?: 0
+            val c = currentClean[i].toIntOrNull() ?: 0
+            if (l > c) return true
+            if (l < c) return false
+        }
+        return latestClean.size > currentClean.size
+    }
+
+    fun setHasShownUpdateLog(shown: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHasShownUpdateLog(shown)
+        }
     }
 }

@@ -34,6 +34,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.ui.viewmodels.ApiKeyUiState
 import com.example.memgallery.ui.viewmodels.BackupUiState
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +53,14 @@ fun SettingsScreen(
     val showInShareSheet by viewModel.showInShareSheet.collectAsState()
     val taskScreenEnabled by viewModel.taskScreenEnabled.collectAsState()
     val backupUiState by viewModel.backupUiState.collectAsState()
+    
+    // Updates State
+    val latestAvailableVersion by viewModel.latestAvailableVersion.collectAsState()
+    val latestChangeLog by viewModel.latestChangeLog.collectAsState()
+    val hasShownUpdateLog by viewModel.hasShownUpdateLog.collectAsState()
+    val updateCheckState by viewModel.updateCheckState.collectAsState()
+    
+    var showUpdateLogSheet by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -115,8 +126,11 @@ fun SettingsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
+    var showAboutScreen by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
             TopAppBar(
                 title = { 
                     Text(
@@ -610,10 +624,89 @@ fun SettingsScreen(
                     )
                 }
             }
-            
+
+            // About & Updates (Full Screen Entry)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                onClick = { showAboutScreen = true }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Update,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "About & Updates",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Version ${com.example.memgallery.BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (latestAvailableVersion != null && latestAvailableVersion != com.example.memgallery.BuildConfig.VERSION_NAME) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(8.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Open About & Updates",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             // Bottom spacing
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showAboutScreen) {
+        AboutScreenOverlay(
+            viewModel = viewModel,
+            onBack = { showAboutScreen = false }
+        )
+        BackHandler { showAboutScreen = false }
+    }
     }
 }
 
@@ -1335,6 +1428,184 @@ fun GroqModelSheet(
     }
 }
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AboutScreenOverlay(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit
+) {
+    val latestAvailableVersion by viewModel.latestAvailableVersion.collectAsState()
+    val latestChangeLog by viewModel.latestChangeLog.collectAsState()
+    val updateCheckState by viewModel.updateCheckState.collectAsState()
+    var showLogSheet by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("About & Updates") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // App Icon
+            Surface(
+                modifier = Modifier.size(120.dp),
+                shape = RoundedCornerShape(28.dp),
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(id = com.example.memgallery.R.mipmap.ic_launcher_foreground),
+                        contentDescription = "MemGallery Icon",
+                        modifier = Modifier.size(120.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "MemGallery",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black
+            )
+
+            Text(
+                text = "Version ${com.example.memgallery.BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Update Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (latestAvailableVersion != null && latestAvailableVersion != com.example.memgallery.BuildConfig.VERSION_NAME) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Update Available",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    "New version $latestAvailableVersion is ready",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+
+                    // Status Message
+                    when (updateCheckState) {
+                        is ApiKeyUiState.Loading -> {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            Text("Checking...", style = MaterialTheme.typography.bodySmall)
+                        }
+                        is ApiKeyUiState.Success -> {
+                            Text(
+                                (updateCheckState as ApiKeyUiState.Success).message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        is ApiKeyUiState.Error -> {
+                            Text(
+                                (updateCheckState as ApiKeyUiState.Error).message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        else -> {
+                           Text("Make sure you are on the latest version", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    
+                    Button(
+                        onClick = { viewModel.checkForUpdates() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Check for Updates")
+                    }
+
+                    if (latestChangeLog != null) {
+                        OutlinedButton(
+                            onClick = { showLogSheet = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.List, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("View Changelog")
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            Text(
+                "Designed with ❤️ under full privacy",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+        }
+    }
+
+    if (showLogSheet && latestChangeLog != null) {
+        com.example.memgallery.ui.components.ChangeLogBottomSheet(
+            versionName = latestAvailableVersion ?: com.example.memgallery.BuildConfig.VERSION_NAME,
+            changeLog = latestChangeLog!!,
+            onDismiss = { showLogSheet = false }
+        )
+    }
+}
+
 @Composable
 fun LimitBadge(
     label: String,
@@ -1367,3 +1638,4 @@ fun LimitBadge(
         }
     }
 }
+

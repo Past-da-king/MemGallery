@@ -11,6 +11,9 @@ import com.example.memgallery.service.MemoryProcessingWorker
 import com.example.memgallery.service.ScreenshotObserver
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.service.EdgeGestureService
+import com.example.memgallery.service.UpdateCheckWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
 import android.content.Intent
 import android.os.Build
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +45,7 @@ class MemGalleryApplication : Application(), Configuration.Provider {
         super.onCreate()
         screenshotObserver.start()
         enqueueMemoryProcessingWorker()
+        enqueueUpdateCheckWorker()
         checkAndStartEdgeGestureService()
     }
 
@@ -69,6 +73,25 @@ class MemGalleryApplication : Application(), Configuration.Provider {
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "MemoryProcessingWork",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+    }
+
+    private fun enqueueUpdateCheckWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val workRequest = PeriodicWorkRequestBuilder<UpdateCheckWorker>(
+            repeatInterval = 1, // Repeat every 1 day
+            repeatIntervalTimeUnit = TimeUnit.DAYS
+        )
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "UpdateCheckWork",
             ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
