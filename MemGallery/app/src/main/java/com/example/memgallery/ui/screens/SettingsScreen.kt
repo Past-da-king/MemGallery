@@ -164,18 +164,25 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
                             onClick = { viewModel.setAiProvider("GEMINI") },
                             selected = aiProvider == "GEMINI"
                         ) {
                             Text("Gemini")
                         }
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
                             onClick = { viewModel.setAiProvider("GROQ") },
                             selected = aiProvider == "GROQ"
                         ) {
                             Text("Groq")
+                        }
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                            onClick = { viewModel.setAiProvider("LOCAL") },
+                            selected = aiProvider == "LOCAL"
+                        ) {
+                            Text("Local")
                         }
                     }
                     
@@ -196,7 +203,7 @@ fun SettingsScreen(
                             onValidate = viewModel::validateAndSaveKey,
                             onClear = viewModel::clearKey
                         )
-                    } else {
+                    } else if (aiProvider == "GROQ") {
                         val groqApiKey by viewModel.groqApiKey.collectAsState()
                         val groqApiKeyUiState by viewModel.groqApiKeyUiState.collectAsState()
                         val selectedModelId by viewModel.groqModelId.collectAsState()
@@ -231,6 +238,97 @@ fun SettingsScreen(
                                     showModelSheet = false
                                 },
                                 onDismiss = { showModelSheet = false }
+                            )
+                        }
+                    } else {
+                        // LOCAL Provider
+                        val localModelPath by viewModel.localModelPath.collectAsState()
+                        val localModelImportState by viewModel.localModelImportState.collectAsState()
+                        
+                        val modelPickerLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.OpenDocument()
+                        ) { uri ->
+                            uri?.let { viewModel.importLocalModel(it) }
+                        }
+
+                        Text(
+                            "Local Model (Gemma 3)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        
+                        Text(
+                            "Run AI completely on-device. Privacy focused, no internet required.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (localModelPath.isNullOrBlank()) {
+                            OutlinedButton(
+                                onClick = { modelPickerLauncher.launch(arrayOf("*/*")) }, // Allow all files as bin/task might vary
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Import Model (.bin, .literlm, .task)")
+                            }
+                            
+                            // Download Link Helper
+                            TextButton(
+                                onClick = {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference/index#models"))
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Download Compatible Models (MediaPipe)")
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Model Loaded", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        localModelPath!!.substringAfterLast("/"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    OutlinedButton(
+                                        onClick = { viewModel.clearLocalModel() },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Delete & Clear")
+                                    }
+                                }
+                            }
+                        }
+
+                        // Import Status
+                        if (localModelImportState is ApiKeyUiState.Loading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                            Text("Importing model... This may take a moment.", style = MaterialTheme.typography.bodySmall)
+                        } else if (localModelImportState is ApiKeyUiState.Error) {
+                             Text(
+                                "Error: ${(localModelImportState as ApiKeyUiState.Error).message}",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                     }

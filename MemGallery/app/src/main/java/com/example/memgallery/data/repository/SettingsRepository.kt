@@ -76,6 +76,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val AI_PROVIDER = stringPreferencesKey("ai_provider") // "GEMINI", "GROQ"
         val GROQ_MODEL_ID = stringPreferencesKey("groq_model_id")
         val MAX_TOOL_CALLS = intPreferencesKey("max_tool_calls")
+        val EXTERNAL_TASK_MANAGER = stringPreferencesKey("external_task_manager") // "NONE", "TICKTICK", "GOOGLE_TASKS", "TODOIST", "SHARE"
+        val LOCAL_MODEL_PATH = stringPreferencesKey("local_model_path")
     }
 
     init {
@@ -470,6 +472,30 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setMaxToolCalls(count: Int) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.MAX_TOOL_CALLS] = count
+        }
+    }
+
+    // External Task Manager Integration
+    val externalTaskManagerFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EXTERNAL_TASK_MANAGER] ?: "NONE"
+        }
+
+    suspend fun setExternalTaskManager(manager: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EXTERNAL_TASK_MANAGER] = manager
+        }
+    }
+
+    // Local LLM
+    val localModelPathFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.LOCAL_MODEL_PATH]
+        }
+
+    suspend fun setLocalModelPath(path: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.LOCAL_MODEL_PATH] = path
         }
     }
 }

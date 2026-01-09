@@ -250,6 +250,17 @@ class SettingsViewModel @Inject constructor(
     val overlayStyle: StateFlow<String> = settingsRepository.overlayStyleFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "EDGE")
 
+    // External Task Manager Integration
+    val externalTaskManager: StateFlow<String> = settingsRepository.externalTaskManagerFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "NONE")
+
+    // Local Model Configuration
+    val localModelPath: StateFlow<String?> = settingsRepository.localModelPathFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    private val _localModelImportState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle) // Reuse ApiKeyUiState for simplicity or create new
+    val localModelImportState: StateFlow<ApiKeyUiState> = _localModelImportState.asStateFlow()
+
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setAutoIndexScreenshots(enabled)
@@ -541,6 +552,83 @@ class SettingsViewModel @Inject constructor(
 
     fun setOverlayStyle(style: String) {
         viewModelScope.launch { settingsRepository.setOverlayStyle(style) }
+    }
+
+    fun setExternalTaskManager(manager: String) {
+        viewModelScope.launch { settingsRepository.setExternalTaskManager(manager) }
+    }
+
+    fun importLocalModel(uri: android.net.Uri) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            _localModelImportState.value = ApiKeyUiState.Loading
+            try {
+                // First, delete any existing local model files to prevent accumulation
+                context.filesDir.listFiles()?.filter { 
+                    it.name.startsWith("local_model_") 
+                }?.forEach { oldFile ->
+                    oldFile.delete()
+                    android.util.Log.d("SettingsViewModel", "Deleted old model: ${oldFile.name}")
+                }
+                
+                // Determine the file extension from the URI
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(uri)
+                val extension = when {
+                    uri.path?.contains(".task") == true -> "task"
+                    uri.path?.contains(".tflite") == true -> "tflite"
+                    uri.path?.contains(".literlm") == true -> "literlm"
+                    mimeType?.contains("octet-stream") == true -> "bin"
+                    else -> uri.lastPathSegment?.substringAfterLast('.', "bin") ?: "bin"
+                }
+                
+                val inputStream = contentResolver.openInputStream(uri) 
+                    ?: throw java.io.IOException("Cannot open input stream")
+                
+                val fileName = "local_model_" + System.currentTimeMillis() + "." + extension
+                val file = java.io.File(context.filesDir, fileName)
+                
+                file.outputStream().use { output ->
+                    inputStream.copyTo(output)
+                }
+
+                val absolutePath = file.absolutePath
+                settingsRepository.setLocalModelPath(absolutePath)
+                _localModelImportState.value = ApiKeyUiState.Success("Model imported successfully")
+            } catch (e: Exception) {
+                _localModelImportState.value = ApiKeyUiState.Error("Import failed: ${e.message}")
+            }
+        }
+    }
+
+    fun clearLocalModel() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Get the current model path before clearing
+                val currentPath = settingsRepository.localModelPathFlow.first()
+                if (!currentPath.isNullOrBlank()) {
+                    val file = java.io.File(currentPath)
+                    if (file.exists()) {
+                        val deleted = file.delete()
+                        android.util.Log.d("SettingsViewModel", "Model file deleted: $deleted, path: $currentPath")
+                    }
+                }
+                
+                // Also clean up any orphaned model files in filesDir
+                context.filesDir.listFiles()?.filter { 
+                    it.name.startsWith("local_model_") 
+                }?.forEach { orphanFile ->
+                    orphanFile.delete()
+                    android.util.Log.d("SettingsViewModel", "Cleaned up orphan model: ${orphanFile.name}")
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Error deleting model file", e)
+            }
+            
+            // Clear the path reference
+            settingsRepository.setLocalModelPath("")
+            _localModelImportState.value = ApiKeyUiState.Idle
+        }
     }
 
     init {

@@ -721,13 +721,26 @@ class GroqProvider @Inject constructor(
     }
     
     private fun parseJsonResponse(responseText: String, audioTranscription: String?): Result<AiAnalysisDto> {
-        val cleanedResponseText = responseText
-            .removePrefix("```json")
-            .removeSuffix("```")
-            .trim()
+        // 1. Remove thinking/reasoning blocks
+        var cleanedText = responseText
+        val thinkRegex = "<think>(.*?)</think>".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val reasoningRegex = "<reasoning>(.*?)</reasoning>".toRegex(RegexOption.DOT_MATCHES_ALL)
         
+        cleanedText = thinkRegex.replace(cleanedText, "").trim()
+        cleanedText = reasoningRegex.replace(cleanedText, "").trim()
+
+        // 2. Extract JSON payload (find outermost braces)
+        val startIndex = cleanedText.indexOf('{')
+        val endIndex = cleanedText.lastIndexOf('}')
+
+        if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
+            return Result.failure(IllegalStateException("No valid JSON object found in response: $responseText"))
+        }
+
+        val jsonContent = cleanedText.substring(startIndex, endIndex + 1)
+
         return try {
-            val dto = gson.fromJson(cleanedResponseText, AiAnalysisDto::class.java)
+            val dto = gson.fromJson(jsonContent, AiAnalysisDto::class.java)
             
             // If we have audio transcription but the model didn't include it, add it
             val finalDto = if (audioTranscription != null && dto.audioTranscription.isNullOrBlank()) {
@@ -740,7 +753,7 @@ class GroqProvider @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse JSON response", e)
             Result.failure(IllegalStateException(
-                "Failed to parse AI analysis JSON: ${e.message}. Raw response: $cleanedResponseText", e
+                "Failed to parse AI analysis JSON: ${e.message}. Extracted JSON: $jsonContent", e
             ))
         }
     }

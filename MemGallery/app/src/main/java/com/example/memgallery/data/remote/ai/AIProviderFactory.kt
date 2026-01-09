@@ -16,6 +16,7 @@ private const val TAG = "AIProviderFactory"
 class AIProviderFactory @Inject constructor(
     private val geminiProvider: GeminiProvider,
     private val groqProvider: GroqProvider,
+    private val localAIProvider: LocalAIProvider,
     private val settingsRepository: SettingsRepository
 ) {
     
@@ -27,14 +28,15 @@ class AIProviderFactory @Inject constructor(
         val providerType = getProviderType()
         val provider = when (providerType) {
             AIProviderType.GROQ -> groqProvider
+            AIProviderType.LOCAL -> localAIProvider
             else -> geminiProvider
         }
         
         // Initialize if not already
         if (!provider.isEnabled()) {
             val apiKey = getApiKey(providerType)
-            if (!apiKey.isNullOrBlank()) {
-                provider.initialize(apiKey)
+            if (!apiKey.isNullOrBlank() || providerType == AIProviderType.LOCAL) {
+                provider.initialize(apiKey ?: "")
                 Log.i(TAG, "Initialized ${provider.providerName} provider")
             }
         }
@@ -49,6 +51,7 @@ class AIProviderFactory @Inject constructor(
         val providerString = settingsRepository.aiProviderFlow.first()
         return when (providerString.uppercase()) {
             "GROQ" -> AIProviderType.GROQ
+            "LOCAL" -> AIProviderType.LOCAL
             else -> AIProviderType.GEMINI
         }
     }
@@ -70,6 +73,7 @@ class AIProviderFactory @Inject constructor(
         return when (providerType) {
             AIProviderType.GROQ -> settingsRepository.groqApiKeyFlow.first()
             AIProviderType.GEMINI -> settingsRepository.apiKeyFlow.first()
+            AIProviderType.LOCAL -> settingsRepository.localModelPathFlow.first()
         }
     }
     
@@ -101,6 +105,7 @@ class AIProviderFactory @Inject constructor(
         val provider = when (providerType) {
             AIProviderType.GROQ -> groqProvider
             AIProviderType.GEMINI -> geminiProvider
+            AIProviderType.LOCAL -> localAIProvider
         }
         
         provider.initialize(apiKey)
@@ -114,6 +119,7 @@ class AIProviderFactory @Inject constructor(
     fun disableAllProviders() {
         geminiProvider.disable()
         groqProvider.disable()
+        localAIProvider.disable()
         Log.i(TAG, "All providers disabled")
     }
 }

@@ -77,12 +77,16 @@ android {
 
 configurations.all {
     exclude(group = "org.jetbrains", module = "annotations-java5")
+    exclude(group = "com.google.protobuf", module = "protobuf-javalite")
     resolutionStrategy.eachDependency {
         if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin-stdlib")) {
             useVersion("2.0.21")
         }
         if (requested.group == "com.squareup.okhttp3") {
             useVersion("4.12.0")
+        }
+        if (requested.group == "com.google.protobuf") {
+            useVersion("3.25.8")
         }
     }
 }
@@ -109,6 +113,7 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.mediapipe.tasks.genai)
 
     // Hilt
     implementation(libs.hilt.android)

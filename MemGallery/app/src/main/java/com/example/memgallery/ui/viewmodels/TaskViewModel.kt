@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memgallery.data.local.dao.TaskDao
 import com.example.memgallery.data.local.entity.TaskEntity
+import com.example.memgallery.data.repository.SettingsRepository
+import com.example.memgallery.utils.TaskExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -13,11 +15,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TaskViewModel @Inject constructor(
-    private val taskDao: TaskDao
+    private val taskDao: TaskDao,
+    private val settingsRepository: SettingsRepository,
+    private val taskExporter: TaskExporter
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow<LocalDate?>(null) // Default to Upcoming (All)
     val selectedDate: StateFlow<LocalDate?> = _selectedDate.asStateFlow()
+
+    // External task manager setting
+    private val externalTaskManager: StateFlow<String> = settingsRepository.externalTaskManagerFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = "NONE")
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val tasksForDisplay: StateFlow<List<TaskEntity>> = _selectedDate.flatMapLatest { date ->
@@ -75,14 +83,27 @@ class TaskViewModel @Inject constructor(
     fun approveTask(task: TaskEntity) {
         viewModelScope.launch {
             taskDao.updateTask(task.copy(isApproved = true))
+            // Export to external task manager if configured
+            val manager = externalTaskManager.value
+            if (manager != "NONE") {
+                taskExporter.exportTask(task, manager)
+            }
         }
     }
 
     fun approveTasks(tasks: List<TaskEntity>) {
         viewModelScope.launch {
             taskDao.approveTasks(tasks.map { it.id })
+            // Export each task to external manager if configured
+            val manager = externalTaskManager.value
+            if (manager != "NONE") {
+                // Only export the first task to avoid opening multiple apps at once
+                // User can manually approve remaining tasks one by one if needed
+                tasks.firstOrNull()?.let { taskExporter.exportTask(it, manager) }
+            }
         }
     }
+
 
     fun addTask(
         title: String,
