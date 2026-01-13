@@ -41,7 +41,8 @@ class SettingsViewModel @Inject constructor(
     private val geminiService: GeminiService,
     private val chatGeminiService: com.example.memgallery.data.remote.ChatGeminiService,
     private val backupRepository: com.example.memgallery.data.repository.BackupRepository,
-    private val githubService: com.example.memgallery.data.remote.github.GitHubService
+    private val githubService: com.example.memgallery.data.remote.github.GitHubService,
+    private val openAICompatibleProvider: com.example.memgallery.data.remote.ai.OpenAICompatibleProvider
 ) : ViewModel() {
 
     // Backup State
@@ -256,6 +257,19 @@ class SettingsViewModel @Inject constructor(
     val externalTaskManager: StateFlow<String> = settingsRepository.externalTaskManagerFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "NONE")
 
+    // Custom / OpenAI Compatible Settings
+    private val _customBaseUrl = MutableStateFlow("https://api.openai.com/v1/")
+    val customBaseUrl: StateFlow<String> = _customBaseUrl.asStateFlow()
+
+    private val _customModelName = MutableStateFlow("gpt-4o")
+    val customModelName: StateFlow<String> = _customModelName.asStateFlow()
+
+    private val _customApiKey = MutableStateFlow("")
+    val customApiKey: StateFlow<String> = _customApiKey.asStateFlow()
+
+    private val _customUiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val customUiState: StateFlow<ApiKeyUiState> = _customUiState.asStateFlow()
+
     // Local Model Configuration
     val localModelPath: StateFlow<String?> = settingsRepository.localModelPathFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
@@ -272,6 +286,15 @@ class SettingsViewModel @Inject constructor(
 
     val hasShownUpdateLog: StateFlow<Boolean> = settingsRepository.hasShownUpdateLogFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
+
+    init {
+        // Initialize custom settings from repository
+        viewModelScope.launch {
+            _customBaseUrl.value = settingsRepository.customBaseUrlFlow.first()
+            _customModelName.value = settingsRepository.customModelNameFlow.first()
+            _customApiKey.value = settingsRepository.customApiKeyFlow.first() ?: ""
+        }
+    }
 
     private val _updateCheckState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
     val updateCheckState: StateFlow<ApiKeyUiState> = _updateCheckState.asStateFlow()
@@ -573,6 +596,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setExternalTaskManager(manager) }
     }
 
+
     fun importLocalModel(uri: android.net.Uri) {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             _localModelImportState.value = ApiKeyUiState.Loading
@@ -731,6 +755,52 @@ class SettingsViewModel @Inject constructor(
     fun setHasShownUpdateLog(shown: Boolean) {
         viewModelScope.launch {
             settingsRepository.setHasShownUpdateLog(shown)
+        }
+    }
+
+    // Custom AI Settings Actions
+    fun setCustomBaseUrl(url: String) {
+        _customBaseUrl.value = url
+    }
+
+    fun setCustomModelName(name: String) {
+        _customModelName.value = name
+    }
+
+    fun onCustomApiKeyChange(key: String) {
+        _customApiKey.value = key
+    }
+
+    fun validateAndSaveCustomSettings() {
+        viewModelScope.launch {
+            _customUiState.value = ApiKeyUiState.Loading
+            
+            val url = _customBaseUrl.value
+            val model = _customModelName.value
+            val key = _customApiKey.value
+
+            val result = openAICompatibleProvider.validateCustomSettings(
+                apiKey = key,
+                baseUrl = url,
+                modelName = model
+            )
+
+            result.onSuccess {
+                settingsRepository.setCustomBaseUrl(url)
+                settingsRepository.setCustomModelName(model)
+                settingsRepository.saveCustomApiKey(key)
+                _customUiState.value = ApiKeyUiState.Success("Settings validated and saved!")
+            }.onFailure { e ->
+                _customUiState.value = ApiKeyUiState.Error("Validation failed: ${e.message}")
+            }
+        }
+    }
+
+    fun clearCustomKey() {
+        viewModelScope.launch {
+            _customApiKey.value = ""
+            settingsRepository.clearCustomApiKey()
+            _customUiState.value = ApiKeyUiState.Idle
         }
     }
 }

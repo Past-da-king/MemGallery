@@ -178,25 +178,32 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4),
                             onClick = { viewModel.setAiProvider("GEMINI") },
                             selected = aiProvider == "GEMINI"
                         ) {
                             Text("Gemini")
                         }
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
                             onClick = { viewModel.setAiProvider("GROQ") },
                             selected = aiProvider == "GROQ"
                         ) {
                             Text("Groq")
                         }
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                            shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
                             onClick = { viewModel.setAiProvider("LOCAL") },
                             selected = aiProvider == "LOCAL"
                         ) {
                             Text("Local")
+                        }
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
+                            onClick = { viewModel.setAiProvider("OPENAI_COMPATIBLE") },
+                            selected = aiProvider == "OPENAI_COMPATIBLE"
+                        ) {
+                            Text("Custom")
                         }
                     }
                     
@@ -254,7 +261,7 @@ fun SettingsScreen(
                                 onDismiss = { showModelSheet = false }
                             )
                         }
-                    } else {
+                    } else if (aiProvider == "LOCAL") {
                         // LOCAL Provider
                         val localModelPath by viewModel.localModelPath.collectAsState()
                         val localModelImportState by viewModel.localModelImportState.collectAsState()
@@ -345,6 +352,38 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
+                    } else if (aiProvider == "OPENAI_COMPATIBLE") {
+                        val customBaseUrl by viewModel.customBaseUrl.collectAsState()
+                        val customModelName by viewModel.customModelName.collectAsState()
+                        val customApiKey by viewModel.customApiKey.collectAsState()
+                        val customUiState by viewModel.customUiState.collectAsState()
+
+                        Text(
+                            "OpenAI Compatible Configuration",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        
+                        Text(
+                             "Connect to LocalAI, Ollama, vLLM, or other OpenAI-compatible APIs.",
+                             style = MaterialTheme.typography.bodySmall,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        CustomProviderSection(
+                            baseUrl = customBaseUrl,
+                            modelName = customModelName,
+                            apiKey = customApiKey,
+                            uiState = customUiState,
+                            onBaseUrlChange = viewModel::setCustomBaseUrl,
+                            onModelNameChange = viewModel::setCustomModelName,
+                            onApiKeyChange = viewModel::onCustomApiKeyChange,
+                            onSave = viewModel::validateAndSaveCustomSettings,
+                            onClearKey = viewModel::clearCustomKey
+                        )
                     }
                 }
             }
@@ -1634,6 +1673,85 @@ fun LimitBadge(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.ExtraBold,
                 color = textColor
+            )
+        }
+    }
+}
+
+@Composable
+fun CustomProviderSection(
+    baseUrl: String,
+    modelName: String,
+    apiKey: String,
+    uiState: ApiKeyUiState,
+    onBaseUrlChange: (String) -> Unit,
+    onModelNameChange: (String) -> Unit,
+    onApiKeyChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onClearKey: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(
+            value = baseUrl,
+            onValueChange = onBaseUrlChange,
+            label = { Text("Base URL") },
+            placeholder = { Text("https://api.openai.com/v1/") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium
+        )
+
+        OutlinedTextField(
+            value = modelName,
+            onValueChange = onModelNameChange,
+            label = { Text("Model Name") },
+            placeholder = { Text("gpt-4o") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium
+        )
+
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = onApiKeyChange,
+            label = { Text("API Key (Optional for local)") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            trailingIcon = {
+                if (apiKey.isNotEmpty()) {
+                    IconButton(onClick = onClearKey) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    }
+                }
+            }
+        )
+
+        Button(
+            onClick = onSave,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = uiState !is ApiKeyUiState.Loading
+        ) {
+            if (uiState is ApiKeyUiState.Loading) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Validating...")
+            } else {
+                Text("Validate & Save Settings")
+            }
+        }
+
+        if (uiState is ApiKeyUiState.Success) {
+            Text(
+                uiState.message,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium
+            )
+        } else if (uiState is ApiKeyUiState.Error) {
+            Text(
+                uiState.message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelMedium
             )
         }
     }

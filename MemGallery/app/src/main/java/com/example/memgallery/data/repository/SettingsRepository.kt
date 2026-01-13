@@ -84,6 +84,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val LATEST_AVAILABLE_VERSION = stringPreferencesKey("latest_available_version")
         val LATEST_CHANGE_LOG = stringPreferencesKey("latest_change_log")
         val HAS_SHOWN_UPDATE_LOG = booleanPreferencesKey("has_shown_update_log")
+        
+        // Custom Provider
+        val CUSTOM_BASE_URL = stringPreferencesKey("custom_base_url")
+        val CUSTOM_MODEL_NAME = stringPreferencesKey("custom_model_name")
     }
 
     init {
@@ -533,5 +537,46 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
 
     suspend fun setHasShownUpdateLog(shown: Boolean) {
         context.dataStore.edit { settings -> settings[PreferencesKeys.HAS_SHOWN_UPDATE_LOG] = shown }
+    }
+
+    // Custom / OpenAI Compatible Provider
+    val customBaseUrlFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.CUSTOM_BASE_URL] ?: "https://api.openai.com/v1/"
+        }
+
+    val customModelNameFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.CUSTOM_MODEL_NAME] ?: "gpt-4o"
+        }
+    
+    val customApiKeyFlow: Flow<String?> = flow {
+        emit(encryptedPrefs.getString("custom_api_key_secure", null))
+    }
+
+    suspend fun setCustomBaseUrl(url: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.CUSTOM_BASE_URL] = url
+        }
+    }
+
+    suspend fun setCustomModelName(modelName: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.CUSTOM_MODEL_NAME] = modelName
+        }
+    }
+
+    suspend fun saveCustomApiKey(apiKey: String) {
+        with(encryptedPrefs.edit()) {
+            putString("custom_api_key_secure", apiKey)
+            apply()
+        }
+    }
+
+    suspend fun clearCustomApiKey() {
+        with(encryptedPrefs.edit()) {
+            remove("custom_api_key_secure")
+            apply()
+        }
     }
 }

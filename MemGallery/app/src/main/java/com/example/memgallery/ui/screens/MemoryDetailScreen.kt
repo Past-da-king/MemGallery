@@ -499,7 +499,14 @@ fun MemoryDetailContent(
                             val context = LocalContext.current
                             memory.aiActions.forEach { action ->
                                 ActionCard(action = action, onAction = {
-                                    ActionHandler.handleAction(context, action)
+                                    // Create internal task instead of firing external intent
+                                    onCreateTask(
+                                        action.description,
+                                        action.description, // Use description as both title and desc for now
+                                        action.date,
+                                        action.time,
+                                        action.type
+                                    )
                                 })
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
