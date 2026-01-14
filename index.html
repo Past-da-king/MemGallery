@@ -361,6 +361,61 @@
             transform: rotate(180deg);
         }
 
+        /* Identity Section: What, Why, How */
+        .identity-manifesto {
+            padding: 15rem 5vw;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .manifesto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 8rem;
+        }
+
+        .manifesto-item h2 {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .manifesto-item p {
+            font-size: 1.2rem;
+            color: var(--text-h);
+            line-height: 1.8;
+            font-weight: 300;
+            opacity: 0.8;
+        }
+
+        .manifesto-item b {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .how-list {
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        .how-list li {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .how-list li::before {
+            content: '>';
+            color: var(--accent);
+            font-weight: 900;
+        }
+
         .footer-text {
             font-size: 1.2rem;
             font-family: 'JetBrains Mono', monospace;
@@ -426,6 +481,44 @@
                 <div class="phone-wireframe" style="margin-top: -5rem;">
                     <span class="phone-label">// PROACTIVE_TASK_GATING</span>
                     <img src="images/tasks.jpg" alt="Task Manager View">
+                </div>
+            </div>
+        </section>
+
+        <section class="identity-manifesto">
+            <div class="manifesto-grid">
+                <div class="manifesto-item">
+                    <h2>What is it?</h2>
+                    <p>
+                        <b>MemGallery</b> is a smart, local-first <b>memory bank</b> designed to store everything you
+                        encounter—audio, images, text, and URLs—so you can recall them exactly when you need them. It
+                        acts as an intelligent index for your digital life, ensuring no breakthrough thought or
+                        essential screenshot is ever lost again.
+                    </p>
+                </div>
+                <div class="manifesto-item">
+                    <h2>Why build it?</h2>
+                    <p>
+                        The inspiration came from powerful manufacturer-locked features like <b>OPPO's Mind Space</b>,
+                        <b>Nothing's Essential Space</b>, and <b>Pixel Screenshots</b>. These are incredible tools, but
+                        they are trapped within specific ecosystems. MemGallery was born to be the <b>open-source
+                            alternative</b>—a device-agnostic intelligence engine that brings that same power to
+                        everyone, with no manufacturer lock-in.
+                    </p>
+                </div>
+                <div class="manifesto-item">
+                    <h2>How it works?</h2>
+                    <p>
+                        We’ve built a seamless pipeline that prioritizes your privacy while maximizing your recall.
+                    </p>
+                    <ul class="how-list">
+                        <li><b>CAPTURE:</b> Snap screenshots, record voice notes, or share URLs directly to the app.
+                        </li>
+                        <li><b>INDEX:</b> Proactive AI (Gemini, Groq, or Local) scans, transcribes, and extracts
+                            actions.</li>
+                        <li><b>RECALL:</b> Use natural language to search your entire history and act on detected tasks
+                            instantly.</li>
+                    </ul>
                 </div>
             </div>
         </section>
