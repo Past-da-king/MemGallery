@@ -1,4 +1,4 @@
-# MemGallery (Digit Mem Gallery) 🧠📸
+# MemGallery 🧠📸
 
 <p align="center">
   <img src="images/icon.png" alt="MemGallery Icon" width="150"/>
