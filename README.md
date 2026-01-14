@@ -5,13 +5,13 @@
 </p>
 
 <p align="center">
-  <strong>Your External Brain for Memories</strong><br>
-  Capture, Process, and Recall Everything with AI
+  <strong>The Smart, Local-First Memory Bank</strong><br>
+  Capture, Process, and Recall Everything — No Cloud, No Limits.
 </p>
 
 <p align="center">
   <a href="https://github.com/Past-da-king/MemGallery/releases">
-    <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.6-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.6">
+    <img src="https://img.shields.io/badge/Download-Latest%20Release-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download">
   </a>
 </p>
 
@@ -38,10 +38,20 @@
 
 ---
 
-
 ## 🎯 What is MemGallery?
 
-**MemGallery** is a smart memory bank that allows you to store all your memories from audio, images, text, and URLs for you to remember later. It uses AI to index it, and the AI can be either local or provided. Most of everything is on-device, no cloud required, and no sign-up required.
+**MemGallery** is a smart, privacy-first **memory bank** designed to help you store and recall your entire digital life. It’s an intelligent pipeline for your audio, images, text, and URLs, ensuring you never lose a fleeting thought or an important screenshot again.
+
+Unlike traditional apps, MemGallery is built on a **Zero-Cloud Mandate**:
+- **Total Privacy**: Your data stays on your device. No cloud sync, no tracking.
+- **No Sign-Up Required**: Start indexing your life immediately.
+- **AI-Powered Intelligence**: Choose your engine—use local models, **Google Gemini**, **Groq (Q)**, or any **OpenAI-compatible** provider.
+
+### 🧠 Proactive Intelligence
+MemGallery doesn't just store data; it understands it. Our proactive AI engine automatically:
+1. **Indexes Everything**: Scans your images, transcribes your audio, and summarizes your URLs.
+2. **Extracts Actions**: Identifies appointments, to-dos, and reminders hidden in your memories.
+3. **Smart Recall**: Find anything instantly using simple, natural language search.
 
 ---
 
