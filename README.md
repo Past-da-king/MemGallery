@@ -41,9 +41,7 @@
 
 ## 🎯 What is MemGallery?
 
-**MemGallery** is an AI-powered Android application that acts as your personal memory assistant. It automatically captures, organizes, and makes searchable every piece of information you encounter—from screenshots to voice notes to web bookmarks.
-
-Think of it as **your second brain** that never forgets. MemGallery uses advanced AI (powered by **Google's Gemini 2.5 Flash**) to understand the content of your memories, extract actionable insights, and help you recall information instantly through intelligent search.
+**MemGallery** is a smart memory bank that allows you to store all your memories from audio, images, text, and URLs for you to remember later. It uses AI to index it, and the AI can be either local or provided. Most of everything is on-device, no cloud required, and no sign-up required.
 
 ---
 
