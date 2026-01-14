@@ -239,7 +239,7 @@ fun PostCaptureScreen(
                             .weight(1f)
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable(enabled = !isEditMode) {
+                            .clickable {
                                 showAddImageSheet = true
                             },
                         contentAlignment = Alignment.Center

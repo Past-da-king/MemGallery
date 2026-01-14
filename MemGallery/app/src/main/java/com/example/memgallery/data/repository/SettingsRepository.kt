@@ -76,6 +76,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val AI_PROVIDER = stringPreferencesKey("ai_provider") // "GEMINI", "GROQ"
         val GROQ_MODEL_ID = stringPreferencesKey("groq_model_id")
         val MAX_TOOL_CALLS = intPreferencesKey("max_tool_calls")
+        val EXTERNAL_TASK_MANAGER = stringPreferencesKey("external_task_manager") // "NONE", "TICKTICK", "GOOGLE_TASKS", "TODOIST", "SHARE"
+        val LOCAL_MODEL_PATH = stringPreferencesKey("local_model_path")
+
+        // Version Tracking
+        val LAST_SEEN_VERSION = stringPreferencesKey("last_seen_version")
+        val LATEST_AVAILABLE_VERSION = stringPreferencesKey("latest_available_version")
+        val LATEST_CHANGE_LOG = stringPreferencesKey("latest_change_log")
+        val HAS_SHOWN_UPDATE_LOG = booleanPreferencesKey("has_shown_update_log")
+        
+        // Custom Provider
+        val CUSTOM_BASE_URL = stringPreferencesKey("custom_base_url")
+        val CUSTOM_MODEL_NAME = stringPreferencesKey("custom_model_name")
     }
 
     init {
@@ -470,6 +482,101 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setMaxToolCalls(count: Int) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.MAX_TOOL_CALLS] = count
+        }
+    }
+
+    // External Task Manager Integration
+    val externalTaskManagerFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.EXTERNAL_TASK_MANAGER] ?: "NONE"
+        }
+
+    suspend fun setExternalTaskManager(manager: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.EXTERNAL_TASK_MANAGER] = manager
+        }
+    }
+
+    // Local LLM
+    val localModelPathFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.LOCAL_MODEL_PATH]
+        }
+
+    suspend fun setLocalModelPath(path: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.LOCAL_MODEL_PATH] = path
+        }
+    }
+
+    // Version Tracking - Flows
+    val lastSeenVersionFlow: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LAST_SEEN_VERSION] }
+
+    val latestAvailableVersionFlow: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LATEST_AVAILABLE_VERSION] }
+
+    val latestChangeLogFlow: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LATEST_CHANGE_LOG] }
+
+    val hasShownUpdateLogFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.HAS_SHOWN_UPDATE_LOG] ?: true }
+
+    // Version Tracking - Setters
+    suspend fun setLastSeenVersion(version: String) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.LAST_SEEN_VERSION] = version }
+    }
+
+    suspend fun setLatestAvailableVersion(version: String) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.LATEST_AVAILABLE_VERSION] = version }
+    }
+
+    suspend fun setLatestChangeLog(log: String) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.LATEST_CHANGE_LOG] = log }
+    }
+
+    suspend fun setHasShownUpdateLog(shown: Boolean) {
+        context.dataStore.edit { settings -> settings[PreferencesKeys.HAS_SHOWN_UPDATE_LOG] = shown }
+    }
+
+    // Custom / OpenAI Compatible Provider
+    val customBaseUrlFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.CUSTOM_BASE_URL] ?: "https://api.openai.com/v1/"
+        }
+
+    val customModelNameFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.CUSTOM_MODEL_NAME] ?: "gpt-4o"
+        }
+    
+    val customApiKeyFlow: Flow<String?> = flow {
+        emit(encryptedPrefs.getString("custom_api_key_secure", null))
+    }
+
+    suspend fun setCustomBaseUrl(url: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.CUSTOM_BASE_URL] = url
+        }
+    }
+
+    suspend fun setCustomModelName(modelName: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.CUSTOM_MODEL_NAME] = modelName
+        }
+    }
+
+    suspend fun saveCustomApiKey(apiKey: String) {
+        with(encryptedPrefs.edit()) {
+            putString("custom_api_key_secure", apiKey)
+            apply()
+        }
+    }
+
+    suspend fun clearCustomApiKey() {
+        with(encryptedPrefs.edit()) {
+            remove("custom_api_key_secure")
+            apply()
         }
     }
 }

@@ -24,8 +24,8 @@ android {
         applicationId = "com.example.memgallery"
         minSdk = 24
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.0.8"
+        versionCode = 10
+        versionName = "0.0.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -77,12 +77,16 @@ android {
 
 configurations.all {
     exclude(group = "org.jetbrains", module = "annotations-java5")
+    exclude(group = "com.google.protobuf", module = "protobuf-javalite")
     resolutionStrategy.eachDependency {
         if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin-stdlib")) {
             useVersion("2.0.21")
         }
         if (requested.group == "com.squareup.okhttp3") {
             useVersion("4.12.0")
+        }
+        if (requested.group == "com.google.protobuf") {
+            useVersion("3.25.8")
         }
     }
 }
@@ -109,6 +113,8 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.okhttp.sse)
+    implementation(libs.mediapipe.tasks.genai)
 
     // Hilt
     implementation(libs.hilt.android)

@@ -17,7 +17,22 @@ interface GitHubService {
         @Header("Authorization") token: String,
         @Body issue: GitHubIssueRequest
     ): Response<GitHubIssueResponse>
+
+    @Headers(
+        "Accept: application/vnd.github+json",
+        "X-GitHub-Api-Version: 2022-11-28",
+        "User-Agent: MemGallery-AndroidApp"
+    )
+    @retrofit2.http.GET("repos/Past-da-king/MemGallery/releases/latest")
+    suspend fun getLatestRelease(): Response<GitHubReleaseResponse>
 }
+
+data class GitHubReleaseResponse(
+    @com.google.gson.annotations.SerializedName("tag_name") val tagName: String,
+    val name: String,
+    val body: String,
+    @com.google.gson.annotations.SerializedName("html_url") val htmlUrl: String
+)
 
 data class GitHubIssueRequest(
     val title: String,

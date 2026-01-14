@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.memgallery.data.remote.GeminiService
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.service.EdgeGestureService
+import com.example.memgallery.BuildConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,9 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val geminiService: GeminiService,
     private val chatGeminiService: com.example.memgallery.data.remote.ChatGeminiService,
-    private val backupRepository: com.example.memgallery.data.repository.BackupRepository
+    private val backupRepository: com.example.memgallery.data.repository.BackupRepository,
+    private val githubService: com.example.memgallery.data.remote.github.GitHubService,
+    private val openAICompatibleProvider: com.example.memgallery.data.remote.ai.OpenAICompatibleProvider
 ) : ViewModel() {
 
     // Backup State
@@ -249,6 +252,52 @@ class SettingsViewModel @Inject constructor(
 
     val overlayStyle: StateFlow<String> = settingsRepository.overlayStyleFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "EDGE")
+
+    // External Task Manager Integration
+    val externalTaskManager: StateFlow<String> = settingsRepository.externalTaskManagerFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "NONE")
+
+    // Custom / OpenAI Compatible Settings
+    private val _customBaseUrl = MutableStateFlow("https://api.openai.com/v1/")
+    val customBaseUrl: StateFlow<String> = _customBaseUrl.asStateFlow()
+
+    private val _customModelName = MutableStateFlow("gpt-4o")
+    val customModelName: StateFlow<String> = _customModelName.asStateFlow()
+
+    private val _customApiKey = MutableStateFlow("")
+    val customApiKey: StateFlow<String> = _customApiKey.asStateFlow()
+
+    private val _customUiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val customUiState: StateFlow<ApiKeyUiState> = _customUiState.asStateFlow()
+
+    // Local Model Configuration
+    val localModelPath: StateFlow<String?> = settingsRepository.localModelPathFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    private val _localModelImportState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle) // Reuse ApiKeyUiState for simplicity or create new
+    val localModelImportState: StateFlow<ApiKeyUiState> = _localModelImportState.asStateFlow()
+
+    // Version Information
+    val latestAvailableVersion: StateFlow<String?> = settingsRepository.latestAvailableVersionFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    val latestChangeLog: StateFlow<String?> = settingsRepository.latestChangeLogFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    val hasShownUpdateLog: StateFlow<Boolean> = settingsRepository.hasShownUpdateLogFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
+
+    init {
+        // Initialize custom settings from repository
+        viewModelScope.launch {
+            _customBaseUrl.value = settingsRepository.customBaseUrlFlow.first()
+            _customModelName.value = settingsRepository.customModelNameFlow.first()
+            _customApiKey.value = settingsRepository.customApiKeyFlow.first() ?: ""
+        }
+    }
+
+    private val _updateCheckState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val updateCheckState: StateFlow<ApiKeyUiState> = _updateCheckState.asStateFlow()
 
     fun setAutoIndexScreenshots(enabled: Boolean) {
         viewModelScope.launch {
@@ -543,6 +592,84 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setOverlayStyle(style) }
     }
 
+    fun setExternalTaskManager(manager: String) {
+        viewModelScope.launch { settingsRepository.setExternalTaskManager(manager) }
+    }
+
+
+    fun importLocalModel(uri: android.net.Uri) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            _localModelImportState.value = ApiKeyUiState.Loading
+            try {
+                // First, delete any existing local model files to prevent accumulation
+                context.filesDir.listFiles()?.filter { 
+                    it.name.startsWith("local_model_") 
+                }?.forEach { oldFile ->
+                    oldFile.delete()
+                    android.util.Log.d("SettingsViewModel", "Deleted old model: ${oldFile.name}")
+                }
+                
+                // Determine the file extension from the URI
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(uri)
+                val extension = when {
+                    uri.path?.contains(".task") == true -> "task"
+                    uri.path?.contains(".tflite") == true -> "tflite"
+                    uri.path?.contains(".literlm") == true -> "literlm"
+                    mimeType?.contains("octet-stream") == true -> "bin"
+                    else -> uri.lastPathSegment?.substringAfterLast('.', "bin") ?: "bin"
+                }
+                
+                val inputStream = contentResolver.openInputStream(uri) 
+                    ?: throw java.io.IOException("Cannot open input stream")
+                
+                val fileName = "local_model_" + System.currentTimeMillis() + "." + extension
+                val file = java.io.File(context.filesDir, fileName)
+                
+                file.outputStream().use { output ->
+                    inputStream.copyTo(output)
+                }
+
+                val absolutePath = file.absolutePath
+                settingsRepository.setLocalModelPath(absolutePath)
+                _localModelImportState.value = ApiKeyUiState.Success("Model imported successfully")
+            } catch (e: Exception) {
+                _localModelImportState.value = ApiKeyUiState.Error("Import failed: ${e.message}")
+            }
+        }
+    }
+
+    fun clearLocalModel() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Get the current model path before clearing
+                val currentPath = settingsRepository.localModelPathFlow.first()
+                if (!currentPath.isNullOrBlank()) {
+                    val file = java.io.File(currentPath)
+                    if (file.exists()) {
+                        val deleted = file.delete()
+                        android.util.Log.d("SettingsViewModel", "Model file deleted: $deleted, path: $currentPath")
+                    }
+                }
+                
+                // Also clean up any orphaned model files in filesDir
+                context.filesDir.listFiles()?.filter { 
+                    it.name.startsWith("local_model_") 
+                }?.forEach { orphanFile ->
+                    orphanFile.delete()
+                    android.util.Log.d("SettingsViewModel", "Cleaned up orphan model: ${orphanFile.name}")
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Error deleting model file", e)
+            }
+            
+            // Clear the path reference
+            settingsRepository.setLocalModelPath("")
+            _localModelImportState.value = ApiKeyUiState.Idle
+        }
+    }
+
     init {
         viewModelScope.launch {
             _apiKey.value = settingsRepository.apiKeyFlow.first() ?: ""
@@ -581,5 +708,99 @@ class SettingsViewModel @Inject constructor(
 
     fun resetBackupState() {
         _backupUiState.value = BackupUiState.Idle
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch {
+            _updateCheckState.value = ApiKeyUiState.Loading
+            try {
+                val response = githubService.getLatestRelease()
+                if (response.isSuccessful) {
+                    val latestRelease = response.body()
+                    if (latestRelease != null) {
+                        settingsRepository.setLatestAvailableVersion(latestRelease.tagName)
+                        settingsRepository.setLatestChangeLog(latestRelease.body)
+                        
+                        val isNewer = isNewerVersion(latestRelease.tagName, BuildConfig.VERSION_NAME)
+                        if (isNewer) {
+                            _updateCheckState.value = ApiKeyUiState.Success("New version ${latestRelease.tagName} available!")
+                        } else {
+                            _updateCheckState.value = ApiKeyUiState.Success("App is up to date.")
+                        }
+                    } else {
+                        _updateCheckState.value = ApiKeyUiState.Error("Failed to parse release data.")
+                    }
+                } else {
+                    _updateCheckState.value = ApiKeyUiState.Error("Failed to check for updates: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                _updateCheckState.value = ApiKeyUiState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
+    private fun isNewerVersion(latest: String, current: String): Boolean {
+        val latestClean = latest.removePrefix("v").split(".")
+        val currentClean = current.removePrefix("v").split(".")
+
+        for (i in 0 until minOf(latestClean.size, currentClean.size)) {
+            val l = latestClean[i].toIntOrNull() ?: 0
+            val c = currentClean[i].toIntOrNull() ?: 0
+            if (l > c) return true
+            if (l < c) return false
+        }
+        return latestClean.size > currentClean.size
+    }
+
+    fun setHasShownUpdateLog(shown: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHasShownUpdateLog(shown)
+        }
+    }
+
+    // Custom AI Settings Actions
+    fun setCustomBaseUrl(url: String) {
+        _customBaseUrl.value = url
+    }
+
+    fun setCustomModelName(name: String) {
+        _customModelName.value = name
+    }
+
+    fun onCustomApiKeyChange(key: String) {
+        _customApiKey.value = key
+    }
+
+    fun validateAndSaveCustomSettings() {
+        viewModelScope.launch {
+            _customUiState.value = ApiKeyUiState.Loading
+            
+            val url = _customBaseUrl.value
+            val model = _customModelName.value
+            val key = _customApiKey.value
+
+            val result = openAICompatibleProvider.validateCustomSettings(
+                apiKey = key,
+                baseUrl = url,
+                modelName = model
+            )
+
+            result.onSuccess {
+                settingsRepository.setCustomBaseUrl(url)
+                settingsRepository.setCustomModelName(model)
+                settingsRepository.saveCustomApiKey(key)
+                _customUiState.value = ApiKeyUiState.Success("Settings validated and saved!")
+            }.onFailure { e ->
+                _customUiState.value = ApiKeyUiState.Error("Validation failed: ${e.message}")
+            }
+        }
+    }
+
+    fun clearCustomKey() {
+        viewModelScope.launch {
+            _customApiKey.value = ""
+            settingsRepository.clearCustomApiKey()
+            _customUiState.value = ApiKeyUiState.Idle
+        }
     }
 }

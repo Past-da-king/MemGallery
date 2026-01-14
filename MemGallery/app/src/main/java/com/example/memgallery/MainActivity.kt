@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.navigation.AppNavigation
 import com.example.memgallery.ui.theme.MemGalleryTheme
@@ -56,6 +57,24 @@ class MainActivity : ComponentActivity() {
                     amoledMode = amoledMode,
                     customColor = selectedColor
                 ) {
+                    val latestChangeLog by settingsRepository.latestChangeLogFlow.collectAsState(initial = null)
+                    val hasShownUpdateLog by settingsRepository.hasShownUpdateLogFlow.collectAsState(initial = true)
+                    val lastSeenVersion by settingsRepository.lastSeenVersionFlow.collectAsState(initial = null)
+                    var showLogSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+                    androidx.compose.runtime.LaunchedEffect(lastSeenVersion) {
+                        val currentVersion = BuildConfig.VERSION_NAME
+                        if (lastSeenVersion != null && lastSeenVersion != currentVersion) {
+                            // Version changed!
+                            if (!hasShownUpdateLog) {
+                                showLogSheet = true
+                            }
+                        }
+                        if (lastSeenVersion != currentVersion) {
+                            settingsRepository.setLastSeenVersion(currentVersion)
+                        }
+                    }
+
                     AppNavigation(
                         isOnboardingCompleted = isOnboardingCompleted,
                         sharedImageUri = sharedData?.imageUri,
@@ -63,6 +82,19 @@ class MainActivity : ComponentActivity() {
                         shortcutAction = shortcutAction,
                         navigateToRoute = intent.getStringExtra("navigate_to")
                     )
+
+                    if (showLogSheet && latestChangeLog != null) {
+                        com.example.memgallery.ui.components.ChangeLogBottomSheet(
+                            versionName = BuildConfig.VERSION_NAME,
+                            changeLog = latestChangeLog!!,
+                            onDismiss = {
+                                showLogSheet = false
+                                lifecycleScope.launch {
+                                    settingsRepository.setHasShownUpdateLog(true)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

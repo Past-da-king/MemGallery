@@ -63,6 +63,7 @@ fun AdvancedSettingsScreen(
     val autoRemindersEnabled by viewModel.autoRemindersEnabled.collectAsState()
     val overlayStyle by viewModel.overlayStyle.collectAsState()
     val maxToolCalls by viewModel.maxToolCalls.collectAsState()
+    val externalTaskManager by viewModel.externalTaskManager.collectAsState()
 
     // User Context State
     val userContextSummary by viewModel.userContextSummary.collectAsState()
@@ -360,6 +361,20 @@ fun AdvancedSettingsScreen(
                             } else null
                         )
                     }
+
+                    HorizontalDivider()
+
+                    // External Task Manager Integration
+                    Text("External Task Manager", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Forward approved tasks to your preferred task app.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    ExternalTaskManagerDropdown(
+                        selectedManager = externalTaskManager,
+                        onManagerSelected = viewModel::setExternalTaskManager
+                    )
                 }
             }
 
@@ -586,7 +601,56 @@ fun ActionDropdown(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun ExternalTaskManagerDropdown(
+    selectedManager: String,
+    onManagerSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val managers = mapOf(
+        "NONE" to "None (Keep in MemGallery only)",
+        "TICKTICK" to "TickTick",
+        "GOOGLE_TASKS" to "Google Tasks",
+        "TODOIST" to "Todoist",
+        "SHARE" to "System Share..."
+    )
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = managers[selectedManager] ?: "None",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Target App") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            managers.forEach { (key, name) ->
+                DropdownMenuItem(
+                    text = { Text(name) },
+                    onClick = {
+                        onManagerSelected(key)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun FullScreenTextEditor(
+
     title: String,
     initialText: String,
     placeholder: String,

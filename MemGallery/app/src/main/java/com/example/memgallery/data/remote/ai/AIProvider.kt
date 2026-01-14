@@ -184,5 +184,7 @@ data class ParameterDef(
  */
 enum class AIProviderType {
     GEMINI,
-    GROQ
+    GROQ,
+    LOCAL,
+    OPENAI_COMPATIBLE
 }

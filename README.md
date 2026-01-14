@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/Past-da-king/MemGallery/releases">
-    <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.5-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.5">
+    <img src="https://img.shields.io/badge/Download-Alpha%20v0.0.6-8C25F4?style=for-the-badge&logo=android&logoColor=white" alt="Download Alpha v0.0.6">
   </a>
 </p>
 

@@ -34,6 +34,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.ui.viewmodels.ApiKeyUiState
 import com.example.memgallery.ui.viewmodels.BackupUiState
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +53,14 @@ fun SettingsScreen(
     val showInShareSheet by viewModel.showInShareSheet.collectAsState()
     val taskScreenEnabled by viewModel.taskScreenEnabled.collectAsState()
     val backupUiState by viewModel.backupUiState.collectAsState()
+    
+    // Updates State
+    val latestAvailableVersion by viewModel.latestAvailableVersion.collectAsState()
+    val latestChangeLog by viewModel.latestChangeLog.collectAsState()
+    val hasShownUpdateLog by viewModel.hasShownUpdateLog.collectAsState()
+    val updateCheckState by viewModel.updateCheckState.collectAsState()
+    
+    var showUpdateLogSheet by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -115,8 +126,11 @@ fun SettingsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
+    var showAboutScreen by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
             TopAppBar(
                 title = { 
                     Text(
@@ -164,18 +178,32 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4),
                             onClick = { viewModel.setAiProvider("GEMINI") },
                             selected = aiProvider == "GEMINI"
                         ) {
                             Text("Gemini")
                         }
                         SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
                             onClick = { viewModel.setAiProvider("GROQ") },
                             selected = aiProvider == "GROQ"
                         ) {
                             Text("Groq")
+                        }
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
+                            onClick = { viewModel.setAiProvider("LOCAL") },
+                            selected = aiProvider == "LOCAL"
+                        ) {
+                            Text("Local")
+                        }
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
+                            onClick = { viewModel.setAiProvider("OPENAI_COMPATIBLE") },
+                            selected = aiProvider == "OPENAI_COMPATIBLE"
+                        ) {
+                            Text("Custom")
                         }
                     }
                     
@@ -196,7 +224,7 @@ fun SettingsScreen(
                             onValidate = viewModel::validateAndSaveKey,
                             onClear = viewModel::clearKey
                         )
-                    } else {
+                    } else if (aiProvider == "GROQ") {
                         val groqApiKey by viewModel.groqApiKey.collectAsState()
                         val groqApiKeyUiState by viewModel.groqApiKeyUiState.collectAsState()
                         val selectedModelId by viewModel.groqModelId.collectAsState()
@@ -233,6 +261,129 @@ fun SettingsScreen(
                                 onDismiss = { showModelSheet = false }
                             )
                         }
+                    } else if (aiProvider == "LOCAL") {
+                        // LOCAL Provider
+                        val localModelPath by viewModel.localModelPath.collectAsState()
+                        val localModelImportState by viewModel.localModelImportState.collectAsState()
+                        
+                        val modelPickerLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.OpenDocument()
+                        ) { uri ->
+                            uri?.let { viewModel.importLocalModel(it) }
+                        }
+
+                        Text(
+                            "Local Model (Gemma 3)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        
+                        Text(
+                            "Run AI completely on-device. Privacy focused, no internet required.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (localModelPath.isNullOrBlank()) {
+                            OutlinedButton(
+                                onClick = { modelPickerLauncher.launch(arrayOf("*/*")) }, // Allow all files as bin/task might vary
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Import Model (.bin, .literlm, .task)")
+                            }
+                            
+                            // Download Link Helper
+                            TextButton(
+                                onClick = {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference/index#models"))
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Download Compatible Models (MediaPipe)")
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Model Loaded", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        localModelPath!!.substringAfterLast("/"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    OutlinedButton(
+                                        onClick = { viewModel.clearLocalModel() },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Delete & Clear")
+                                    }
+                                }
+                            }
+                        }
+
+                        // Import Status
+                        if (localModelImportState is ApiKeyUiState.Loading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                            Text("Importing model... This may take a moment.", style = MaterialTheme.typography.bodySmall)
+                        } else if (localModelImportState is ApiKeyUiState.Error) {
+                             Text(
+                                "Error: ${(localModelImportState as ApiKeyUiState.Error).message}",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    } else if (aiProvider == "OPENAI_COMPATIBLE") {
+                        val customBaseUrl by viewModel.customBaseUrl.collectAsState()
+                        val customModelName by viewModel.customModelName.collectAsState()
+                        val customApiKey by viewModel.customApiKey.collectAsState()
+                        val customUiState by viewModel.customUiState.collectAsState()
+
+                        Text(
+                            "OpenAI Compatible Configuration",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        
+                        Text(
+                             "Connect to LocalAI, Ollama, vLLM, or other OpenAI-compatible APIs.",
+                             style = MaterialTheme.typography.bodySmall,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        CustomProviderSection(
+                            baseUrl = customBaseUrl,
+                            modelName = customModelName,
+                            apiKey = customApiKey,
+                            uiState = customUiState,
+                            onBaseUrlChange = viewModel::setCustomBaseUrl,
+                            onModelNameChange = viewModel::setCustomModelName,
+                            onApiKeyChange = viewModel::onCustomApiKeyChange,
+                            onSave = viewModel::validateAndSaveCustomSettings,
+                            onClearKey = viewModel::clearCustomKey
+                        )
                     }
                 }
             }
@@ -512,10 +663,89 @@ fun SettingsScreen(
                     )
                 }
             }
-            
+
+            // About & Updates (Full Screen Entry)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                onClick = { showAboutScreen = true }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Update,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "About & Updates",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Version ${com.example.memgallery.BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (latestAvailableVersion != null && latestAvailableVersion != com.example.memgallery.BuildConfig.VERSION_NAME) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(8.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Open About & Updates",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             // Bottom spacing
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showAboutScreen) {
+        AboutScreenOverlay(
+            viewModel = viewModel,
+            onBack = { showAboutScreen = false }
+        )
+        BackHandler { showAboutScreen = false }
+    }
     }
 }
 
@@ -1237,6 +1467,184 @@ fun GroqModelSheet(
     }
 }
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AboutScreenOverlay(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit
+) {
+    val latestAvailableVersion by viewModel.latestAvailableVersion.collectAsState()
+    val latestChangeLog by viewModel.latestChangeLog.collectAsState()
+    val updateCheckState by viewModel.updateCheckState.collectAsState()
+    var showLogSheet by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("About & Updates") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // App Icon
+            Surface(
+                modifier = Modifier.size(120.dp),
+                shape = RoundedCornerShape(28.dp),
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(id = com.example.memgallery.R.mipmap.ic_launcher_foreground),
+                        contentDescription = "MemGallery Icon",
+                        modifier = Modifier.size(120.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "MemGallery",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black
+            )
+
+            Text(
+                text = "Version ${com.example.memgallery.BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Update Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (latestAvailableVersion != null && latestAvailableVersion != com.example.memgallery.BuildConfig.VERSION_NAME) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Update Available",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    "New version $latestAvailableVersion is ready",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+
+                    // Status Message
+                    when (updateCheckState) {
+                        is ApiKeyUiState.Loading -> {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            Text("Checking...", style = MaterialTheme.typography.bodySmall)
+                        }
+                        is ApiKeyUiState.Success -> {
+                            Text(
+                                (updateCheckState as ApiKeyUiState.Success).message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        is ApiKeyUiState.Error -> {
+                            Text(
+                                (updateCheckState as ApiKeyUiState.Error).message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        else -> {
+                           Text("Make sure you are on the latest version", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    
+                    Button(
+                        onClick = { viewModel.checkForUpdates() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Check for Updates")
+                    }
+
+                    if (latestChangeLog != null) {
+                        OutlinedButton(
+                            onClick = { showLogSheet = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.List, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("View Changelog")
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            Text(
+                "Designed with ❤️ under full privacy",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+        }
+    }
+
+    if (showLogSheet && latestChangeLog != null) {
+        com.example.memgallery.ui.components.ChangeLogBottomSheet(
+            versionName = latestAvailableVersion ?: com.example.memgallery.BuildConfig.VERSION_NAME,
+            changeLog = latestChangeLog!!,
+            onDismiss = { showLogSheet = false }
+        )
+    }
+}
+
 @Composable
 fun LimitBadge(
     label: String,
@@ -1269,3 +1677,83 @@ fun LimitBadge(
         }
     }
 }
+
+@Composable
+fun CustomProviderSection(
+    baseUrl: String,
+    modelName: String,
+    apiKey: String,
+    uiState: ApiKeyUiState,
+    onBaseUrlChange: (String) -> Unit,
+    onModelNameChange: (String) -> Unit,
+    onApiKeyChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onClearKey: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(
+            value = baseUrl,
+            onValueChange = onBaseUrlChange,
+            label = { Text("Base URL") },
+            placeholder = { Text("https://api.openai.com/v1/") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium
+        )
+
+        OutlinedTextField(
+            value = modelName,
+            onValueChange = onModelNameChange,
+            label = { Text("Model Name") },
+            placeholder = { Text("gpt-4o") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium
+        )
+
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = onApiKeyChange,
+            label = { Text("API Key (Optional for local)") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            trailingIcon = {
+                if (apiKey.isNotEmpty()) {
+                    IconButton(onClick = onClearKey) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    }
+                }
+            }
+        )
+
+        Button(
+            onClick = onSave,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = uiState !is ApiKeyUiState.Loading
+        ) {
+            if (uiState is ApiKeyUiState.Loading) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Validating...")
+            } else {
+                Text("Validate & Save Settings")
+            }
+        }
+
+        if (uiState is ApiKeyUiState.Success) {
+            Text(
+                uiState.message,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium
+            )
+        } else if (uiState is ApiKeyUiState.Error) {
+            Text(
+                uiState.message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
+}
+

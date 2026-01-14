@@ -16,6 +16,8 @@ private const val TAG = "AIProviderFactory"
 class AIProviderFactory @Inject constructor(
     private val geminiProvider: GeminiProvider,
     private val groqProvider: GroqProvider,
+    private val localAIProvider: LocalAIProvider,
+    private val openAICompatibleProvider: OpenAICompatibleProvider,
     private val settingsRepository: SettingsRepository
 ) {
     
@@ -27,14 +29,20 @@ class AIProviderFactory @Inject constructor(
         val providerType = getProviderType()
         val provider = when (providerType) {
             AIProviderType.GROQ -> groqProvider
+            AIProviderType.LOCAL -> localAIProvider
+            AIProviderType.OPENAI_COMPATIBLE -> openAICompatibleProvider
             else -> geminiProvider
         }
         
         // Initialize if not already
         if (!provider.isEnabled()) {
             val apiKey = getApiKey(providerType)
-            if (!apiKey.isNullOrBlank()) {
-                provider.initialize(apiKey)
+            // Local provider might not need a key, or uses path as key
+            if (!apiKey.isNullOrBlank() || providerType == AIProviderType.LOCAL || providerType == AIProviderType.OPENAI_COMPATIBLE) {
+                // OpenAI compatible might rely on internal config fetching, but initialize expects a key.
+                // We pass the key if available, or empty string if it relies on repo internal fetch. 
+                // Provider implementation handles this.
+                provider.initialize(apiKey ?: "")
                 Log.i(TAG, "Initialized ${provider.providerName} provider")
             }
         }
@@ -49,13 +57,12 @@ class AIProviderFactory @Inject constructor(
         val providerString = settingsRepository.aiProviderFlow.first()
         return when (providerString.uppercase()) {
             "GROQ" -> AIProviderType.GROQ
+            "LOCAL" -> AIProviderType.LOCAL
+            "OPENAI_COMPATIBLE" -> AIProviderType.OPENAI_COMPATIBLE
             else -> AIProviderType.GEMINI
         }
     }
     
-    /**
-     * Get the API key for the specified provider type.
-     */
     /**
      * Get the API key for the currently selected provider type.
      */
@@ -70,6 +77,8 @@ class AIProviderFactory @Inject constructor(
         return when (providerType) {
             AIProviderType.GROQ -> settingsRepository.groqApiKeyFlow.first()
             AIProviderType.GEMINI -> settingsRepository.apiKeyFlow.first()
+            AIProviderType.LOCAL -> settingsRepository.localModelPathFlow.first()
+            AIProviderType.OPENAI_COMPATIBLE -> settingsRepository.customApiKeyFlow.first()
         }
     }
     
@@ -82,6 +91,12 @@ class AIProviderFactory @Inject constructor(
      * Check if the current provider is properly configured
      */
     suspend fun isProviderConfigured(): Boolean {
+        // Local logic is path-based; OpenAI logic might be URL+Key
+        val type = getProviderType()
+        if (type == AIProviderType.OPENAI_COMPATIBLE) {
+             val url = settingsRepository.customBaseUrlFlow.first()
+             return url.isNotBlank() // Key technically optional for some local endpoints?
+        }
         val apiKey = getApiKey()
         return !apiKey.isNullOrBlank()
     }
@@ -93,7 +108,7 @@ class AIProviderFactory @Inject constructor(
         val providerType = getProviderType()
         val apiKey = getApiKey(providerType)
         
-        if (apiKey.isNullOrBlank()) {
+        if (apiKey.isNullOrBlank() && providerType != AIProviderType.OPENAI_COMPATIBLE) {
             Log.w(TAG, "No API key configured for $providerType")
             return false
         }
@@ -101,9 +116,11 @@ class AIProviderFactory @Inject constructor(
         val provider = when (providerType) {
             AIProviderType.GROQ -> groqProvider
             AIProviderType.GEMINI -> geminiProvider
+            AIProviderType.LOCAL -> localAIProvider
+            AIProviderType.OPENAI_COMPATIBLE -> openAICompatibleProvider
         }
         
-        provider.initialize(apiKey)
+        provider.initialize(apiKey ?: "")
         Log.i(TAG, "Initialized ${provider.providerName} provider")
         return true
     }
@@ -114,6 +131,8 @@ class AIProviderFactory @Inject constructor(
     fun disableAllProviders() {
         geminiProvider.disable()
         groqProvider.disable()
+        localAIProvider.disable()
+        openAICompatibleProvider.disable()
         Log.i(TAG, "All providers disabled")
     }
 }
