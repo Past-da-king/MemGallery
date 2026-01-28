@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
     private fun extractSharedData(intent: Intent?): SharedData? {
         if (intent?.action != Intent.ACTION_SEND) return null
 
-        return when (intent.type) {
+        val result = when (intent.type) {
             "text/plain" -> {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                     ?: intent.getStringExtra("shared_text")
@@ -123,6 +123,15 @@ class MainActivity : ComponentActivity() {
                 } else null
             }
         }
+        
+        // Clear the intent action to prevent reprocessing on activity recreation
+        if (result != null) {
+            intent.action = null
+            intent.removeExtra(Intent.EXTRA_TEXT)
+            intent.removeExtra(Intent.EXTRA_STREAM)
+        }
+        
+        return result
     }
 
     data class SharedData(

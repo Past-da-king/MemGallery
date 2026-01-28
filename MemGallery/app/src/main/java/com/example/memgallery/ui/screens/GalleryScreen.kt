@@ -256,16 +256,14 @@ fun GalleryScreen(
                         headerHeightDp = with(localDensity) { coordinates.size.height.toDp() }
                     }
                     .drawBehind {
-                        // Blend between transparent and solid based on header height vs scroll
-                        // But since we want a gradient, we'll keep the gradient but ensure 
-                        // it's robust. We'll increase the solid portion.
-                        val solidStop = 0.85f 
+                        // Solid background with very subtle fade at the bottom
+                        // to prevent content bleeding through during scroll
+                        val solidStop = 0.95f 
                         
                         val brush = Brush.verticalGradient(
                             0.0f to backgroundColor,
                             solidStop to backgroundColor,
-                            0.92f to backgroundColor.copy(alpha = 0.5f),
-                            1.0f to Color.Transparent
+                            1.0f to backgroundColor.copy(alpha = 0.7f)
                         )
                         drawRect(brush)
                     }

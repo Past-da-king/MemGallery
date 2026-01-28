@@ -337,13 +337,19 @@ class OpenAICompatibleProvider @Inject constructor(
     ): Result<String> {
         var currentMessages = messages
         var toolCallCount = 0
-        val maxToolCalls = try { settingsRepository.maxToolCallsFlow.first() } catch (e: Exception) { 3 }
+        val maxToolCalls = try { settingsRepository.maxToolCallsFlow.first() } catch (e: Exception) { 5 }
 
-        while (toolCallCount < maxToolCalls) {
+        // Loop until we get a final response (no tool calls) or hit max iterations
+        while (true) {
+            if (toolCallCount >= maxToolCalls) {
+                return Result.failure(Exception("Max tool calls ($maxToolCalls) exceeded. The AI may be stuck in a loop."))
+            }
+
             val jsonBody = JSONObject().apply {
                 put("model", model)
                 put("messages", currentMessages)
-                if (toolExecutor != null) {
+                // Only add tools if toolExecutor is provided and we haven't exceeded limits
+                if (toolExecutor != null && toolCallCount < maxToolCalls) {
                     val tools = buildOpenAITools(toolExecutor)
                     if (tools.length() > 0) {
                         put("tools", tools)
@@ -351,6 +357,8 @@ class OpenAICompatibleProvider @Inject constructor(
                     }
                 }
             }
+
+            Log.d(TAG, "Sending request to $url with ${currentMessages.length()} messages, toolCallCount=$toolCallCount")
 
             val request = Request.Builder()
                 .url(url)
@@ -362,71 +370,94 @@ class OpenAICompatibleProvider @Inject constructor(
                 .build()
 
             try {
-                client.newCall(request).execute().use { response ->
-                    val bodyStr = response.body?.string()
-                    if (!response.isSuccessful || bodyStr == null) {
-                        throw IOException("API request failed (${response.code}): $bodyStr")
-                    }
-
-                    val jsonResponse = JSONObject(bodyStr)
-                    val choice = jsonResponse.getJSONArray("choices").getJSONObject(0)
-                    val assistantMsgJson = choice.getJSONObject("message")
-                    
-                    // Add assistant message to history for potential next turn
-                    currentMessages.put(assistantMsgJson)
-
-                    if (!assistantMsgJson.has("tool_calls")) {
-                        return Result.success(assistantMsgJson.optString("content", ""))
-                    }
-
-                    val toolCalls = assistantMsgJson.getJSONArray("tool_calls")
-                    Log.d(TAG, "Assistant requested ${toolCalls.length()} tool calls")
-
-                    for (i in 0 until toolCalls.length()) {
-                        val toolCall = toolCalls.getJSONObject(i)
-                        val callId = toolCall.getString("id")
-                        val function = toolCall.getJSONObject("function")
-                        val fnName = function.getString("name")
-                        val fnArgsStr = function.getString("arguments")
-
-                        Log.d(TAG, "Executing tool: $fnName with args: $fnArgsStr")
-                        
-                        val argsMap = try {
-                            @Suppress("UNCHECKED_CAST")
-                            gson.fromJson(fnArgsStr, Map::class.java) as Map<String, Any?>
-                        } catch (e: Exception) {
-                            emptyMap<String, Any?>()
-                        }
-
-                        val result = toolExecutor?.executeTool(fnName, argsMap) ?: "Tool not found"
-                        
-                        currentMessages.put(JSONObject().apply {
-                            put("role", "tool")
-                            put("tool_call_id", callId)
-                            put("name", fnName)
-                            put("content", result)
-                        })
-                        
-                        toolCallCount++
-                    }
-                    // Loop continues with updated messages
+                val response = client.newCall(request).execute()
+                val bodyStr = response.body?.string()
+                
+                if (!response.isSuccessful || bodyStr == null) {
+                    response.close()
+                    throw IOException("API request failed (${response.code}): $bodyStr")
                 }
+                response.close()
+
+                val jsonResponse = JSONObject(bodyStr)
+                val choices = jsonResponse.optJSONArray("choices")
+                if (choices == null || choices.length() == 0) {
+                    Log.e(TAG, "No choices in response: $bodyStr")
+                    return Result.failure(Exception("Invalid API response: no choices"))
+                }
+                
+                val choice = choices.getJSONObject(0)
+                val assistantMsgJson = choice.getJSONObject("message")
+                
+                // Add assistant message to history for potential next turn
+                currentMessages.put(assistantMsgJson)
+
+                // Check if the assistant wants to call tools
+                val toolCalls = assistantMsgJson.optJSONArray("tool_calls")
+                
+                if (toolCalls == null || toolCalls.length() == 0) {
+                    // No tool calls - this is the final response
+                    val content = assistantMsgJson.optString("content", "")
+                    Log.d(TAG, "Final response received (no tool calls): ${content.take(100)}...")
+                    return Result.success(content)
+                }
+
+                // Process tool calls
+                Log.d(TAG, "Assistant requested ${toolCalls.length()} tool calls")
+
+                for (i in 0 until toolCalls.length()) {
+                    val toolCall = toolCalls.getJSONObject(i)
+                    val callId = toolCall.getString("id")
+                    val function = toolCall.getJSONObject("function")
+                    val fnName = function.getString("name")
+                    val fnArgsStr = function.optString("arguments", "{}")
+
+                    Log.d(TAG, "Executing tool: $fnName with args: $fnArgsStr")
+                    
+                    val argsMap = try {
+                        @Suppress("UNCHECKED_CAST")
+                        gson.fromJson(fnArgsStr, Map::class.java) as? Map<String, Any?> ?: emptyMap()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to parse tool arguments: $fnArgsStr", e)
+                        emptyMap<String, Any?>()
+                    }
+
+                    val result = try {
+                        toolExecutor?.executeTool(fnName, argsMap) ?: "Tool executor not available"
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Tool execution failed: $fnName", e)
+                        "Tool execution error: ${e.message}"
+                    }
+                    
+                    Log.d(TAG, "Tool $fnName result: ${result.take(200)}...")
+                    
+                    currentMessages.put(JSONObject().apply {
+                        put("role", "tool")
+                        put("tool_call_id", callId)
+                        put("name", fnName)
+                        put("content", result)
+                    })
+                    
+                    toolCallCount++
+                }
+                // Continue the loop to send tool results back to the model
+                
             } catch (e: IOException) {
-                // Check if error is related to tools not being supported (e.g. 404/400 from incompatible provider)
+                // Check if error is related to tools not being supported
                 val msg = e.message ?: ""
-                val isToolError = msg.contains("404") || msg.contains("tools") || msg.contains("tool use")
+                val isToolError = msg.contains("404") || msg.contains("400") || 
+                                  msg.contains("tools") || msg.contains("tool use") ||
+                                  msg.contains("not supported")
                 
                 if (isToolError && toolCallCount == 0 && toolExecutor != null) {
                     Log.w(TAG, "Tool request failed ($msg). Retrying without tools.")
                     // Retry without tools
                     return executeChatRequest(url, key, model, messages, null)
                 }
-                throw e
+                Log.e(TAG, "API request failed", e)
+                return Result.failure(e)
             }
-            return Result.success("") // Should not reach here typically if loop continues, but structure requires return
         }
-
-        return Result.failure(Exception("Max tool calls ($maxToolCalls) exceeded"))
     }
 
     private fun buildOpenAITools(toolExecutor: ToolExecutor): JSONArray {
