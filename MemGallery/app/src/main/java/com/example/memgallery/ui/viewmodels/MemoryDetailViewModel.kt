@@ -64,7 +64,8 @@ class MemoryDetailViewModel @Inject constructor(
                 dueTime = time,
                 type = type,
                 status = "PENDING",
-                priority = "MEDIUM"
+                priority = "MEDIUM",
+                isApproved = true
             )
             memoryRepository.createTask(task)
         }

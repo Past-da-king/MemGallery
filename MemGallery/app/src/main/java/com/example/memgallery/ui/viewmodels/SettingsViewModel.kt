@@ -284,6 +284,9 @@ class SettingsViewModel @Inject constructor(
     val latestChangeLog: StateFlow<String?> = settingsRepository.latestChangeLogFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
 
+    val lastSeenVersion: StateFlow<String?> = settingsRepository.lastSeenVersionFlow
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
     val hasShownUpdateLog: StateFlow<Boolean> = settingsRepository.hasShownUpdateLogFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
 

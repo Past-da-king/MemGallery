@@ -32,7 +32,7 @@
 
     <application
         android:name=".MemGalleryApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -67,6 +67,7 @@
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
+            android:noHistory="true"
             android:taskAffinity="">
         </activity>
 

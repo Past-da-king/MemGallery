@@ -44,6 +44,7 @@ class MemoryProcessingWorker @AssistedInject constructor(
         try {
             setForeground(createForegroundInfo())
         } catch (e: Exception) {
+            // ForegroundServiceStartNotAllowedException on Android 12+ if app is in background
             Log.w(TAG, "Failed to run as foreground service: ${e.message}. Continuing as background worker.")
         }
 

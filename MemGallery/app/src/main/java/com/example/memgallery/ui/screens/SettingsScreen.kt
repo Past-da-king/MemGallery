@@ -60,7 +60,11 @@ fun SettingsScreen(
     val hasShownUpdateLog by viewModel.hasShownUpdateLog.collectAsState()
     val updateCheckState by viewModel.updateCheckState.collectAsState()
     
+    var showAboutScreen by remember { mutableStateOf(false) }
     var showUpdateLogSheet by remember { mutableStateOf(false) }
+    
+    // Performance: Only collect these when AboutScreen is shown
+    val lastSeenVersion by if (showAboutScreen) viewModel.lastSeenVersion.collectAsState() else remember { mutableStateOf<String?>(null) }
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -126,7 +130,6 @@ fun SettingsScreen(
         }
     }
 
-    var showAboutScreen by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

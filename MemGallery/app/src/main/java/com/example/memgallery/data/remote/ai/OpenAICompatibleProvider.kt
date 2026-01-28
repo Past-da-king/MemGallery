@@ -208,6 +208,17 @@ class OpenAICompatibleProvider @Inject constructor(
                 val choices = jsonResponse.getJSONArray("choices")
                 val content = choices.getJSONObject(0).getJSONObject("message").getString("content")
                 
+                // Parse the JSON content - robustly handle potential markdown wrapping
+                val cleanContent = content.trim().run {
+                    if (startsWith("```json")) {
+                        removePrefix("```json").removeSuffix("```").trim() 
+                    } else if (startsWith("```")) {
+                        removePrefix("```").removeSuffix("```").trim()
+                    } else {
+                        this
+                    }
+                }
+                
                 // Parse the JSON content
                 try {
                     val resultDto = gson.fromJson(content, AiAnalysisDto::class.java)
@@ -238,42 +249,23 @@ class OpenAICompatibleProvider @Inject constructor(
                 put("content", systemPrompt)
             })
 
-            val userContent = StringBuilder()
-            if (conversationHistory.isNotEmpty()) {
-                userContent.append("Context from previous conversation:\n$conversationHistory\n\n")
+            // Add history if present
+            if (conversationHistory.isNotBlank()) {
+                // Heuristic: try to parse roles if history is formatted, otherwise treat as text
+                messages.put(JSONObject().apply {
+                    put("role", "assistant")
+                    put("content", "Previous context:\n$conversationHistory")
+                })
             }
-            userContent.append(message)
 
             messages.put(JSONObject().apply {
                 put("role", "user")
-                put("content", userContent.toString())
+                put("content", message)
             })
 
-            val jsonBody = JSONObject().apply {
-                put("model", modelName)
-                put("messages", messages)
-            }
-
-            val request = Request.Builder()
-                .url(finalUrl)
-                .addHeader("Authorization", "Bearer $key")
-                .addHeader("HTTP-Referer", "https://github.com/Past-da-king/MemGallery")
-                .addHeader("X-Title", "MemGallery")
-                .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                val bodyStr = response.body?.string()
-                if (!response.isSuccessful || bodyStr == null) {
-                    Log.e(TAG, "Chat failed: ${response.code} $bodyStr")
-                    throw IOException("Chat failed: ${response.code} $bodyStr")
-                }
-                val jsonResponse = JSONObject(bodyStr)
-                val content = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content")
-                Result.success(content)
-            }
-
+            executeChatRequest(finalUrl, key, modelName, messages, toolExecutor)
         } catch (e: Exception) {
+            Log.e(TAG, "sendMessage failed", e)
             Result.failure(e)
         }
     }
@@ -297,17 +289,16 @@ class OpenAICompatibleProvider @Inject constructor(
             })
 
             val contentArray = JSONArray()
-            val userText = StringBuilder()
             if (conversationHistory.isNotEmpty()) {
-                userText.append("Context from previous conversation:\n$conversationHistory\n\n")
-            }
-            if (!message.isNullOrBlank()) {
-                userText.append(message)
-            }
-            if (userText.isNotEmpty()) {
                 contentArray.put(JSONObject().apply {
                     put("type", "text")
-                    put("text", userText.toString())
+                    put("text", "Previous context:\n$conversationHistory")
+                })
+            }
+            if (!message.isNullOrBlank()) {
+                contentArray.put(JSONObject().apply {
+                    put("type", "text")
+                    put("text", message)
                 })
             }
             
@@ -330,32 +321,141 @@ class OpenAICompatibleProvider @Inject constructor(
                 put("content", contentArray)
             })
 
+            executeChatRequest(finalUrl, key, modelName, messages, toolExecutor)
+        } catch (e: Exception) {
+            Log.e(TAG, "sendMessageWithMedia failed", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun executeChatRequest(
+        url: String,
+        key: String,
+        model: String,
+        messages: JSONArray,
+        toolExecutor: ToolExecutor?
+    ): Result<String> {
+        var currentMessages = messages
+        var toolCallCount = 0
+        val maxToolCalls = try { settingsRepository.maxToolCallsFlow.first() } catch (e: Exception) { 3 }
+
+        while (toolCallCount < maxToolCalls) {
             val jsonBody = JSONObject().apply {
-                put("model", modelName)
-                put("messages", messages)
+                put("model", model)
+                put("messages", currentMessages)
+                if (toolExecutor != null) {
+                    val tools = buildOpenAITools(toolExecutor)
+                    if (tools.length() > 0) {
+                        put("tools", tools)
+                        put("tool_choice", "auto")
+                    }
+                }
             }
 
-             val request = Request.Builder()
-                .url(finalUrl)
+            val request = Request.Builder()
+                .url(url)
                 .addHeader("Authorization", "Bearer $key")
+                .addHeader("Content-Type", "application/json")
                 .addHeader("HTTP-Referer", "https://github.com/Past-da-king/MemGallery")
                 .addHeader("X-Title", "MemGallery")
                 .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
                 .build()
 
-            client.newCall(request).execute().use { response ->
-                val bodyStr = response.body?.string()
-                if (!response.isSuccessful || bodyStr == null) {
-                    Log.e(TAG, "Chat media failed: ${response.code} $bodyStr")
-                    throw IOException("Chat media failed: ${response.code} $bodyStr")
+            try {
+                client.newCall(request).execute().use { response ->
+                    val bodyStr = response.body?.string()
+                    if (!response.isSuccessful || bodyStr == null) {
+                        throw IOException("API request failed (${response.code}): $bodyStr")
+                    }
+
+                    val jsonResponse = JSONObject(bodyStr)
+                    val choice = jsonResponse.getJSONArray("choices").getJSONObject(0)
+                    val assistantMsgJson = choice.getJSONObject("message")
+                    
+                    // Add assistant message to history for potential next turn
+                    currentMessages.put(assistantMsgJson)
+
+                    if (!assistantMsgJson.has("tool_calls")) {
+                        return Result.success(assistantMsgJson.optString("content", ""))
+                    }
+
+                    val toolCalls = assistantMsgJson.getJSONArray("tool_calls")
+                    Log.d(TAG, "Assistant requested ${toolCalls.length()} tool calls")
+
+                    for (i in 0 until toolCalls.length()) {
+                        val toolCall = toolCalls.getJSONObject(i)
+                        val callId = toolCall.getString("id")
+                        val function = toolCall.getJSONObject("function")
+                        val fnName = function.getString("name")
+                        val fnArgsStr = function.getString("arguments")
+
+                        Log.d(TAG, "Executing tool: $fnName with args: $fnArgsStr")
+                        
+                        val argsMap = try {
+                            @Suppress("UNCHECKED_CAST")
+                            gson.fromJson(fnArgsStr, Map::class.java) as Map<String, Any?>
+                        } catch (e: Exception) {
+                            emptyMap<String, Any?>()
+                        }
+
+                        val result = toolExecutor?.executeTool(fnName, argsMap) ?: "Tool not found"
+                        
+                        currentMessages.put(JSONObject().apply {
+                            put("role", "tool")
+                            put("tool_call_id", callId)
+                            put("name", fnName)
+                            put("content", result)
+                        })
+                        
+                        toolCallCount++
+                    }
+                    // Loop continues with updated messages
                 }
-                val jsonResponse = JSONObject(bodyStr)
-                val content = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content")
-                Result.success(content)
+            } catch (e: IOException) {
+                // Check if error is related to tools not being supported (e.g. 404/400 from incompatible provider)
+                val msg = e.message ?: ""
+                val isToolError = msg.contains("404") || msg.contains("tools") || msg.contains("tool use")
+                
+                if (isToolError && toolCallCount == 0 && toolExecutor != null) {
+                    Log.w(TAG, "Tool request failed ($msg). Retrying without tools.")
+                    // Retry without tools
+                    return executeChatRequest(url, key, model, messages, null)
+                }
+                throw e
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+            return Result.success("") // Should not reach here typically if loop continues, but structure requires return
         }
+
+        return Result.failure(Exception("Max tool calls ($maxToolCalls) exceeded"))
+    }
+
+    private fun buildOpenAITools(toolExecutor: ToolExecutor): JSONArray {
+        val tools = JSONArray()
+        toolExecutor.getToolDefinitions().forEach { def ->
+            tools.put(JSONObject().apply {
+                put("type", "function")
+                put("function", JSONObject().apply {
+                    put("name", def.name)
+                    put("description", def.description)
+                    put("parameters", JSONObject().apply {
+                        put("type", "object")
+                        put("properties", JSONObject().apply {
+                            def.parameters.forEach { (name, param) ->
+                                put(name, JSONObject().apply {
+                                    put("type", param.type)
+                                    put("description", param.description)
+                                    if (param.enum != null) {
+                                        put("enum", JSONArray(param.enum))
+                                    }
+                                })
+                            }
+                        })
+                        put("required", JSONArray(def.parameters.filter { it.value.required }.keys))
+                    })
+                })
+            })
+        }
+        return tools
     }
 
     override fun sendMessageStream(
@@ -365,83 +465,16 @@ class OpenAICompatibleProvider @Inject constructor(
         toolExecutor: ToolExecutor?
     ): Flow<ChatStreamEvent> = flow {
          try {
-            val (baseUrl, modelName, key) = getConfig()
-            val finalUrl = "$baseUrl/chat/completions"
-
-            val messages = JSONArray()
-            if (systemPrompt.isNotBlank()) {
-                messages.put(JSONObject().apply {
-                    put("role", "system")
-                    put("content", systemPrompt)
-                })
-            }
-
-            val userContent = StringBuilder()
-            if (conversationHistory.isNotEmpty()) {
-                userContent.append("Context from previous conversation:\n$conversationHistory\n\n")
-            }
-            userContent.append(message)
-
-            messages.put(JSONObject().apply {
-                put("role", "user")
-                put("content", userContent.toString())
-            })
-
-            val jsonBody = JSONObject().apply {
-                put("model", modelName)
-                put("messages", messages)
-                put("stream", true)
-            }
-
-            val bodyString = jsonBody.toString()
-            Log.d(TAG, "Streaming request to $finalUrl with body: $bodyString")
-
-            val requestBuilder = Request.Builder()
-                .url(finalUrl)
-                .addHeader("Accept", "text/event-stream")
-                .addHeader("HTTP-Referer", "https://github.com/Past-da-king/MemGallery")
-                .addHeader("X-Title", "MemGallery")
-            
-            if (key.isNotBlank()) {
-                requestBuilder.addHeader("Authorization", "Bearer $key")
-            }
-
-            val request = requestBuilder
-                .post(bodyString.toRequestBody("application/json".toMediaType()))
-                .build()
-
-            // SSE Handling with OkHttp EventSource is cleaner but simpler to just read stream line by line for this task
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errorBody = response.body?.string() ?: "No error body"
-                    Log.e(TAG, "Stream failed: ${response.code} $errorBody | Request Body: $bodyString")
-                    throw IOException("Stream failed: ${response.code} $errorBody")
-                }
-                
-                 val source = response.body?.source() ?: throw IOException("No body")
-                 while (!source.exhausted()) {
-                     val line = source.readUtf8Line() ?: continue
-                     if (line.startsWith("data: ")) {
-                         val data = line.removePrefix("data: ").trim()
-                         if (data == "[DONE]") break
-                         try {
-                             val json = JSONObject(data)
-                             val delta = json.getJSONArray("choices").getJSONObject(0).getJSONObject("delta")
-                             if (delta.has("content")) {
-                                 val content = delta.getString("content")
-                                 emit(ChatStreamEvent.Content(content))
-                             }
-                         } catch (e: Exception) {
-                             // Ignore parse errors for keep-alives etc
-                         }
-                     }
-                 }
-            }
-            emit(ChatStreamEvent.Done)
-
-        } catch (e: Exception) {
-            emit(ChatStreamEvent.Error(e))
-        }
+             emit(ChatStreamEvent.Thinking("Processing..."))
+             // Fallback to blocking sendMessage to ensure tool execution loops work correctly.
+             val result = sendMessage(conversationHistory, message, systemPrompt, toolExecutor)
+             result.onSuccess { 
+                 emit(ChatStreamEvent.Content(it)) 
+                 emit(ChatStreamEvent.Done)
+             }.onFailure { emit(ChatStreamEvent.Error(it)) }
+         } catch (e: Exception) {
+             emit(ChatStreamEvent.Error(e))
+         }
     }.flowOn(Dispatchers.IO)
 
     override fun sendMessageWithMediaStream(
@@ -452,10 +485,16 @@ class OpenAICompatibleProvider @Inject constructor(
         systemPrompt: String,
         toolExecutor: ToolExecutor?
     ): Flow<ChatStreamEvent> = flow {
-        // reuse standard stream logic but with media body construction
-        // For brevity, similar implementation to sendMessageStream but constructing content array
-        // ... (Simplified for this file generation to keep it concise, assuming text stream is primary priority)
-        emit(ChatStreamEvent.Error(NotImplementedError("Media streaming not fully implemented for Custom provider yet")))
+        try {
+             emit(ChatStreamEvent.Thinking("Processing media..."))
+             val result = sendMessageWithMedia(conversationHistory, message, audioData, imageData, systemPrompt, toolExecutor)
+             result.onSuccess { 
+                 emit(ChatStreamEvent.Content(it)) 
+                 emit(ChatStreamEvent.Done)
+             }.onFailure { emit(ChatStreamEvent.Error(it)) }
+        } catch (e: Exception) {
+             emit(ChatStreamEvent.Error(e))
+        }
     }.flowOn(Dispatchers.IO)
 
     override suspend fun generateUserContext(memoryText: String): Result<String> = withContext(Dispatchers.IO) {

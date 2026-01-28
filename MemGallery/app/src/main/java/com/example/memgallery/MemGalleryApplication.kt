@@ -54,10 +54,15 @@ class MemGalleryApplication : Application(), Configuration.Provider {
             val enabled = settingsRepository.edgeGestureEnabledFlow.first()
             if (enabled) {
                 val intent = Intent(this@MemGalleryApplication, EdgeGestureService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(intent)
-                } else {
-                    startService(intent)
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                } catch (e: Exception) {
+                    // On Android 12+, we cannot start foreground service from background
+                    Log.e("MemGalleryApp", "Failed to start EdgeGestureService: ${e.message}")
                 }
             }
         }
