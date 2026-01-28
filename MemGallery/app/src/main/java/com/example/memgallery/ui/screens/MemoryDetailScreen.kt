@@ -41,14 +41,13 @@ import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.remote.dto.ActionDto
 import com.example.memgallery.ui.components.AudioPlayer
 import com.example.memgallery.ui.components.FullscreenImageViewer
+import com.example.memgallery.ui.components.MarkdownText
 import com.example.memgallery.ui.components.sheets.AddTaskSheet
 import com.example.memgallery.ui.viewmodels.MemoryDetailViewModel
 import com.example.memgallery.utils.ActionHandler
 import com.google.accompanist.flowlayout.FlowCrossAxisAlignment
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
-import io.noties.markwon.Markwon
-import io.noties.markwon.image.ImagesPlugin
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,7 +59,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -655,29 +653,4 @@ fun ActionCard(action: ActionDto, onAction: () -> Unit) {
             }
         }
     }
-}
-
-@Composable
-fun MarkdownText(markdown: String, modifier: Modifier = Modifier, style: androidx.compose.ui.text.TextStyle) {
-    val context = LocalContext.current
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val markwon = remember {
-        Markwon.builder(context)
-            .usePlugin(ImagesPlugin.create())
-            .build()
-    }
-
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            TextView(ctx).apply {
-                movementMethod = ScrollingMovementMethod()
-                setTextColor(onSurfaceColor.toArgb())
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, style.fontSize.value)
-            }
-        },
-        update = { textView ->
-            markwon.setMarkdown(textView, markdown)
-        }
-    )
 }

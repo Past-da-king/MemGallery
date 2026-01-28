@@ -24,8 +24,8 @@ android {
         applicationId = "com.example.memgallery"
         minSdk = 24
         targetSdk = 36
-        versionCode = 12
-        versionName = "0.0.12"
+        versionCode = 14
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

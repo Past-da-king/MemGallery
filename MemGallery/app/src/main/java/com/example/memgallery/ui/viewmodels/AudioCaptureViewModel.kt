@@ -62,6 +62,8 @@ class AudioCaptureViewModel @Inject constructor(
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setAudioSamplingRate(44100)
+            setAudioEncodingBitRate(128000)
             setOutputFile(outputFile?.absolutePath)
             try {
                 prepare()
@@ -70,11 +72,17 @@ class AudioCaptureViewModel @Inject constructor(
                 _error.value = null
                 startTimerAndPolling()
             } catch (e: IOException) {
-                Log.e("AudioCaptureViewModel", "prepare() failed", e)
-                _error.value = "Failed to start recording"
+                Log.e("AudioCaptureViewModel", "prepare() or start() failed", e)
+                _error.value = "Failed to start recording: ${e.message}"
+                _isRecording.value = false
             } catch (e: IllegalStateException) {
-                Log.e("AudioCaptureViewModel", "start() failed", e)
-                _error.value = "Failed to start recording"
+                Log.e("AudioCaptureViewModel", "start() failed in illegal state", e)
+                _error.value = "Recording could not be started"
+                _isRecording.value = false
+            } catch (e: Exception) {
+                Log.e("AudioCaptureViewModel", "Unexpected error starting recording", e)
+                _error.value = "An unexpected error occurred"
+                _isRecording.value = false
             }
         }
     }

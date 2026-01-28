@@ -108,12 +108,15 @@ fun GalleryScreen(
 
     // Scroll detection to toggle search bar visibility
     // Update search bar visibility based on scroll
-    LaunchedEffect(gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset) {
-        if (gridState.firstVisibleItemIndex > 0) {
-            isSearchBarVisible = false
-        } else if (gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0) {
-             isSearchBarVisible = true
+    // Scroll detection to toggle search bar visibility efficiently
+    val shouldShowSearchBar by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
         }
+    }
+
+    LaunchedEffect(shouldShowSearchBar) {
+        isSearchBarVisible = shouldShowSearchBar
     }
 
     // Handle shortcut to open add sheet

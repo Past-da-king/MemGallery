@@ -56,7 +56,7 @@ object LogUtils {
             Manufacturer: ${Build.MANUFACTURER}
             Android Version: ${Build.VERSION.RELEASE}
             SDK: ${Build.VERSION.SDK_INT}
-            App Version: 0.0.8 (BuildConfig pending)
+            App Version: ${com.example.memgallery.BuildConfig.VERSION_NAME}
         """.trimIndent()
     }
 }

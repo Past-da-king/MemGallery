@@ -1,6 +1,8 @@
 package com.example.memgallery.ui.screens
 
 import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,19 +58,26 @@ fun AudioCaptureScreen(
     val error by viewModel.error.collectAsState()
 
     var hasPermission by remember { mutableStateOf(false) }
+    var showPermissionSheet by remember { mutableStateOf(false) }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         hasPermission = isGranted
+        if (isGranted) {
+            showPermissionSheet = false
+        }
+    }
+
+    val checkPermission = {
+        hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        } else {
-            hasPermission = true
-        }
+        checkPermission()
     }
 
     // Navigate when recording is finished and file is saved
@@ -210,6 +220,8 @@ fun AudioCaptureScreen(
                             } else {
                                 viewModel.startRecording()
                             }
+                        } else {
+                            showPermissionSheet = true
                         }
                     },
                     modifier = Modifier.size(72.dp),
@@ -222,6 +234,57 @@ fun AudioCaptureScreen(
                         contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
                         modifier = Modifier.size(32.dp)
                     )
+                }
+            }
+        }
+
+        if (showPermissionSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showPermissionSheet = false },
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Microphone Access",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "MemGallery needs microphone access to record your voice notes and index them for searching.",
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Button(
+                        onClick = {
+                            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape
+                    ) {
+                        Text("Grant Permission")
+                    }
+                    TextButton(
+                        onClick = { showPermissionSheet = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Not Now")
+                    }
                 }
             }
         }

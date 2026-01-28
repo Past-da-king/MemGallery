@@ -65,6 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.example.memgallery.ui.components.ThinkingProcessAccordion
 import com.example.memgallery.ui.components.ToolExecutionIndicator
+import com.example.memgallery.ui.components.MarkdownText
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -114,6 +115,7 @@ fun ChatScreen(
     val recordingAmplitudes by audioViewModel.amplitudes.collectAsState()
     val recordedFilePath by audioViewModel.recordedFilePath.collectAsState()
     val recordingError by audioViewModel.error.collectAsState()
+    var showPermissionSheet by remember { mutableStateOf(false) }
 
     // Image/Document picker
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -148,6 +150,7 @@ fun ChatScreen(
     ) { isGranted ->
         if (isGranted) {
             audioViewModel.startRecording()
+            showPermissionSheet = false
         }
     }
 
@@ -206,7 +209,7 @@ fun ChatScreen(
                                 == PackageManager.PERMISSION_GRANTED) {
                                 audioViewModel.startRecording()
                             } else {
-                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                showPermissionSheet = true
                             }
                         }
                 },
@@ -407,6 +410,57 @@ fun ChatScreen(
                 onDeleteSelected = viewModel::deleteSelectedChats,
                 onClearSelection = viewModel::clearSelection
             )
+        }
+    }
+
+    if (showPermissionSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPermissionSheet = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Default.Mic,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Microphone Access",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "MemGallery needs microphone access to send voice messages to Gemini.",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = {
+                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = CircleShape
+                ) {
+                    Text("Grant Permission")
+                }
+                TextButton(
+                    onClick = { showPermissionSheet = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Not Now")
+                }
+            }
         }
     }
 }
@@ -786,7 +840,7 @@ fun MessageBubble(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                ChatMarkdownText(
+                MarkdownText(
                     markdown = message.content,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface
@@ -957,87 +1011,6 @@ fun LoadingIndicator() {
     }
 }
 
-@Composable
-fun ChatMarkdownText(markdown: String, modifier: Modifier = Modifier, style: androidx.compose.ui.text.TextStyle) {
-    val context = LocalContext.current
-    val onSurfaceColor = MaterialTheme.colorScheme.onBackground
-    val markwon = remember {
-        Markwon.builder(context)
-            .usePlugin(io.noties.markwon.image.ImagesPlugin.create { plugin ->
-                plugin.addSchemeHandler(io.noties.markwon.image.network.NetworkSchemeHandler.create())
-                // File scheme handler with assets support
-                plugin.addSchemeHandler(io.noties.markwon.image.file.FileSchemeHandler.createWithAssets(context))
-                // Explicit file scheme handler for local app files
-                plugin.addSchemeHandler(object : io.noties.markwon.image.SchemeHandler() {
-                    override fun handle(raw: String, uri: Uri): io.noties.markwon.image.ImageItem {
-                        return try {
-                            val path = uri.path ?: throw IllegalArgumentException("No path in URI")
-                            val file = java.io.File(path)
-                            if (file.exists() && file.canRead()) {
-                                io.noties.markwon.image.ImageItem.withDecodingNeeded(
-                                    "file",
-                                    java.io.BufferedInputStream(java.io.FileInputStream(file))
-                                )
-                            } else {
-                                // Try as content URI fallback for file:// paths that don't exist
-                                io.noties.markwon.image.ImageItem.withDecodingNeeded(
-                                    "file",
-                                    java.io.ByteArrayInputStream(ByteArray(0))
-                                )
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("ChatMarkdownText", "Failed to load file image: $raw", e)
-                            io.noties.markwon.image.ImageItem.withDecodingNeeded(
-                                "file",
-                                java.io.ByteArrayInputStream(ByteArray(0))
-                            )
-                        }
-                    }
-
-                    override fun supportedSchemes(): MutableCollection<String> {
-                        return mutableListOf("file")
-                    }
-                })
-                // Content scheme handler for content:// URIs
-                plugin.addSchemeHandler(object : io.noties.markwon.image.SchemeHandler() {
-                    override fun handle(raw: String, uri: Uri): io.noties.markwon.image.ImageItem {
-                        val inputStream = context.contentResolver.openInputStream(uri)
-                        return if (inputStream != null) {
-                            io.noties.markwon.image.ImageItem.withDecodingNeeded(
-                                "content",
-                                java.io.BufferedInputStream(inputStream)
-                            )
-                        } else {
-                            io.noties.markwon.image.ImageItem.withDecodingNeeded(
-                                "content",
-                                java.io.ByteArrayInputStream(ByteArray(0))
-                            )
-                        }
-                    }
-
-                    override fun supportedSchemes(): MutableCollection<String> {
-                        return mutableListOf("content")
-                    }
-                })
-            })
-            .build()
-    }
-
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            TextView(ctx).apply {
-                movementMethod = LinkMovementMethod.getInstance()
-                setTextColor(onSurfaceColor.toArgb())
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, style.fontSize.value)
-                setLineSpacing(0f, 1.3f)
-            }
-        },
-        update = { textView ->
-            markwon.setMarkdown(textView, markdown)
-        }
-    )
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
