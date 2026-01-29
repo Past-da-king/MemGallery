@@ -250,8 +250,6 @@ class SettingsViewModel @Inject constructor(
     val autoRemindersEnabled: StateFlow<Boolean> = settingsRepository.autoRemindersEnabledFlow
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = true)
 
-    val overlayStyle: StateFlow<String> = settingsRepository.overlayStyleFlow
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = "EDGE")
 
     // External Task Manager Integration
     val externalTaskManager: StateFlow<String> = settingsRepository.externalTaskManagerFlow
@@ -591,9 +589,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setPostCaptureBehavior(behavior) }
     }
 
-    fun setOverlayStyle(style: String) {
-        viewModelScope.launch { settingsRepository.setOverlayStyle(style) }
-    }
 
     fun setExternalTaskManager(manager: String) {
         viewModelScope.launch { settingsRepository.setExternalTaskManager(manager) }
