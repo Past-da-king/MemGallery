@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.memgallery.data.local.entity.MemoryEntity
+import com.example.memgallery.data.local.model.PulseMemory
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -35,4 +36,15 @@ interface MemoryDao {
 
     @Query("SELECT * FROM memories WHERE id IN (:ids)")
     fun getMemoriesByIds(ids: List<Int>): Flow<List<MemoryEntity>>
+
+    @Query("""
+        SELECT m.*, t.dueDate as taskDueDate, t.dueTime as taskDueTime 
+        FROM memories as m
+        INNER JOIN tasks as t ON m.id = t.memoryId
+        WHERE t.dueDate >= :currentDate
+        AND t.isCompleted = 0
+        ORDER BY t.dueDate ASC, t.dueTime ASC
+        LIMIT 10
+    """)
+    suspend fun getPulseMemories(currentDate: String): List<com.example.memgallery.data.local.model.PulseMemory>
 }

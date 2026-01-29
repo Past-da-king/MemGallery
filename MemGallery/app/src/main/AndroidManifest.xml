@@ -55,6 +55,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Deep Link Intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="memgallery" android:host="detail" />
+            </intent-filter>
+
             <!-- Shortcuts Reference -->
             <meta-data
                 android:name="android.app.shortcuts"
@@ -171,6 +179,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
         </provider>
+
+        <receiver
+            android:name=".ui.widget.MemoryPulseWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/memory_pulse_widget_info" />
+        </receiver>
 
         <provider
             android:name="androidx.startup.InitializationProvider"

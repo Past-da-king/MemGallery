@@ -28,73 +28,68 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Check if share handling is enabled for share intents
-        lifecycleScope.launch {
-            if (intent?.action == Intent.ACTION_SEND) {
-                val enabled = settingsRepository.showInShareSheetFlow.first()
-                if (!enabled) {
-                    finish()
-                    return@launch
-                }
+        // Extract shared data and shortcuts immediately
+        val sharedData = extractSharedData(intent)
+        val shortcutAction = intent.getStringExtra("shortcut_action")
+        val navigateToRoute = intent.getStringExtra("navigate_to")
+
+        setContent {
+            val isOnboardingCompleted by settingsRepository.isOnboardingCompletedFlow.collectAsState(initial = true)
+            val dynamicTheming by settingsRepository.dynamicThemingEnabledFlow.collectAsState(initial = true)
+            val appThemeMode by settingsRepository.appThemeModeFlow.collectAsState(initial = "SYSTEM")
+            val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
+            val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)
+            
+            val showInShareSheet by settingsRepository.showInShareSheetFlow.collectAsState(initial = true)
+
+            // Handle share sheet permission check
+            if (intent?.action == Intent.ACTION_SEND && !showInShareSheet) {
+                finish()
+                return@setContent
             }
 
-            // Extract shared data and shortcuts
-            val sharedData = extractSharedData(intent)
-            val shortcutAction = intent.getStringExtra("shortcut_action")
-            
-            // Check onboarding status
-            val isOnboardingCompleted = settingsRepository.isOnboardingCompletedFlow.first()
+            MemGalleryTheme(
+                dynamicColor = dynamicTheming,
+                appThemeMode = appThemeMode,
+                amoledMode = amoledMode,
+                customColor = selectedColor
+            ) {
+                val latestChangeLog by settingsRepository.latestChangeLogFlow.collectAsState(initial = null)
+                val hasShownUpdateLog by settingsRepository.hasShownUpdateLogFlow.collectAsState(initial = true)
+                val lastSeenVersion by settingsRepository.lastSeenVersionFlow.collectAsState(initial = null)
+                var showLogSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
-            setContent {
-                val dynamicTheming by settingsRepository.dynamicThemingEnabledFlow.collectAsState(initial = true)
-                val appThemeMode by settingsRepository.appThemeModeFlow.collectAsState(initial = "SYSTEM")
-                val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
-                val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)
-
-                MemGalleryTheme(
-                    dynamicColor = dynamicTheming,
-                    appThemeMode = appThemeMode,
-                    amoledMode = amoledMode,
-                    customColor = selectedColor
-                ) {
-                    val latestChangeLog by settingsRepository.latestChangeLogFlow.collectAsState(initial = null)
-                    val hasShownUpdateLog by settingsRepository.hasShownUpdateLogFlow.collectAsState(initial = true)
-                    val lastSeenVersion by settingsRepository.lastSeenVersionFlow.collectAsState(initial = null)
-                    var showLogSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-
-                    androidx.compose.runtime.LaunchedEffect(lastSeenVersion) {
-                        val currentVersion = BuildConfig.VERSION_NAME
-                        if (lastSeenVersion != null && lastSeenVersion != currentVersion) {
-                            // Version changed!
-                            if (!hasShownUpdateLog) {
-                                showLogSheet = true
-                            }
-                        }
-                        if (lastSeenVersion != currentVersion) {
-                            settingsRepository.setLastSeenVersion(currentVersion)
+                androidx.compose.runtime.LaunchedEffect(lastSeenVersion) {
+                    val currentVersion = BuildConfig.VERSION_NAME
+                    if (lastSeenVersion != null && lastSeenVersion != currentVersion) {
+                        if (!hasShownUpdateLog) {
+                            showLogSheet = true
                         }
                     }
+                    if (lastSeenVersion != currentVersion) {
+                        settingsRepository.setLastSeenVersion(currentVersion)
+                    }
+                }
 
-                    AppNavigation(
-                        isOnboardingCompleted = isOnboardingCompleted,
-                        sharedImageUri = sharedData?.imageUri,
-                        sharedText = sharedData?.text,
-                        shortcutAction = shortcutAction,
-                        navigateToRoute = intent.getStringExtra("navigate_to")
+                AppNavigation(
+                    isOnboardingCompleted = isOnboardingCompleted,
+                    sharedImageUri = sharedData?.imageUri,
+                    sharedText = sharedData?.text,
+                    shortcutAction = shortcutAction,
+                    navigateToRoute = navigateToRoute
+                )
+
+                if (showLogSheet && latestChangeLog != null) {
+                    com.example.memgallery.ui.components.ChangeLogBottomSheet(
+                        versionName = BuildConfig.VERSION_NAME,
+                        changeLog = latestChangeLog!!,
+                        onDismiss = {
+                            showLogSheet = false
+                            lifecycleScope.launch {
+                                settingsRepository.setHasShownUpdateLog(true)
+                            }
+                        }
                     )
-
-                    if (showLogSheet && latestChangeLog != null) {
-                        com.example.memgallery.ui.components.ChangeLogBottomSheet(
-                            versionName = BuildConfig.VERSION_NAME,
-                            changeLog = latestChangeLog!!,
-                            onDismiss = {
-                                showLogSheet = false
-                                lifecycleScope.launch {
-                                    settingsRepository.setHasShownUpdateLog(true)
-                                }
-                            }
-                        )
-                    }
                 }
             }
         }

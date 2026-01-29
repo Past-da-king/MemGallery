@@ -268,7 +268,8 @@ fun AppNavigation(
         }
         composable(
             route = Screen.Detail.route,
-            arguments = listOf(navArgument("memoryId") { type = NavType.IntType })
+            arguments = listOf(navArgument("memoryId") { type = NavType.IntType }),
+            deepLinks = listOf(androidx.navigation.navDeepLink { uriPattern = "memgallery://detail/{memoryId}" })
         ) { backStackEntry ->
             val memoryId = backStackEntry.arguments?.getInt("memoryId") ?: 0
             MemoryDetailScreen(navController = navController, memoryId = memoryId)

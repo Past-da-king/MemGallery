@@ -11,6 +11,7 @@ import com.example.memgallery.data.remote.GeminiService
 import com.example.memgallery.service.MemoryProcessingWorker
 import com.example.memgallery.utils.FileUtils
 import com.example.memgallery.data.repository.SettingsRepository
+import com.example.memgallery.ui.widget.WidgetRefreshManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
@@ -172,6 +173,8 @@ class MemoryRepository @Inject constructor(
         val memoryId = memoryDao.insertMemory(memoryEntity)
         Log.d(TAG, "Successfully saved memory with ID: $memoryId")
         enqueueMemoryProcessing()
+        // Instant Widget Refresh
+        WidgetRefreshManager.refreshWidget(context)
         Result.success(memoryId)
     } catch (e: Exception) {
         Log.e(TAG, "Failed to save pending memory", e)
@@ -253,6 +256,9 @@ class MemoryRepository @Inject constructor(
                 )
                 memoryDao.updateMemory(updatedMemory)
                 Log.d(TAG, "Memory $memoryId updated with AI analysis.")
+                
+                // Instant Widget Refresh
+                WidgetRefreshManager.refreshWidget(context)
 
                 // Handle Suggested Collections
                 aiAnalysis.suggestedCollections?.forEach { collectionName ->
@@ -282,6 +288,7 @@ class MemoryRepository @Inject constructor(
                         }
                         taskDao.insertTasks(tasks)
                         Log.d(TAG, "Inserted ${tasks.size} tasks for memory $memoryId")
+                        WidgetRefreshManager.refreshWidget(context)
                     } else {
                         Log.d(TAG, "Auto-reminders disabled - skipping task creation")
                     }
@@ -309,10 +316,12 @@ class MemoryRepository @Inject constructor(
             }
         }
         memoryDao.deleteMemory(memory)
+        WidgetRefreshManager.refreshWidget(context)
     }
 
     suspend fun updateMemory(memory: MemoryEntity) {
         memoryDao.updateMemory(memory)
+        WidgetRefreshManager.refreshWidget(context)
     }
 
     suspend fun updateMemoryMedia(memoryId: Int, deleteImage: Boolean, deleteAudio: Boolean) {
@@ -342,6 +351,7 @@ class MemoryRepository @Inject constructor(
                 audioFilePath = updatedAudioFilePath
             )
             memoryDao.updateMemory(updatedMemory)
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
@@ -350,6 +360,7 @@ class MemoryRepository @Inject constructor(
         existingMemory?.let { memory ->
             val updatedMemory = memory.copy(isHidden = hide)
             memoryDao.updateMemory(updatedMemory)
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
     

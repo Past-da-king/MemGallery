@@ -13,8 +13,13 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
+import com.example.memgallery.ui.widget.WidgetRefreshManager
+
 @HiltViewModel
 class TaskViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val taskDao: TaskDao,
     private val settingsRepository: SettingsRepository,
     private val taskExporter: TaskExporter
@@ -65,18 +70,21 @@ class TaskViewModel @Inject constructor(
     fun toggleTaskCompletion(task: TaskEntity) {
         viewModelScope.launch {
             taskDao.updateTask(task.copy(isCompleted = !task.isCompleted))
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
     fun deleteTask(task: TaskEntity) {
         viewModelScope.launch {
             taskDao.deleteTask(task)
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
     fun deleteTasks(tasks: List<TaskEntity>) {
         viewModelScope.launch {
             taskDao.deleteTasksByIds(tasks.map { it.id })
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
@@ -88,6 +96,7 @@ class TaskViewModel @Inject constructor(
             if (manager != "NONE") {
                 taskExporter.exportTask(task, manager)
             }
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
@@ -101,6 +110,7 @@ class TaskViewModel @Inject constructor(
                 // User can manually approve remaining tasks one by one if needed
                 tasks.firstOrNull()?.let { taskExporter.exportTask(it, manager) }
             }
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
@@ -128,12 +138,14 @@ class TaskViewModel @Inject constructor(
                 isApproved = true // Manual tasks are always approved
             )
             taskDao.insertTask(newTask)
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 
     fun updateTask(task: TaskEntity) {
         viewModelScope.launch {
             taskDao.updateTask(task)
+            WidgetRefreshManager.refreshWidget(context)
         }
     }
 }
