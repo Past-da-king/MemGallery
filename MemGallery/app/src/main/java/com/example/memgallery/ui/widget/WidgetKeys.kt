@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 object WidgetKeys {
     val widgetDataKey = stringPreferencesKey("widget_pulse_data")
     val lastUpdateKey = stringPreferencesKey("widget_last_update")
+    val themeColorKey = androidx.datastore.preferences.core.intPreferencesKey("widget_theme_color")
+    val themeModeKey = stringPreferencesKey("widget_theme_mode")
 }
 
 data class WidgetMemoryItem(

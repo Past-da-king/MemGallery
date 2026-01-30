@@ -17,19 +17,27 @@ import dagger.assisted.AssistedInject
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.glance.appwidget.updateAll
+import kotlinx.coroutines.flow.first
 
 @HiltWorker
 class WidgetUpdateWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted workerParams: WorkerParameters,
     private val memoryDao: MemoryDao,
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository,
     private val gson: Gson
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
         return try {
-            val today = LocalDate.now().toString()
+            val today = java.time.LocalDate.now().toString()
             val memories = memoryDao.getPulseMemories(today)
+            
+            // Fetch current theme settings
+            val themeColor = settingsRepository.selectedColorFlow.first()
+            val themeMode = settingsRepository.appThemeModeFlow.first()
+            val amoledMode = settingsRepository.amoledModeEnabledFlow.first()
+            val dynamicTheming = settingsRepository.dynamicThemingEnabledFlow.first()
 
             val widgetItems = memories.map { pulseMemory ->
                 val memory = pulseMemory.memory
@@ -71,6 +79,8 @@ class WidgetUpdateWorker @AssistedInject constructor(
                     prefs.toMutablePreferences().apply {
                         this[WidgetKeys.widgetDataKey] = json
                         this[WidgetKeys.lastUpdateKey] = System.currentTimeMillis().toString()
+                        this[WidgetKeys.themeColorKey] = themeColor
+                        this[WidgetKeys.themeModeKey] = themeMode
                     }
                 }
             }

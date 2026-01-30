@@ -248,6 +248,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.DYNAMIC_THEMING_ENABLED] = enabled
         }
+        com.example.memgallery.ui.widget.WidgetRefreshManager.refreshWidget(context)
     }
 
     val appThemeModeFlow: Flow<String> = context.dataStore.data
@@ -259,6 +260,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.APP_THEME_MODE] = mode
         }
+        com.example.memgallery.ui.widget.WidgetRefreshManager.refreshWidget(context)
     }
 
     val amoledModeEnabledFlow: Flow<Boolean> = context.dataStore.data
@@ -270,6 +272,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.AMOLED_MODE_ENABLED] = enabled
         }
+        com.example.memgallery.ui.widget.WidgetRefreshManager.refreshWidget(context)
     }
 
     val selectedColorFlow: Flow<Int> = context.dataStore.data
@@ -281,6 +284,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.SELECTED_COLOR] = color
         }
+        com.example.memgallery.ui.widget.WidgetRefreshManager.refreshWidget(context)
     }
 
     // User System Prompt
