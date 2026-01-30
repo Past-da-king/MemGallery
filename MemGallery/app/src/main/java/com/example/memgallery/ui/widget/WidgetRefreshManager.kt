@@ -8,12 +8,9 @@ import kotlinx.coroutines.launch
 
 object WidgetRefreshManager {
     fun refreshWidget(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                MemoryPulseWidget().updateAll(context)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        val workRequest = androidx.work.OneTimeWorkRequestBuilder<com.example.memgallery.worker.WidgetUpdateWorker>()
+            .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .build()
+        androidx.work.WorkManager.getInstance(context).enqueue(workRequest)
     }
 }
