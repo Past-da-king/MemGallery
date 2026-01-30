@@ -81,33 +81,34 @@ class MemoryPulseWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxSize()
                         .background(GlanceTheme.colors.surface)
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.TopStart
                 ) {
                     if (items.isEmpty()) {
                         EmptyPulseState(pulseColor)
                     } else {
-                        // THE TIMELINE PULSE LAYOUT - 10X Different
+                        // REFINED TIMELINE PULSE LAYOUT - "PERFECT PREMIUM"
                         Box(modifier = GlanceModifier.fillMaxSize()) {
-                            // The Pulse Line (Vertical) - Left side
+                            // The Pulse Line (Vertical) - Refined Glow
                             Box(
                                 modifier = GlanceModifier
-                                    .width(3.dp)
+                                    .width(4.dp)
                                     .fillMaxHeight()
                                     .padding(start = 12.dp)
-                                    .background(ColorProvider(pulseColor.copy(alpha = 0.3f)))
+                                    .background(ColorProvider(pulseColor.copy(alpha = 0.2f)))
                                     .cornerRadius(2.dp)
                             ) { }
 
                             // Scrollable Timeline Content
                             LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-                                items(items) { item ->
-                                    TimelinePulseItem(item, pulseColor)
+                                item { Spacer(modifier = GlanceModifier.height(12.dp)) }
+                                
+                                // Limit items to prevent memory bloat and for better UX
+                                items(items.take(25)) { item ->
+                                    RefinedTimelineItem(item, pulseColor, size)
                                 }
-                                item { 
-                                    // Bottom Spacer for clean finish
-                                    Spacer(modifier = GlanceModifier.height(24.dp))
-                                }
+                                
+                                item { Spacer(modifier = GlanceModifier.height(32.dp)) }
                             }
                         }
                     }
@@ -118,30 +119,32 @@ class MemoryPulseWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun TimelinePulseItem(item: WidgetMemoryItem, pulseColor: Color) {
+private fun RefinedTimelineItem(item: WidgetMemoryItem, pulseColor: Color, size: androidx.compose.ui.unit.DpSize) {
+    val isTall = size.height > 180.dp
+    
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp)
+            .padding(vertical = 12.dp, horizontal = 4.dp)
             .clickable(actionStartActivity<MainActivity>(
                 actionParametersOf(androidx.glance.action.ActionParameters.Key<String>("navigate_to") to "detail/${item.id}")
             )),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         // Node Section
         Box(
-            modifier = GlanceModifier.width(28.dp),
-            contentAlignment = Alignment.Center
+            modifier = GlanceModifier.width(28.dp).padding(top = 6.dp),
+            contentAlignment = Alignment.TopCenter
         ) {
             // Pulse Node (Circle)
             Box(
                 modifier = GlanceModifier
-                    .size(12.dp)
+                    .size(10.dp)
                     .background(ColorProvider(pulseColor))
-                    .cornerRadius(6.dp)
+                    .cornerRadius(5.dp)
             ) { }
             
-            // Subtle Outer Glow for the node
+            // Subtle Outer Glow
             Box(
                 modifier = GlanceModifier
                     .size(20.dp)
@@ -150,63 +153,93 @@ private fun TimelinePulseItem(item: WidgetMemoryItem, pulseColor: Color) {
             ) { }
         }
 
-        // Content Section
+        // Content Section - Premium Hierarchy
         Column(
             modifier = GlanceModifier
                 .defaultWeight()
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = 8.dp)
         ) {
+            // 1. TITLE - Bold & Prominent
             Text(
                 text = item.title,
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 17.sp
                 ),
                 maxLines = 1
             )
             
-            if (item.formattedDateTime != null) {
-                Spacer(modifier = GlanceModifier.height(2.dp))
+            // 2. SUMMARY SNIPPET - Modern line clamping
+            if (item.summary.isNotBlank()) {
+                Spacer(modifier = GlanceModifier.height(4.dp))
                 Text(
-                    text = item.formattedDateTime!!,
+                    text = item.summary,
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal
+                    ),
+                    maxLines = if (isTall) 3 else 2
                 )
+            }
+            
+            // 3. DATE - Pulse Color Accent
+            if (item.formattedDateTime != null) {
+                Spacer(modifier = GlanceModifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = GlanceModifier
+                            .size(6.dp)
+                            .background(ColorProvider(pulseColor.copy(alpha = 0.5f)))
+                            .cornerRadius(3.dp)
+                    ) { }
+                    Spacer(modifier = GlanceModifier.width(6.dp))
+                    Text(
+                        text = item.formattedDateTime!!,
+                        style = TextStyle(
+                            color = ColorProvider(pulseColor),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
             }
         }
 
-        // Image/Icon Thumbnail Section - Floating style
+        // Image/Icon Thumbnail Section - LARGER (80dp)
         Box(
             modifier = GlanceModifier
-                .size(56.dp)
-                .cornerRadius(12.dp)
-                .background(GlanceTheme.colors.secondaryContainer),
+                .size(if (isTall) 80.dp else 64.dp)
+                .cornerRadius(16.dp)
+                .background(GlanceTheme.colors.secondaryContainer)
+                .padding(2.dp), // Tiny border spacing
             contentAlignment = Alignment.Center
         ) {
-            if (!item.imagePath.isNullOrEmpty()) {
-                Image(
-                    provider = getImageProvider(item),
-                    contentDescription = item.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-            } else {
-                // Large subtle icon for audio/text
-                val iconRes = when (item.type) {
-                    "AUDIO" -> R.drawable.ic_mic
-                    "Camera" -> R.drawable.ic_camera
-                    else -> R.drawable.ic_shortcut_note
+            // Inner content box for rounded corners clipping
+            Box(modifier = GlanceModifier.fillMaxSize().cornerRadius(14.dp)) {
+                if (!item.imagePath.isNullOrEmpty()) {
+                    Image(
+                        provider = getImageProvider(item),
+                        contentDescription = item.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = GlanceModifier.fillMaxSize()
+                    )
+                } else {
+                    val iconRes = when (item.type) {
+                        "AUDIO" -> R.drawable.ic_mic
+                        "Camera" -> R.drawable.ic_camera
+                        else -> R.drawable.ic_shortcut_note
+                    }
+                    Box(modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.secondaryContainer), contentAlignment = Alignment.Center) {
+                        Image(
+                            provider = ImageProvider(iconRes),
+                            contentDescription = null,
+                            modifier = GlanceModifier.size(32.dp),
+                            colorFilter = ColorFilter.tint(GlanceTheme.colors.onSecondaryContainer)
+                        )
+                    }
                 }
-                Image(
-                    provider = ImageProvider(iconRes),
-                    contentDescription = null,
-                    modifier = GlanceModifier.size(28.dp),
-                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onSecondaryContainer)
-                )
             }
         }
     }
@@ -235,7 +268,7 @@ private fun EmptyPulseState(pulseColor: Color) {
         }
         Spacer(modifier = GlanceModifier.height(16.dp))
         Text(
-            text = "No Pulse Detected",
+            text = "Pulse Empty",
             style = TextStyle(
                 color = GlanceTheme.colors.onSurface,
                 fontWeight = FontWeight.Bold,
@@ -243,7 +276,7 @@ private fun EmptyPulseState(pulseColor: Color) {
             )
         )
         Text(
-            text = "Your memories are safe and sound.",
+            text = "Your timeline is clear.",
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp)
         )
     }
@@ -257,7 +290,7 @@ private fun getImageProvider(item: WidgetMemoryItem): ImageProvider {
                  inJustDecodeBounds = true
              }
              BitmapFactory.decodeFile(file.absolutePath, options)
-             options.inSampleSize = calculateInSampleSize(options, 200, 200)
+             options.inSampleSize = calculateInSampleSize(options, 200, 200) // Lower resolution for memory safety
              options.inJustDecodeBounds = false
              val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
              if (bitmap != null) ImageProvider(bitmap) else ImageProvider(R.drawable.rounded_image_24)
