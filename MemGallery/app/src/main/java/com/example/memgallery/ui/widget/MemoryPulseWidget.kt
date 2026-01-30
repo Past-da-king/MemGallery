@@ -125,7 +125,7 @@ private fun RefinedTimelineItem(item: WidgetMemoryItem, pulseColor: Color, size:
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(vertical = 14.dp, horizontal = 4.dp)
+            .padding(vertical = 12.dp, horizontal = 4.dp)
             .clickable(actionStartActivity<MainActivity>(
                 actionParametersOf(androidx.glance.action.ActionParameters.Key<String>("navigate_to") to "detail/${item.id}")
             )),
@@ -133,7 +133,7 @@ private fun RefinedTimelineItem(item: WidgetMemoryItem, pulseColor: Color, size:
     ) {
         // Node Section
         Box(
-            modifier = GlanceModifier.width(28.dp).padding(top = 8.dp),
+            modifier = GlanceModifier.width(28.dp).padding(top = 10.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             // Pulse Node (Circle)
@@ -144,22 +144,22 @@ private fun RefinedTimelineItem(item: WidgetMemoryItem, pulseColor: Color, size:
                     .cornerRadius(5.dp)
             ) { }
             
-            // Bloom / Glow Effect
+            // Deep Bloom / Glow Effect
             Box(
                 modifier = GlanceModifier
-                    .size(22.dp)
-                    .background(ColorProvider(pulseColor.copy(alpha = 0.15f)))
-                    .cornerRadius(11.dp)
+                    .size(24.dp)
+                    .background(ColorProvider(pulseColor.copy(alpha = 0.2f)))
+                    .cornerRadius(12.dp)
             ) { }
         }
 
-        // Content Section - Hierarchy: Title > Summary > Date
+        // Content Section - Hierarchy: Title > Summary > Date Pill
         Column(
             modifier = GlanceModifier
                 .defaultWeight()
                 .padding(horizontal = 10.dp)
         ) {
-            // 1. TITLE
+            // 1. TITLE - Stronger & Darker
             Text(
                 text = item.title,
                 style = TextStyle(
@@ -170,7 +170,7 @@ private fun RefinedTimelineItem(item: WidgetMemoryItem, pulseColor: Color, size:
                 maxLines = 1
             )
             
-            // 2. SUMMARY (User specific request)
+            // 2. SUMMARY
             if (item.summary.isNotBlank()) {
                 Spacer(modifier = GlanceModifier.height(4.dp))
                 Text(
@@ -180,49 +180,63 @@ private fun RefinedTimelineItem(item: WidgetMemoryItem, pulseColor: Color, size:
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Normal
                     ),
-                    maxLines = if (isTall) 3 else 2 // Dynamic clamping
+                    maxLines = if (isTall) 3 else 2
                 )
             }
             
-            // 3. DATE - Accentuated with Theme Color
+            // 3. DATE PILL - Themed Chip
             if (item.formattedDateTime != null) {
                 Spacer(modifier = GlanceModifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = GlanceModifier
-                            .size(6.dp)
-                            .background(ColorProvider(pulseColor.copy(alpha = 0.6f)))
-                            .cornerRadius(3.dp)
-                    ) { }
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-                    Text(
-                        text = item.formattedDateTime!!,
-                        style = TextStyle(
-                            color = ColorProvider(pulseColor),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                Box(
+                    modifier = GlanceModifier
+                        .background(ColorProvider(pulseColor.copy(alpha = 0.1f)))
+                        .cornerRadius(8.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = GlanceModifier
+                                .size(6.dp)
+                                .background(ColorProvider(pulseColor))
+                                .cornerRadius(3.dp)
+                        ) { }
+                        Spacer(modifier = GlanceModifier.width(6.dp))
+                        Text(
+                            text = item.formattedDateTime!!,
+                            style = TextStyle(
+                                color = ColorProvider(pulseColor),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
 
-        // Thumbnail Section - 80dp "Gallery Weight"
+        // Thumbnail Ring Section - "Jewel" Effect
         Box(
             modifier = GlanceModifier
-                .size(if (isTall) 80.dp else 68.dp)
-                .cornerRadius(16.dp)
-                .background(GlanceTheme.colors.secondaryContainer)
-                .padding(2.dp),
+                .size(if (isTall) 84.dp else 72.dp) // Outer Ring Size
+                .cornerRadius(18.dp)
+                .background(ColorProvider(pulseColor.copy(alpha = 0.3f))) // Themed Ring
+                .padding(2.dp), // Ring Thickness
             contentAlignment = Alignment.Center
         ) {
-            Box(modifier = GlanceModifier.fillMaxSize().cornerRadius(14.dp)) {
+            // Inner Content Container
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .cornerRadius(16.dp)
+                    .background(GlanceTheme.colors.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
                 if (!item.imagePath.isNullOrEmpty()) {
                     Image(
                         provider = getImageProvider(item),
                         contentDescription = item.title,
                         contentScale = ContentScale.Crop,
-                        modifier = GlanceModifier.fillMaxSize()
+                        modifier = GlanceModifier.fillMaxSize().cornerRadius(16.dp)
                     )
                 } else {
                     val iconRes = when (item.type) {
