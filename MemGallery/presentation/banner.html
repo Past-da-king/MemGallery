@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemGallery Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f0f11;
+            /* Deep dark background */
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .phone-mockup {
+            border-radius: 2rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 8px solid #2a2a2e;
+            position: relative;
+            background: #000;
+            aspect-ratio: 9/19.5;
+            transition: transform 0.3s ease;
+        }
+
+        .phone-mockup:hover {
+            transform: translateY(-10px);
+        }
+
+        .phone-mockup img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Glassmorphism card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bg-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="antialiased min-h-screen">
+
+    <!-- Section 1: Organize & Achieve (Gallery, Detail, Task) -->
+    <div class="relative min-h-screen flex flex-col items-center justify-center p-8 lg:p-16 border-b border-white/5">
+        <div class="bg-glow top-0 left-1/4 transform -translate-x-1/2"></div>
+
+        <div class="text-center mb-16 max-w-3xl">
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <img src="images/icon.png" alt="Logo" class="w-12 h-12 rounded-xl shadow-lg">
+                <span class="text-2xl font-bold tracking-tight">MemGallery</span>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                Your Second Brain <br>
+                <span class="gradient-text">Organized & Actionable</span>
+            </h1>
+            <p class="text-xl text-gray-400 font-light">
+                Capture memories, get AI insights, and turn them into tasks. All in one seamless flow.
+            </p>
+        </div>
+
+        <!-- Grid for 3 phones -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl items-center">
+
+            <!-- Gallery -->
+            <div class="flex flex-col items-center gap-4">
+                <div class="phone-mockup w-full max-w-[280px]">
+                    <img src="images/gallery.jpg" alt="Gallery">
+                </div>
+                <div class="text-center mt-4">
+                    <h3 class="text-xl font-semibold text-white">Smart Gallery</h3>
+                    <p class="text-sm text-gray-400">All your memories in one place</p>
+                </div>
+            </div>
+
+            <!-- Detail (Center, slightly larger or elevated?) -->
+            <div class="flex flex-col items-center gap-4 transform md:-translate-y-8">
+                <div class="phone-mockup w-full max-w-[300px] ring-4 ring-brand-500/30">
+                    <img src="images/detail.jpg" alt="Detail View">
+                </div>
+                <div class="text-center mt-4">
+                    <h3 class="text-xl font-semibold text-white">AI Analysis</h3>
+                    <p class="text-sm text-gray-400">Deep context & summaries</p>
+                </div>
+            </div>
+
+            <!-- Task -->
+            <div class="flex flex-col items-center gap-4">
+                <div class="phone-mockup w-full max-w-[280px]">
+                    <img src="images/task.jpg" alt="Tasks">
+                </div>
+                <div class="text-center mt-4">
+                    <h3 class="text-xl font-semibold text-white">Actionable Tasks</h3>
+                    <p class="text-sm text-gray-400">Turn memories into to-dos</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Section 2: Capture & Control (Capture, Post Capture, Notification, Settings) -->
+    <div class="relative min-h-screen flex flex-col items-center justify-center p-8 lg:p-16">
+        <div class="bg-glow bottom-0 right-1/4 transform translate-x-1/2"></div>
+
+        <div class="text-center mb-16 max-w-3xl">
+            <h2 class="text-4xl md:text-6xl font-bold mb-6">
+                Seamless <span class="gradient-text">Workflow</span>
+            </h2>
+            <p class="text-xl text-gray-400 font-light">
+                From the moment you capture to how you customize your experience.
+            </p>
+        </div>
+
+        <!-- Grid for 4 phones -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl items-start">
+
+            <!-- Capture -->
+            <div class="flex flex-col items-center gap-4">
+                <div class="phone-mockup w-full max-w-[240px]">
+                    <img src="images/capture.jpg" alt="Capture">
+                </div>
+                <h3 class="text-lg font-medium text-gray-300 mt-2">Quick Capture</h3>
+            </div>
+
+            <!-- Post Capture -->
+            <div class="flex flex-col items-center gap-4 md:mt-12">
+                <div class="phone-mockup w-full max-w-[240px]">
+                    <img src="images/post_capture.jpg" alt="Post Capture">
+                </div>
+                <h3 class="text-lg font-medium text-gray-300 mt-2">Instant Processing</h3>
+            </div>
+
+            <!-- Notification -->
+            <div class="flex flex-col items-center gap-4">
+                <div class="phone-mockup w-full max-w-[240px]">
+                    <img src="images/notification.jpg" alt="Notification">
+                </div>
+                <h3 class="text-lg font-medium text-gray-300 mt-2">Smart Alerts</h3>
+            </div>
+
+            <!-- Settings -->
+            <div class="flex flex-col items-center gap-4 md:mt-12">
+                <div class="phone-mockup w-full max-w-[240px]">
+                    <img src="images/settings.jpg" alt="Settings">
+                </div>
+                <h3 class="text-lg font-medium text-gray-300 mt-2">Full Control</h3>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

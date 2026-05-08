@@ -1,0 +1,29 @@
+# Signing keys & secrets
+*.jks
+*.keystore
+local.properties
+
+# Build outputs
+.gradle/
+build/
+*.apk
+*.aab
+release/
+
+# JVM crash dumps from Gradle / Android Studio
+hs_err_pid*.log
+replay_pid*.log
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.kotlin/
+
+# OS / scratch
+.DS_Store
+Thumbs.db
+error.txt
+Screenshot_*.jpg
+Screenshot_*.png

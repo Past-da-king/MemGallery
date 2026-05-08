@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MemGallery" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#121212</item>
+        <item name="android:navigationBarColor">#121212</item>
+    </style>
+</resources>

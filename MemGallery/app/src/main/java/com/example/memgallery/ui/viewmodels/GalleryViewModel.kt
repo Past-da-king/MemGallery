@@ -1,0 +1,233 @@
+package com.example.memgallery.ui.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.memgallery.data.repository.MemoryRepository
+import com.example.memgallery.data.local.entity.MemoryEntity
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import javax.inject.Inject
+
+@HiltViewModel
+class GalleryViewModel @Inject constructor(
+    private val memoryRepository: MemoryRepository,
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository
+) : ViewModel() {
+
+    private val _searchText = MutableStateFlow("")
+    val searchText = _searchText.asStateFlow()
+
+    private val _selectedFilter = MutableStateFlow("All")
+    val selectedFilter = _selectedFilter.asStateFlow()
+
+    private val _highlightTag = MutableStateFlow<String?>(null)
+    val highlightTag = _highlightTag.asStateFlow()
+
+    private val _highlightMemories = MutableStateFlow<List<MemoryEntity>>(emptyList())
+    val highlightMemories = _highlightMemories.asStateFlow()
+
+    private val _selectionModeActive = MutableStateFlow(false)
+    val selectionModeActive = _selectionModeActive.asStateFlow()
+
+    private val _selectedMemoryIds = MutableStateFlow(emptySet<Int>())
+    val selectedMemoryIds = _selectedMemoryIds.asStateFlow()
+
+    private val _pendingDeletionIntent = MutableStateFlow<android.app.PendingIntent?>(null)
+    val pendingDeletionIntent = _pendingDeletionIntent.asStateFlow()
+    
+    // Heatmap Data derived from timestamps
+    // We fetch Flow<List<Long>> and convert to Map<LocalDate, Int>
+    val heatMapData: StateFlow<Map<java.time.LocalDate, Int>> = memoryRepository.getAllCreationTimestamps()
+        .map { timestamps ->
+            timestamps.map { timestamp ->
+                java.time.Instant.ofEpochMilli(timestamp)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+            }
+            .groupingBy { it }
+            .eachCount()
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap()
+        )
+
+    val collections = memoryRepository.getAllCollections()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    private val _memories = memoryRepository.getMemories()
+
+    val memories: StateFlow<List<MemoryEntity>> = combine(
+        _searchText,
+        _memories,
+        _selectedFilter
+    ) { text, allMemories, filter ->
+        val filteredBySearch = if (text.isBlank()) {
+            allMemories
+        } else {
+            allMemories.filter {
+                it.aiTitle?.contains(text, ignoreCase = true) ?: false ||
+                it.aiSummary?.contains(text, ignoreCase = true) ?: false ||
+                it.aiTags?.any { tag -> tag.contains(text, ignoreCase = true) } ?: false
+            }
+        }
+
+        when (filter) {
+            "Images" -> filteredBySearch.filter { it.imageUri != null }
+            "Notes" -> filteredBySearch.filter { !it.userText.isNullOrBlank() }
+            "Audio" -> filteredBySearch.filter { it.audioFilePath != null }
+            "Bookmarks" -> filteredBySearch.filter { it.bookmarkUrl != null }
+            "Collections" -> emptyList() // Handled by UI to show collection list
+            "All" -> filteredBySearch
+            else -> filteredBySearch // Should not happen with defined filters
+        }
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun createCollection(name: String, description: String, memoriesToAdd: List<Int> = emptyList()) {
+        viewModelScope.launch {
+            val collectionId = memoryRepository.createCollection(name, description)
+            if (memoriesToAdd.isNotEmpty()) {
+                memoriesToAdd.forEach { memoryId ->
+                    memoryRepository.addMemoryToCollection(memoryId, collectionId.toInt())
+                }
+                clearSelection()
+            }
+        }
+    }
+
+    fun addSelectedMemoriesToCollection(collectionId: Int) {
+        viewModelScope.launch {
+            _selectedMemoryIds.value.forEach { memoryId ->
+                memoryRepository.addMemoryToCollection(memoryId, collectionId)
+            }
+            clearSelection()
+        }
+    }
+
+    fun onSearchTextChange(text: String) {
+        _searchText.value = text
+    }
+
+    fun onFilterSelected(filter: String) {
+        _selectedFilter.value = filter
+    }
+
+    fun toggleSelectionMode() {
+        _selectionModeActive.value = !_selectionModeActive.value
+        if (!_selectionModeActive.value) {
+            _selectedMemoryIds.value = emptySet() // Clear selection when exiting mode
+        }
+    }
+
+    fun toggleMemorySelection(memoryId: Int) {
+        _selectedMemoryIds.value = if (_selectedMemoryIds.value.contains(memoryId)) {
+            _selectedMemoryIds.value - memoryId
+        } else {
+            _selectedMemoryIds.value + memoryId
+        }
+    }
+
+    fun clearSelection() {
+        _selectedMemoryIds.value = emptySet()
+        _selectionModeActive.value = false
+    }
+
+    fun deleteSelectedMemories() {
+        viewModelScope.launch {
+            val iterator = _selectedMemoryIds.value.iterator()
+            while (iterator.hasNext()) {
+                val memoryId = iterator.next()
+                try {
+                    val memoryToDelete = memoryRepository.getMemory(memoryId).first()
+                    memoryToDelete?.let { memoryRepository.deleteMemory(it) }
+                } catch (e: Exception) {
+                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q && 
+                        e is android.app.RecoverableSecurityException) {
+                        _pendingDeletionIntent.value = e.userAction.actionIntent
+                        // Stop batch deletion to handle permission one by one (limitation of this simple approach)
+                        break 
+                    }
+                }
+            }
+            clearSelection()
+        }
+    }
+
+    fun deleteMedia(memoryId: Int, deleteImage: Boolean, deleteAudio: Boolean) {
+        viewModelScope.launch {
+            memoryRepository.updateMemoryMedia(memoryId, deleteImage, deleteAudio)
+        }
+    }
+
+    fun deleteFullMemory(memoryId: Int) {
+        viewModelScope.launch {
+            try {
+                val memoryToDelete = memoryRepository.getMemory(memoryId).first()
+                memoryToDelete?.let { memoryRepository.deleteMemory(it) }
+            } catch (e: Exception) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q && 
+                    e is android.app.RecoverableSecurityException) {
+                    _pendingDeletionIntent.value = e.userAction.actionIntent
+                } else {
+                    // Log error or show snackbar
+                }
+            }
+        }
+    }
+
+    fun clearPendingDeletionIntent() {
+        _pendingDeletionIntent.value = null
+    }
+
+    fun hideMemory(memoryId: Int) {
+        viewModelScope.launch {
+            memoryRepository.hideMemory(memoryId, true)
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            combine(
+                _memories,
+                settingsRepository.showHighlightsFlow
+            ) { allMemories, showHighlights ->
+                if (showHighlights && allMemories.isNotEmpty()) {
+                    updateHighlight(allMemories)
+                } else {
+                    _highlightTag.value = null
+                    _highlightMemories.value = emptyList()
+                }
+            }.collect {}
+        }
+    }
+
+    private fun updateHighlight(allMemories: List<MemoryEntity>) {
+        val allTags = allMemories.flatMap { it.aiTags.orEmpty() }.distinct()
+        if (allTags.isNotEmpty()) {
+            val randomTag = allTags.random()
+            _highlightTag.value = randomTag
+            _highlightMemories.value = allMemories.filter { it.aiTags?.contains(randomTag) == true }
+        } else {
+            _highlightTag.value = null
+            _highlightMemories.value = emptyList()
+        }
+    }
+}

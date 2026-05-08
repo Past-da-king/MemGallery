@@ -1,0 +1,502 @@
+package com.example.memgallery.ui.screens
+
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.memgallery.navigation.Screen
+import com.example.memgallery.ui.viewmodels.MemoryCreationViewModel
+import com.example.memgallery.ui.viewmodels.MemoryCreationUiState
+import com.example.memgallery.ui.viewmodels.MemoryUpdateViewModel
+import kotlinx.coroutines.launch
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostCaptureScreen(
+    navController: NavController,
+    initialImageUri: String? = null,
+    initialAudioUri: String? = null,
+    initialUserText: String? = null,
+    initialBookmarkUrl: String? = null,
+    memoryId: Int? = null,
+    openUrlSheet: Boolean = false,
+    creationViewModel: MemoryCreationViewModel = hiltViewModel(),
+    updateViewModel: MemoryUpdateViewModel = hiltViewModel()
+) {
+    val isEditMode = memoryId != null
+    val memory by updateViewModel.memory.collectAsState()
+
+    val draftImageUris by creationViewModel.draftImageUris.collectAsState()
+    val draftAudioUri by creationViewModel.draftAudioUri.collectAsState()
+    val draftUserText by creationViewModel.draftUserText.collectAsState()
+    val draftBookmarkUrl by creationViewModel.draftBookmarkUrl.collectAsState()
+    val uiState by creationViewModel.uiState.collectAsState()
+
+    val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState()
+    var showAddImageSheet by remember { mutableStateOf(false) }
+    var showUrlSheet by remember { mutableStateOf(false) }
+    var tempUrl by remember { mutableStateOf("") }
+    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(openUrlSheet) {
+        if (openUrlSheet) {
+            showUrlSheet = true
+        }
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        uris.forEach { uri ->
+            creationViewModel.addDraftImageUri(uri.toString())
+        }
+        showAddImageSheet = false
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                tempImageUri?.let { creationViewModel.addDraftImageUri(it.toString()) }
+            }
+            showAddImageSheet = false
+        }
+    )
+
+    LaunchedEffect(memoryId) {
+        if (isEditMode) {
+            updateViewModel.loadMemory(memoryId!!)
+        }
+    }
+
+    LaunchedEffect(memory) {
+        if (isEditMode && memory != null) {
+            if (initialImageUri == null) {
+                // Handle migration from single imageUri to list
+                val uris = memory!!.imageUris ?: listOfNotNull(memory!!.imageUri)
+                creationViewModel.setDraftImageUris(uris)
+            }
+            if (initialAudioUri == null) creationViewModel.setDraftAudioUri(memory!!.audioFilePath)
+            if (initialUserText == null) creationViewModel.setDraftUserText(memory!!.userText)
+            if (initialBookmarkUrl == null) creationViewModel.setDraftBookmarkUrl(memory!!.bookmarkUrl)
+        }
+    }
+
+    // Set initial draft values from navigation arguments
+    LaunchedEffect(initialImageUri, initialAudioUri, initialUserText, initialBookmarkUrl) {
+        if (initialImageUri != null && draftImageUris.isEmpty()) {
+             creationViewModel.addDraftImageUri(initialImageUri)
+        }
+        if (initialAudioUri != null) creationViewModel.setDraftAudioUri(initialAudioUri)
+        if (initialBookmarkUrl != null) creationViewModel.setDraftBookmarkUrl(initialBookmarkUrl)
+        if (initialUserText != null) {
+            // URL decode the text to handle special characters
+            val decodedText = try {
+                java.net.URLDecoder.decode(initialUserText, "UTF-8")
+            } catch (e: Exception) {
+                initialUserText
+            }
+            creationViewModel.setDraftUserText(decodedText)
+        }
+    }
+
+    // Navigate back on success
+    LaunchedEffect(uiState) {
+        if (uiState is MemoryCreationUiState.Success) {
+            navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
+            creationViewModel.resetState()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (isEditMode) "Edit Memory" else "New Memory Captured") },
+                actions = {
+                    IconButton(onClick = {
+                        navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
+                        creationViewModel.resetState()
+                    }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Captured Content Display
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Image Carousel or Add Button
+                if (draftImageUris.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        androidx.compose.foundation.lazy.LazyRow(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(8.dp)
+                        ) {
+                            items(draftImageUris.size) { index ->
+                                val uri = draftImageUris[index]
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .aspectRatio(0.8f) // Portrait aspect ratio
+                                        .clip(RoundedCornerShape(12.dp))
+                                ) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = Uri.parse(uri)),
+                                        contentDescription = "Captured Image $index",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    
+                                    // Delete Button Overlay
+                                    IconButton(
+                                        onClick = { creationViewModel.removeDraftImageUri(uri) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .size(32.dp)
+                                            .background(Color.Black.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close, 
+                                            contentDescription = "Remove Image", 
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Add more images button at the end
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .aspectRatio(0.8f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                        .clickable { showAddImageSheet = true },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.Add, contentDescription = "Add More")
+                                        Text("Add", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Empty State - Add Image Button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable {
+                                showAddImageSheet = true
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = "Add Image",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Tap to add images", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (draftAudioUri != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Icon(Icons.Default.Mic, contentDescription = "Audio Added")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Audio added")
+                    }
+                }
+                if (draftUserText != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Icon(Icons.Default.EditNote, contentDescription = "Text Added")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(draftUserText!!, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    }
+                }
+                if (draftBookmarkUrl != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Icon(Icons.Default.Link, contentDescription = "URL Added")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(draftBookmarkUrl!!, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Action Button Group
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = { navController.navigate(Screen.AudioCapture.createRoute(imageUri = draftImageUris.firstOrNull(), audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    enabled = draftAudioUri == null
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Add Audio", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Audio")
+                }
+                Button(
+                    onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUris.firstOrNull(), audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Icon(Icons.Default.EditNote, contentDescription = "Add Text", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Text")
+                }
+                Button(
+                    onClick = { showUrlSheet = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), contentColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Icon(Icons.Default.Link, contentDescription = "Add URL", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("URL")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Save Now Button
+            Button(
+                onClick = {
+                    if (isEditMode) {
+                        memory?.let { existingMemory ->
+                            val updatedMemory = existingMemory.copy(
+                                userText = draftUserText,
+                                imageUri = draftImageUris.firstOrNull(), // Backward compatibility
+                                imageUris = draftImageUris,
+                                audioFilePath = draftAudioUri,
+                                bookmarkUrl = draftBookmarkUrl
+                            )
+                            updateViewModel.updateMemory(updatedMemory)
+                            navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
+                        } ?: run {
+                            // Memory not loaded yet - log error
+                             android.util.Log.e("PostCaptureScreen", "Attempted to update null memory")
+                        }
+                    } else {
+                        creationViewModel.createMemory()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(vertical = 12.dp),
+                enabled = (isEditMode && memory != null) || (!isEditMode && uiState !is MemoryCreationUiState.Loading)
+            ) {
+                if (uiState is MemoryCreationUiState.Loading && !isEditMode) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                } else if (isEditMode && memory == null) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Icon(Icons.Default.AddCircle, contentDescription = "Save Now", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (isEditMode) "Update" else "Save Now")
+                }
+            }
+
+            if (uiState is MemoryCreationUiState.Error) {
+                Text(text = (uiState as MemoryCreationUiState.Error).message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if (showAddImageSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showAddImageSheet = false },
+                sheetState = sheetState
+            ) {
+                AddImageSourceSheet(
+                    onGalleryClick = { imagePickerLauncher.launch("image/*") },
+                    onCameraClick = {
+                        val newImageUri = createImageUri(context)
+                        tempImageUri = newImageUri
+                        cameraLauncher.launch(newImageUri)
+                    }
+                )
+            }
+        }
+        
+        if (showUrlSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showUrlSheet = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .navigationBarsPadding() // Handle safe area
+                        .imePadding() // Handle keyboard
+                ) {
+                    Text(
+                        text = "Add Link",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Paste a URL to save",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    OutlinedTextField(
+                        value = tempUrl,
+                        onValueChange = { tempUrl = it },
+                        placeholder = { Text("https://example.com") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        ),
+                        leadingIcon = {
+                            Icon(Icons.Default.Link, contentDescription = null)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = {
+                            creationViewModel.setDraftBookmarkUrl(tempUrl)
+                            showUrlSheet = false
+                            tempUrl = ""
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            text = "Add Link",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddImageSourceSheet(
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Text("Add an image", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onGalleryClick).padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Image, contentDescription = "Choose from Gallery")
+            Spacer(modifier = Modifier.width(16.dp))
+            Text("Choose from Gallery", style = MaterialTheme.typography.bodyLarge)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onCameraClick).padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.PhotoCamera, contentDescription = "Take a Picture")
+            Spacer(modifier = Modifier.width(16.dp))
+            Text("Take a Picture", style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+private fun createImageUri(context: Context): Uri {
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+    val imageFileName = "JPEG_${timeStamp}_"
+    val storageDir: File? = context.filesDir
+    val image = File.createTempFile(
+        imageFileName,  /* prefix */
+        ".jpg",         /* suffix */
+        storageDir      /* directory */
+    )
+    return FileProvider.getUriForFile(
+        Objects.requireNonNull(context),
+        context.packageName + ".provider",
+        image
+    )
+}

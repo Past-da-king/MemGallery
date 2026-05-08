@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemGallery | The Absolute Local AI Memory Pipeline</title>
+    <link rel="icon" type="image/png" href="images/icon.png">
+    <meta name="description"
+        content="MemGallery is a smart, local-first memory bank. Securely store and search memories from audio, images, text, and URLs using Gemini or Groq AI. No cloud, no sign-up.">
+    <meta name="keywords"
+        content="Mem Gallery, private memory, local AI, privacy-focused, memory vault, AI assistant, secure gallery, life indexing">
+    <meta name="author" content="Past-da-king">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://past-da-king.github.io/MemGallery/">
+    <meta property="og:title" content="MemGallery | The Absolute Local AI Memory Pipeline">
+    <meta property="og:description"
+        content="MemGallery: Your private AI memory bank. Proactively extracts tasks and index memories from audio, images, and URLs. Zero cloud, 100% privacy.">
+    <meta property="og:image" content="https://past-da-king.github.io/MemGallery/images/banner.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://past-da-king.github.io/MemGallery/">
+    <meta property="twitter:title" content="MemGallery | The Absolute Local AI Memory Pipeline">
+    <meta property="twitter:description"
+        content="MemGallery: Your private AI memory bank. Proactively extracts tasks and index memories from audio, images, and URLs. Zero cloud, 100% privacy.">
+    <meta property="twitter:image" content="https://past-da-king.github.io/MemGallery/images/banner.png">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;400;900&family=JetBrains+Mono:wght@200;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --accent: #8b5cf6;
+            /* Violet */
+            --secondary: #10b981;
+            /* Emerald */
+            --text-h: #ffffff;
+            --text-p: rgba(255, 255, 255, 0.4);
+            --border: rgba(255, 255, 255, 0.05);
+            --glow: rgba(139, 92, 246, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-h);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom Cursor */
+        #cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+
+        /* Background Noise & Grid */
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .grid-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.3;
+            pointer-events: none;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 2.5rem 5vw;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            text-decoration: none;
+        }
+
+        .logo-box {
+            width: 54px;
+            height: 54px;
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px var(--glow);
+        }
+
+        .logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .brand-name {
+            font-weight: 900;
+            font-size: 2rem;
+            letter-spacing: -3px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .btn-dl {
+            padding: 0.8rem 2rem;
+            background: #fff;
+            color: #000;
+            border-radius: 100px;
+            font-weight: 900;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .btn-dl:hover {
+            transform: scale(1.1) rotate(-2deg);
+        }
+
+        /* Hero: Massive Typography */
+        .hero {
+            height: 120vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 0 5vw;
+        }
+
+        .hero-title {
+            font-size: clamp(5rem, 18vw, 15rem);
+            font-weight: 900;
+            line-height: 0.75;
+            letter-spacing: -0.07em;
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(to bottom, #fff 40%, rgba(255, 255, 255, 0));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-tagline {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            margin-bottom: 5rem;
+            font-weight: 700;
+        }
+
+        /* Float Section: 3D Phones */
+        .showcase-v3d {
+            height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 2000px;
+        }
+
+        .phone-cluster {
+            display: flex;
+            gap: 4rem;
+            transform: rotateY(-20deg) rotateX(10deg);
+        }
+
+        .phone-wireframe {
+            width: 320px;
+            height: 640px;
+            background: #0a0a0a;
+            border: 4px solid var(--border);
+            border-radius: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 100px 200px rgba(0, 0, 0, 0.8);
+            transition: 0.8s cubic-bezier(0.2, 1, 0.2, 1);
+        }
+
+        .phone-wireframe:hover {
+            transform: translateZ(100px) translateY(-50px);
+            border-color: var(--accent);
+        }
+
+        .phone-wireframe img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .phone-label {
+            position: absolute;
+            bottom: 3rem;
+            left: -4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-p);
+            transform: rotate(-90deg);
+            white-space: nowrap;
+        }
+
+        /* Mechanical Deep Dive */
+        .tech-obsidian {
+            padding: 20rem 5vw;
+            background: #000;
+        }
+
+        .tech-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10rem;
+            align-items: center;
+            margin-bottom: 20rem;
+        }
+
+        .tech-content h2 {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 0.8;
+            letter-spacing: -0.04em;
+            margin-bottom: 3rem;
+        }
+
+        .tech-content p {
+            font-size: 1.5rem;
+            color: var(--text-p);
+            font-weight: 300;
+            line-height: 1.5;
+            margin-bottom: 3rem;
+        }
+
+        .tech-mechanics {
+            padding: 2.5rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .tech-mechanics span {
+            color: var(--accent);
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .tech-visual {
+            position: relative;
+        }
+
+        .tech-visual img {
+            width: 100%;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            filter: grayscale(1);
+            transition: 0.5s;
+        }
+
+        .tech-visual:hover img {
+            filter: grayscale(0);
+        }
+
+        /* The Multi-Image Chat visual styling */
+        .chat-dual-visual {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .chat-dual-visual img {
+            width: calc(50% - 0.75rem);
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            filter: grayscale(1);
+            transition: 0.5s;
+        }
+
+        .chat-dual-visual:hover img {
+            filter: grayscale(0);
+        }
+
+        /* The Parallax Strip */
+        .parallax-banner {
+            height: 80vh;
+            margin: 10rem 0;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('images/banner1 (1).png');
+            background-size: cover;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .parallax-banner h2 {
+            font-size: 10rem;
+            font-weight: 900;
+            letter-spacing: -0.08em;
+        }
+
+        /* Footer: Finality */
+        footer {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-logo-massive {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 3rem;
+            filter: saturate(0);
+            transition: 0.5s;
+        }
+
+        .footer-logo-massive:hover {
+            filter: saturate(1);
+            transform: rotate(180deg);
+        }
+
+        /* Identity Section: What, Why, How */
+        .identity-manifesto {
+            padding: 15rem 5vw;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .manifesto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 8rem;
+        }
+
+        .manifesto-item h2 {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .manifesto-item p {
+            font-size: 1.2rem;
+            color: var(--text-h);
+            line-height: 1.8;
+            font-weight: 300;
+            opacity: 0.8;
+        }
+
+        .manifesto-item b {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .how-list {
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        .how-list li {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .how-list li::before {
+            content: '>';
+            color: var(--accent);
+            font-weight: 900;
+        }
+
+        .footer-text {
+            font-size: 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-p);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1024px) {
+            .hero-title {
+                font-size: 10rem;
+            }
+
+            .tech-row {
+                grid-template-columns: 1fr;
+                gap: 5rem;
+            }
+
+            .phone-cluster {
+                flex-direction: column;
+                transform: none;
+            }
+
+            .chat-dual-visual {
+                flex-direction: column;
+            }
+
+            .chat-dual-visual img {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cursor"></div>
+    <div class="noise"></div>
+    <div class="grid-mesh"></div>
+
+    <nav>
+        <a href="index.html" class="brand">
+            <div class="logo-box"><img src="images/icon.png" alt="MemGallery Logo"></div>
+            <span class="brand-name">MemGallery</span>
+        </a>
+        <a href="https://github.com/Past-da-king/MemGallery/releases" class="btn-dl">DOWNLOAD_V0.1.0</a>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <span class="hero-tagline">SMART_LOCAL_MEMORY_PIPELINE</span>
+            <h1 class="hero-title">INDEX<br>YOUR<br>LIFE</h1>
+        </section>
+
+        <section class="showcase-v3d">
+            <div class="phone-cluster">
+                <div class="phone-wireframe">
+                    <span class="phone-label">// NATIVE_MOBILE_VAULT</span>
+                    <img src="images/gallery.jpg" alt="Gallery View">
+                </div>
+                <div class="phone-wireframe" style="margin-top: 10rem;">
+                    <span class="phone-label">// AI_REASONING_CORE</span>
+                    <img src="images/memdetail.jpg" alt="Memory Detail View">
+                </div>
+                <div class="phone-wireframe" style="margin-top: -5rem;">
+                    <span class="phone-label">// PROACTIVE_TASK_GATING</span>
+                    <img src="images/tasks.jpg" alt="Task Manager View">
+                </div>
+            </div>
+        </section>
+
+        <section class="identity-manifesto">
+            <div class="manifesto-grid">
+                <div class="manifesto-item">
+                    <h2>What is it?</h2>
+                    <p>
+                        <b>MemGallery</b> is a smart, local-first <b>memory bank</b> designed to store everything you
+                        encounter—audio, images, text, and URLs—so you can recall them exactly when you need them. It
+                        acts as an intelligent index for your digital life, ensuring no breakthrough thought or
+                        essential screenshot is ever lost again.
+                    </p>
+                </div>
+                <div class="manifesto-item">
+                    <h2>Why build it?</h2>
+                    <p>
+                        The inspiration came from powerful manufacturer-locked features like <b>OPPO's Mind Space</b>,
+                        <b>Nothing's Essential Space</b>, and <b>Pixel Screenshots</b>. These are incredible tools, but
+                        they are trapped within specific ecosystems. MemGallery was born to be the <b>open-source
+                            alternative</b>—a device-agnostic intelligence engine that brings that same power to
+                        everyone, with no manufacturer lock-in.
+                    </p>
+                </div>
+                <div class="manifesto-item">
+                    <h2>How it works?</h2>
+                    <p>
+                        We’ve built a seamless pipeline that prioritizes your privacy while maximizing your recall.
+                    </p>
+                    <ul class="how-list">
+                        <li><b>CAPTURE:</b> Snap screenshots, record voice notes, or share URLs directly to the app.
+                        </li>
+                        <li><b>INDEX:</b> Proactive AI (Gemini, Groq, or Local) scans, transcribes, and extracts
+                            actions.</li>
+                        <li><b>RECALL:</b> Use natural language to search your entire history and act on detected tasks
+                            instantly.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="parallax-banner">
+            <h2>PRIVATE</h2>
+        </section>
+
+        <section class="tech-obsidian">
+            <!-- New Chat Section -->
+            <div class="tech-row">
+                <div class="tech-content">
+                    <h2>AI Chat</h2>
+                    <p>The AI Chat isn't just a text box—it's your direct link to everything you've saved. Ask
+                        questions, find old memories, and see your history instantly.</p>
+                    <div class="tech-mechanics">
+                        - <b>Search Everything:</b> Search your entire history using simple, natural language.<br>
+                        - <b>See Your Memories:</b> The AI can pull up and show images from your past right in the
+                        chat.<br>
+                        - <b>Memory Cards:</b> Get a detailed view of any memory without leaving the conversation.
+                    </div>
+                </div>
+                <div class="chat-dual-visual">
+                    <img src="images/CHATIMAGE.jpg" alt="Images in Chat">
+                    <img src="images/CHATMemory.jpg" alt="Memory Cards in Chat">
+                </div>
+            </div>
+
+            <div class="tech-row">
+                <div class="tech-visual">
+                    <img src="images/capture.jpg" alt="Capture Interface">
+                </div>
+                <div class="tech-content" style="text-align: right;">
+                    <h2>Smart Capture</h2>
+                    <p>Save more than just text. MemGallery handles your images, voice recordings, and web bookmarks
+                        effortlessly.</p>
+                    <div class="tech-mechanics">
+                        <span style="text-align: right;">HOW IT WORKS</span>
+                        The AI scans your images to find important details and automatically transcribes your voice
+                        notes so they're searchable later.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-row">
+                <div class="tech-visual">
+                    <img src="images/post_capture.jpg" alt="Review Interface">
+                </div>
+                <div class="tech-content" style="text-align: right;">
+                    <h2 style="margin-right: -2rem;">Private & Local</h2>
+                    <p>Your data stays on your phone. No cloud syncing, no tracking, and no prying eyes.</p>
+                    <div class="tech-mechanics">
+                        <span style="text-align: right;">SECURE STORAGE</span>
+                        Everything is stored in an encrypted database on your device. Your security keys are locked deep
+                        in your phone's hardware.
+                    </div>
+                </div>
+            </div>
+            <div class="tech-row">
+                <div class="tech-content">
+                    <h2>Dual-Engine<br>Flexibility</h2>
+                    <p>Absolute control over your intelligence stack. Switch between monolithic versatility and
+                        modular power.</p>
+                    <div class="tech-mechanics">
+                        - <b>Gemini 2.5 Flash:</b> An all-in-one AI that handles your images, audio, and text all at
+                        once. It's fast, smart, and keeps everything connected.<br>
+                        - <b>Groq Engine:</b> Extreme speed and choice. It uses specialized models for your voice
+                        recordings and data analysis, and lets you pick exactly which AI model you want to talk to.
+                    </div>
+                </div>
+                <div class="tech-visual">
+                    <img src="images/settings.jpg" alt="Settings Interface for AI Provider">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <img src="images/icon.png" alt="MemGallery Logo" class="footer-logo-massive">
+        <h2 style="font-size: 4rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 2rem;">BUILD_0.1.0</h2>
+        <a href="https://github.com/Past-da-king/MemGallery/releases" class="btn-dl"
+            style="padding: 2rem 5rem; font-size: 1.5rem;">GET_MEMGALLERY</a>
+        <p class="footer-text" style="margin-top: 5rem;">© 2026 // ZERO_TELEMETRY // LOCAL_PROCESSING // MEMGALLERY</p>
+    </footer>
+
+    <script>
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Hover Effect
+        const links = document.querySelectorAll('a, .phone-wireframe, .chat-dual-visual img');
+        links.forEach(link => {
+            link.addEventListener('mouseenter', () => cursor.style.transform = 'scale(4)');
+            link.addEventListener('mouseleave', () => cursor.style.transform = 'scale(1)');
+        });
+    </script>
+</body>
+
+</html>

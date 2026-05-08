@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="?android:attr/colorBackground" /> 
+    <!-- Note: Glance uses exact colors or resources. Using ?attr might only work if context has theme. 
+         Better to Rely on GlanceTheme in code, but for background shape we might need generic.
+         Actually, strictly defining this might be risky if theme attributes aren't resolved in RemoteViews context easily.
+         I'll stick to code-based background(GlanceTheme.colors.background) and cornerRadius(16.dp).
+         The user wants "10x". I'll use a semi-transparent white/black for the "Chip". -->
+</shape>

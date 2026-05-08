@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanical Architecture | MemGallery</title>
+    <link rel="icon" type="image/png" href="images/icon.png">
+    <meta name="description"
+        content="Technical architecture of MemGallery: a smart memory bank for audio, images, text, and URLs. AI-indexed, on-device, and private.">
+    <meta name="keywords"
+        content="Mem Gallery architecture, local AI, secure memory, private intelligence, technical details, life indexing technology">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://past-da-king.github.io/MemGallery/details.html">
+    <meta property="og:title" content="Mechanical Architecture | MemGallery">
+    <meta property="og:description"
+        content="Deep dive into MemGallery's smart memory bank architecture. AI-indexed, on-device, no cloud required.">
+    <meta property="og:image" content="https://past-da-king.github.io/MemGallery/images/banner.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://past-da-king.github.io/MemGallery/details.html">
+    <meta property="twitter:title" content="Mechanical Architecture | MemGallery">
+    <meta property="twitter:description"
+        content="Deep dive into MemGallery's smart memory bank architecture. AI-indexed, on-device, no cloud required.">
+    <meta property="twitter:image" content="https://past-da-king.github.io/MemGallery/images/banner.png">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;700;900&family=JetBrains+Mono:wght@300;500;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030303;
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.2);
+            --text: #ffffff;
+            --text-dim: #71717a;
+            --border: rgba(255, 255, 255, 0.08);
+            --card: rgba(255, 255, 255, 0.02);
+            --code-bg: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 2rem 5vw;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1100;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .back-link {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 8rem 2rem;
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            letter-spacing: -4px;
+            margin-bottom: 4rem;
+        }
+
+        p.intro {
+            font-size: 1.5rem;
+            color: var(--text-dim);
+            font-weight: 200;
+            margin-bottom: 6rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 6rem 0 2rem;
+            border-left: 8px solid var(--accent);
+            padding-left: 2rem;
+        }
+
+        .feature-depth {
+            margin-bottom: 8rem;
+        }
+
+        .feature-depth h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+        }
+
+        .mechanical-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .flow-step::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .code-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #a1a1aa;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .tech-card {
+            padding: 2rem;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+        }
+
+        .tech-card h4 {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        footer {
+            padding: 10rem 0 5rem;
+            text-align: center;
+            opacity: 0.3;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="noise"></div>
+
+    <nav>
+        <a href="index.html" class="back-link">SYSTEM_HOME_V0.0.13</a>
+        <img src="images/icon.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+    </nav>
+
+    <div class="container">
+        <h1>HOW IT<br>WORKS.</h1>
+        <p class="intro">A look at the technology that keeps your memories safe, organized, and private. No marketing
+            fluff—just the details.</p>
+
+        <section class="feature-depth">
+            <h2>Smart Task Management</h2>
+            <p style="margin-bottom: 2rem;">MemGallery doesn't just save notes; it helps you stay on top of things by
+                suggesting tasks from your memories.</p>
+
+            <div class="mechanical-box">
+                <h3>The Lifecycle of a Task</h3>
+                <div class="flow-container">
+                    <div class="flow-step">You save a memory (text, image, or voice)</div>
+                    <div class="flow-step">The AI scans it for important dates or things to do</div>
+                    <div class="flow-step">You review the suggested task in a simple popup</div>
+                    <div class="flow-step">Once approved, it's saved securely on your phone</div>
+                    <div class="flow-step">You can even export tasks to your Google Calendar or Tasks</div>
+                </div>
+
+                <span class="code-title">How we handle your tasks</span>
+                <pre><code>
+fun createCalendarEventIntent(action: ActionDto): Intent {
+    return Intent(Intent.ACTION_INSERT).apply {
+        data = CalendarContract.Events.CONTENT_URI
+        putExtra(CalendarContract.Events.TITLE, action.description)
+        if (action.date != null) {
+            val startTime = parseDateTime(action.date, action.time)
+            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTime)
+            putExtra(CalendarContract.EXTRA_EVENT_END_TIME, startTime + 3600000)
+        }
+    }
+}
+                </code></pre>
+            </div>
+        </section>
+
+        <section class="feature-depth">
+            <h2>AI Technology</h2>
+            <p style="margin-bottom: 2rem;">We use two different AI systems to give you a balance of depth and speed.
+            </p>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>Gemini 2.5 Flash</h4>
+                    <p>This is the all-in-one brain. It hears your voice, sees your images, and reads your text all at
+                        once. It's perfect for finding hidden patterns in your history.</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Groq Engine</h4>
+                    <p>This is built for pure speed. It uses specialized models to transcribe your voice recordings and
+                        analyze images in less than a second.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="feature-depth">
+            <h2>Security & Privacy</h2>
+            <p style="margin-bottom: 2rem;">MemGallery is built to keep your data private by design.</p>
+
+            <div class="mechanical-box">
+                <h3>Locked in Hardware</h3>
+                <p style="margin-bottom: 2rem; color: var(--text-dim);">We don't just "save" your API keys. We lock them
+                    in your phone's secure hardware enclave.</p>
+
+                <span class="code-title">Security Implementation</span>
+                <pre><code>
+private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+private val encryptedPrefs = EncryptedSharedPreferences.create(
+    "secure_settings",
+    masterKeyAlias,
+    context,
+    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+)
+                </code></pre>
+                <div class="flow-container">
+                    <div class="flow-step">A master key is generated inside your phone's secure hardware</div>
+                    <div class="flow-step">Your settings and API keys are double-encrypted</div>
+                    <div class="flow-step">Access is only granted when the app signature matches exactly</div>
+                    <div class="flow-step">Your private keys never leave the secure hardware area</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="feature-depth">
+            <h2>System Integration</h2>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>Edge Gestures</h4>
+                    <p>This is how you access the app quickly. MemGallery uses a system service to place an invisible
+                        handle on your screen edge, letting you swipe to capture anything instantly.</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Live Monitoring</h4>
+                    <p>The app monitors your screenshots folder. When you take a screenshot, MemGallery wakes the AI to
+                        index the image so you can search for it later.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            V0.0.13 // BUILT BY PAST // MEMGALLERY
+        </footer>
+    </div>
+</body>
+
+</html>
