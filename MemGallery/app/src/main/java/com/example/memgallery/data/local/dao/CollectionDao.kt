@@ -34,4 +34,12 @@ interface CollectionDao {
     
     @Query("SELECT * FROM collections WHERE name = :name LIMIT 1")
     suspend fun getCollectionByName(name: String): CollectionEntity?
+
+    /** Backup: list every collection eagerly (one-shot, not Flow). */
+    @Query("SELECT * FROM collections ORDER BY id ASC")
+    suspend fun getAllCollectionsRaw(): List<CollectionEntity>
+
+    /** Backup: list every memory↔collection link. */
+    @Query("SELECT * FROM memory_collection_cross_ref")
+    suspend fun getAllCrossRefs(): List<MemoryCollectionCrossRef>
 }

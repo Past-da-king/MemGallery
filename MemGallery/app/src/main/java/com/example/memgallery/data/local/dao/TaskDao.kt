@@ -14,6 +14,10 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isApproved = 1 ORDER BY dueDate ASC, dueTime ASC")
     fun getAllTasks(): Flow<List<TaskEntity>>
 
+    /** Backup: every row regardless of approval state. */
+    @Query("SELECT * FROM tasks ORDER BY id ASC")
+    suspend fun getAllTasksRaw(): List<TaskEntity>
+
     @Query("SELECT * FROM tasks WHERE isCompleted = 0 AND isApproved = 1 ORDER BY dueDate ASC, dueTime ASC")
     fun getActiveTasks(): Flow<List<TaskEntity>>
 
