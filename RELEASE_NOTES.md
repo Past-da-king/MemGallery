@@ -40,7 +40,20 @@
 
 Download `MemGallery-v0.3.0.apk` from the [release page](https://github.com/Past-da-king/MemGallery/releases/tag/v0.3.0).
 
-> ⚠️ **Heads up:** this release is signed with a fresh signing key. Existing v0.2.0 installs cannot upgrade in-place — uninstall the previous version first, then install this APK. Sorry for the friction; future releases will be signature-stable from this version forward.
+> ⚠️ **Heads up:** this release is signed with a fresh signing key. Existing v0.2.0 installs cannot upgrade in-place — uninstall the previous version first, then install this APK. Future releases will be signature-stable from this version forward.
+
+## 🔁 Upgrading from v0.2.0 — keep your memories
+
+Because v0.3.0 is signed with a new key, Android won't replace the old app for you, and uninstalling normally wipes its data. Use the built-in **Backup** feature to carry your memories across:
+
+1. **On v0.2.0**, open **Settings → Backup and restore your memories → Export Backup**. Pick a location outside the app sandbox (Downloads, Drive, etc.) — that file survives the uninstall.
+2. **Uninstall** the v0.2.0 app.
+3. **Install** `MemGallery-v0.3.0.apk` from this release.
+4. Complete onboarding (tap **Skip** if you don't want to enter the API key right now — you can do it later in Settings).
+5. **Settings → Backup and restore your memories → Import Backup**, point at the file from step 1. Your memories and attached images/audio reappear.
+
+> 📌 **What carries over:** memory entries (titles, summaries, tags, AI analyses, transcriptions, bookmarks) and their attached images/audio.
+> 📌 **What does not yet carry over:** tasks (events/to-dos) and collections — those live in separate database tables that the current backup format doesn't include. You'll need to re-create them, or AI-generated tasks will reappear as you re-process memories.
 
 ## Requirements
 
