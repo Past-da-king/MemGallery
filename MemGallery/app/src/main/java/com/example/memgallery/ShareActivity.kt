@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import com.example.memgallery.ui.theme.MemGalleryTheme
 import javax.inject.Inject
 
@@ -65,16 +66,16 @@ class ShareActivity : ComponentActivity() {
     ) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Save to MemGallery") },
-            text = { Text("Choose how you want to save this memory.") },
+            title = { Text(stringResource(R.string.process_text_label)) },
+            text = { Text(stringResource(R.string.share_dialog_body)) },
             confirmButton = {
                 Button(onClick = onQuickSave) {
-                    Text("Quick Save")
+                    Text(stringResource(R.string.share_quick_save))
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = onEdit) {
-                    Text("Edit")
+                    Text(stringResource(R.string.common_edit))
                 }
             }
         )
@@ -103,7 +104,7 @@ class ShareActivity : ComponentActivity() {
                     )
 
                     runOnUiThread {
-                        Toast.makeText(this@ShareActivity, "Saved to MemGallery!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ShareActivity, getString(R.string.quicksave_saved), Toast.LENGTH_SHORT).show()
                         finish()
                     }
                 } else {
@@ -122,7 +123,7 @@ class ShareActivity : ComponentActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@ShareActivity, "Failed to process", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ShareActivity, getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
                     finish()
                 }
             }

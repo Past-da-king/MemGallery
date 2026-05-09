@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 
 @Composable
 fun AddMemorySheet(
@@ -30,17 +32,17 @@ fun AddMemorySheet(
             .navigationBarsPadding()
     ) {
         Text(
-            "Create New",
+            stringResource(R.string.sheet_create_new_title),
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
         val items = listOf(
-            Triple("Text Note", Icons.Default.TextFields, onTextNote),
-            Triple("Upload Image", Icons.Default.Image, onUploadImage),
-            Triple("Take Photo", Icons.Default.PhotoCamera, onTakePhoto),
-            Triple("Record Audio", Icons.Default.Mic, onRecordAudio),
-            Triple("Save Bookmark", Icons.Default.Bookmark, onSaveBookmark)
+            Triple(stringResource(R.string.sheet_create_new_text), Icons.Default.TextFields, onTextNote),
+            Triple(stringResource(R.string.sheet_create_new_image), Icons.Default.Image, onUploadImage),
+            Triple(stringResource(R.string.sheet_create_new_photo), Icons.Default.PhotoCamera, onTakePhoto),
+            Triple(stringResource(R.string.sheet_create_new_audio), Icons.Default.Mic, onRecordAudio),
+            Triple(stringResource(R.string.sheet_create_new_bookmark), Icons.Default.Bookmark, onSaveBookmark)
         )
 
         Column(

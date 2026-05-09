@@ -1,7 +1,9 @@
 package com.example.memgallery.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memgallery.R
 import com.example.memgallery.data.local.dao.ChatDao
 import com.example.memgallery.data.local.entity.ChatEntity
 import com.example.memgallery.data.local.entity.ChatMessageEntity
@@ -9,6 +11,7 @@ import com.example.memgallery.data.remote.ChatGeminiService
 import com.example.memgallery.data.remote.ChatStreamEvent
 import com.example.memgallery.data.remote.ChatTools
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +31,16 @@ class ChatViewModel @Inject constructor(
     private val chatDao: ChatDao,
     private val chatGeminiService: ChatGeminiService,
     private val memoryRepository: com.example.memgallery.data.repository.MemoryRepository,
-    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    companion object {
+        // DB-persisted markers and equality literals — DO NOT localize.
+        const val DEFAULT_CHAT_TITLE = "New Chat"
+        const val VOICE_MESSAGE_MARKER = "🎤 Voice message"
+        const val ATTACHMENT_MARKER = "📎 Attachment"
+    }
 
     // ... (existing code) ...
 
@@ -106,7 +117,7 @@ class ChatViewModel @Inject constructor(
             ChatTools.toolEvents.collect { event ->
                 when (event) {
                     is ChatTools.ToolEvent.Started -> {
-                        _currentTool.value = "${event.toolName}..."
+                        _currentTool.value = context.getString(R.string.chat_tool_indicator, event.toolName)
                     }
                     is ChatTools.ToolEvent.Finished -> {
                         _currentTool.value = null
@@ -153,7 +164,7 @@ class ChatViewModel @Inject constructor(
 
     fun createNewChat() {
         viewModelScope.launch {
-            val newChat = ChatEntity(title = "New Chat")
+            val newChat = ChatEntity(title = DEFAULT_CHAT_TITLE)
             val id = chatDao.insertChat(newChat).toInt()
             _currentChatId.value = id
         }
@@ -201,7 +212,7 @@ class ChatViewModel @Inject constructor(
             if (_currentChatId.value == chatId) {
                 _currentChatId.value = null
             }
-            _snackbarMessage.value = "Chat deleted"
+            _snackbarMessage.value = context.getString(R.string.chat_snackbar_deleted_one)
         }
     }
     
@@ -214,7 +225,7 @@ class ChatViewModel @Inject constructor(
                 if (_currentChatId.value in ids) {
                     _currentChatId.value = null
                 }
-                _snackbarMessage.value = "${ids.size} chat(s) deleted"
+                _snackbarMessage.value = context.getString(R.string.vm_chats_deleted_count, ids.size)
             }
             clearSelection()
         }
@@ -230,19 +241,19 @@ class ChatViewModel @Inject constructor(
             
             // Handle Slash Commands
             if (message.trim() == "/refresh_context") {
-                _snackbarMessage.value = "Regenerating User Context..."
-                chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "user", content = "🔄 Regenerating User Context..."))
+                _snackbarMessage.value = context.getString(R.string.chat_snackbar_regenerating_context)
+                chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "user", content = context.getString(R.string.chat_system_regenerating_context)))
                 _isLoading.value = true
 
                 try {
                     val result = chatGeminiService.generateUserContext()
                     result.onSuccess { summary ->
-                        chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "system", content = "✅ User Context Updated:\n\n$summary"))
-                        _snackbarMessage.value = "Context updated"
+                        chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "system", content = context.getString(R.string.chat_system_context_updated, summary)))
+                        _snackbarMessage.value = context.getString(R.string.chat_snackbar_context_updated)
                     }
                     result.onFailure { e ->
-                        chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "system", content = "❌ Failed to update context: ${e.message}"))
-                        _snackbarMessage.value = "Detailed Context update failed"
+                        chatDao.insertMessage(ChatMessageEntity(chatId = chatId, role = "system", content = context.getString(R.string.chat_system_context_failed, e.message ?: "")))
+                        _snackbarMessage.value = context.getString(R.string.chat_snackbar_context_failed)
                     }
                 } catch (e: Exception) {
                      android.util.Log.e("ChatViewModel", "Context generation error", e)
@@ -261,9 +272,9 @@ class ChatViewModel @Inject constructor(
             _currentThought.value = ""
             _currentTool.value = null
             
-            // Update title if it's the first message (or title is "New Chat")
+            // Update title if it's the first message (or title is the default DB marker)
             val chat = chatDao.getChatById(chatId)
-            if (chat != null && chat.title == "New Chat") {
+            if (chat != null && chat.title == DEFAULT_CHAT_TITLE) {
                 val newTitle = message.take(30) + if (message.length > 30) "..." else ""
                 chatDao.updateChat(chat.copy(title = newTitle))
             }
@@ -287,7 +298,10 @@ class ChatViewModel @Inject constructor(
                             _isLoading.value = false
                             _isStreaming.value = false
                             android.util.Log.e("ChatViewModel", "Stream error", event.error)
-                            _snackbarMessage.value = "Error: ${event.error.localizedMessage ?: event.error::class.java.simpleName}"
+                            _snackbarMessage.value = context.getString(
+                                R.string.chat_snackbar_error_with_message,
+                                event.error.localizedMessage ?: event.error::class.java.simpleName
+                            )
                         }
                     }
                 }
@@ -295,7 +309,7 @@ class ChatViewModel @Inject constructor(
                  _isLoading.value = false
                  _isStreaming.value = false
                  android.util.Log.e("ChatViewModel", "sendMessage failed", e)
-                 _snackbarMessage.value = "Failed to send message: ${e.message}"
+                 _snackbarMessage.value = context.getString(R.string.chat_snackbar_send_failed, e.message ?: "")
             }
         }
     }
@@ -344,26 +358,27 @@ class ChatViewModel @Inject constructor(
         val chatId = _currentChatId.value ?: return
 
         viewModelScope.launch {
-            // Insert user message immediately with audio indicator
-            val displayText = additionalText?.takeIf { it.isNotBlank() } ?: "🎤 Voice message"
+            // Insert user message immediately with audio indicator.
+            // VOICE_MESSAGE_MARKER is a DB-persisted marker (English) — must remain stable.
+            val displayText = additionalText?.takeIf { it.isNotBlank() } ?: VOICE_MESSAGE_MARKER
             chatDao.insertMessage(ChatMessageEntity(
-                chatId = chatId, 
-                role = "user", 
+                chatId = chatId,
+                role = "user",
                 content = displayText,
                 audioFilePath = audioFilePath
             ))
-            
+
             _isLoading.value = true
             _isStreaming.value = true
             _streamingContent.value = ""
             _currentThought.value = ""
-            
+
             // Update title if first message
             val chat = chatDao.getChatById(chatId)
-            if (chat != null && chat.title == "New Chat") {
-                chatDao.updateChat(chat.copy(title = "Voice Chat"))
+            if (chat != null && chat.title == DEFAULT_CHAT_TITLE) {
+                chatDao.updateChat(chat.copy(title = context.getString(R.string.chat_voice_chat_title)))
             }
-            
+
             try {
                 chatGeminiService.sendMessageWithMediaStream(
                     chatId = chatId,
@@ -377,7 +392,7 @@ class ChatViewModel @Inject constructor(
                 _isLoading.value = false
                 _isStreaming.value = false
                 android.util.Log.e("ChatViewModel", "Failed to send audio message", e)
-                _snackbarMessage.value = "Failed to send audio message"
+                _snackbarMessage.value = context.getString(R.string.chat_snackbar_audio_failed)
             }
         }
     }
@@ -396,7 +411,10 @@ class ChatViewModel @Inject constructor(
                 _isLoading.value = false
                 _isStreaming.value = false
                 android.util.Log.e("ChatViewModel", "Stream error", event.error)
-                _snackbarMessage.value = "Error: ${event.error.localizedMessage ?: event.error::class.java.simpleName}"
+                _snackbarMessage.value = context.getString(
+                    R.string.chat_snackbar_error_with_message,
+                    event.error.localizedMessage ?: event.error::class.java.simpleName
+                )
             }
         }
     }
@@ -412,27 +430,28 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             _inputMessage.value = "" // Clear input
-            
-            // Insert user message immediately with media indicator
-            val displayText = additionalText?.takeIf { it.isNotBlank() } ?: "📎 Attachment"
+
+            // Insert user message immediately with media indicator.
+            // ATTACHMENT_MARKER is a DB-persisted marker (English) — must remain stable.
+            val displayText = additionalText?.takeIf { it.isNotBlank() } ?: ATTACHMENT_MARKER
             chatDao.insertMessage(ChatMessageEntity(
-                chatId = chatId, 
-                role = "user", 
+                chatId = chatId,
+                role = "user",
                 content = displayText,
                 imageUri = mediaUri
             ))
-            
+
             _isLoading.value = true
             _isStreaming.value = true
             _streamingContent.value = ""
             _currentThought.value = ""
-            
+
             // Update title if first message
             val chat = chatDao.getChatById(chatId)
-            if (chat != null && chat.title == "New Chat") {
-                chatDao.updateChat(chat.copy(title = "Media Chat"))
+            if (chat != null && chat.title == DEFAULT_CHAT_TITLE) {
+                chatDao.updateChat(chat.copy(title = context.getString(R.string.chat_media_chat_title)))
             }
-            
+
             try {
                 chatGeminiService.sendMessageWithMediaStream(
                     chatId = chatId,
@@ -446,7 +465,7 @@ class ChatViewModel @Inject constructor(
                 _isLoading.value = false
                 _isStreaming.value = false
                 android.util.Log.e("ChatViewModel", "Failed to send media message", e)
-                _snackbarMessage.value = "Failed to send attachment"
+                _snackbarMessage.value = context.getString(R.string.chat_snackbar_attachment_failed)
             }
         }
     }
@@ -463,10 +482,10 @@ class ChatViewModel @Inject constructor(
                     audioUri = null,
                     userText = content
                 )
-                _snackbarMessage.value = "Saved as note"
+                _snackbarMessage.value = context.getString(R.string.chat_snackbar_saved_note)
             } catch (e: Exception) {
                 android.util.Log.e("ChatViewModel", "Failed to save message as note", e)
-                _snackbarMessage.value = "Failed to save note"
+                _snackbarMessage.value = context.getString(R.string.chat_snackbar_save_note_failed)
             }
         }
     }
@@ -515,7 +534,7 @@ class ChatViewModel @Inject constructor(
             startProgressPolling()
         } catch (e: Exception) {
             android.util.Log.e("ChatViewModel", "Failed to play audio: $path", e)
-            _snackbarMessage.value = "Failed to play audio"
+            _snackbarMessage.value = context.getString(R.string.chat_snackbar_audio_play_failed)
             stopAudio()
         }
     }

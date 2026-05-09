@@ -77,12 +77,12 @@ class QuickSaveActivity : ComponentActivity() {
                 )
 
                 runOnUiThread {
-                    Toast.makeText(this@QuickSaveActivity, "Saved to MemGallery!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@QuickSaveActivity, getString(R.string.quicksave_saved), Toast.LENGTH_SHORT).show()
                     finish()
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@QuickSaveActivity, "Failed to save", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@QuickSaveActivity, getString(R.string.quicksave_failed), Toast.LENGTH_SHORT).show()
                     finish()
                 }
             }

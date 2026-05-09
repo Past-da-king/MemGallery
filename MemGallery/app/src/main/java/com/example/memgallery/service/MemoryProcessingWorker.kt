@@ -135,17 +135,17 @@ class MemoryProcessingWorker @AssistedInject constructor(
 
     private fun createForegroundInfo(): ForegroundInfo {
         val id = "memory_processing_channel"
-        val title = "Processing Memory"
-        val cancel = "Cancel"
-        
+        val title = applicationContext.getString(R.string.notif_processing_title)
+        val cancel = applicationContext.getString(R.string.notif_processing_cancel)
+
         // Create a Notification channel if necessary
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Memory Processing"
-            val description = "Notifications for AI memory processing"
+            val name = applicationContext.getString(R.string.notif_channel_processing_name)
+            val description = applicationContext.getString(R.string.notif_channel_processing_desc)
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel = NotificationChannel(id, name, importance)
             channel.description = description
-            
+
             val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
@@ -153,7 +153,7 @@ class MemoryProcessingWorker @AssistedInject constructor(
         val notification = NotificationCompat.Builder(applicationContext, id)
             .setContentTitle(title)
             .setTicker(title)
-            .setContentText("Analyzing your memory with AI...")
+            .setContentText(applicationContext.getString(R.string.notif_processing_text))
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -173,16 +173,16 @@ class MemoryProcessingWorker @AssistedInject constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "AI Actions",
+                applicationContext.getString(R.string.notif_channel_actions_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Notifications for detected actions"
+                description = applicationContext.getString(R.string.notif_channel_actions_desc)
             }
             notificationManager.createNotificationChannel(channel)
         }
 
         actions.forEachIndexed { index, action ->
-            val intent = com.example.memgallery.utils.ActionHandler.getActionIntent(action)
+            val intent = com.example.memgallery.utils.ActionHandler.getActionIntent(applicationContext, action)
             val pendingIntent = if (intent != null) {
                 android.app.PendingIntent.getActivity(
                     applicationContext,
@@ -194,13 +194,17 @@ class MemoryProcessingWorker @AssistedInject constructor(
 
             val builder = NotificationCompat.Builder(applicationContext, channelId)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Action Detected: ${action.type}")
+                .setContentTitle(applicationContext.getString(R.string.notif_action_detected, action.type))
                 .setContentText(action.description)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
 
             if (pendingIntent != null) {
-                val actionLabel = if (action.type == "EVENT") "Add to Calendar" else "Save Action"
+                val actionLabel = if (action.type == "EVENT") {
+                    applicationContext.getString(R.string.notif_action_add_to_calendar)
+                } else {
+                    applicationContext.getString(R.string.notif_action_save_action)
+                }
                 builder.addAction(R.drawable.ic_launcher_foreground, actionLabel, pendingIntent)
                 builder.setContentIntent(pendingIntent) // Also make the notification body clickable
             }

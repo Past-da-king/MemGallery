@@ -32,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.components.MemoryCard
 import com.example.memgallery.ui.viewmodels.GalleryViewModel
@@ -163,7 +165,7 @@ fun GalleryScreen(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ) {
-                        Icon(Icons.Default.CreateNewFolder, contentDescription = "Create Collection")
+                        Icon(Icons.Default.CreateNewFolder, contentDescription = stringResource(R.string.gallery_cd_create_collection))
                     }
                 } else {
                     FloatingActionButton(
@@ -171,7 +173,7 @@ fun GalleryScreen(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Memory")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_add_memory))
                     }
                 }
             }
@@ -210,7 +212,7 @@ fun GalleryScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("No collections yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.gallery_no_collections), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -248,7 +250,7 @@ fun GalleryScreen(
                         }
                         item(span = StaggeredGridItemSpan.FullLine) {
                             Text(
-                                text = "All Memories",
+                                text = stringResource(R.string.gallery_section_all_memories),
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
@@ -301,10 +303,10 @@ fun GalleryScreen(
             ) {
                 if (selectionModeActive) {
                     TopAppBar(
-                        title = { Text("${selectedMemoryIds.size} selected") },
+                        title = { Text(stringResource(R.string.gallery_selection_count, selectedMemoryIds.size)) },
                         navigationIcon = {
                             IconButton(onClick = { viewModel.clearSelection() }) {
-                                Icon(Icons.Default.Close, contentDescription = "Cancel Selection")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_cancel_selection))
                             }
                         },
                         actions = {
@@ -316,7 +318,7 @@ fun GalleryScreen(
                                 },
                                 enabled = selectedMemoryIds.isNotEmpty()
                             ) {
-                                Icon(Icons.Default.Folder, contentDescription = "Add to Collection")
+                                Icon(Icons.Default.Folder, contentDescription = stringResource(R.string.gallery_cd_add_to_collection))
                             }
                             IconButton(
                                 onClick = {
@@ -330,7 +332,7 @@ fun GalleryScreen(
                                 },
                                 enabled = selectedMemoryIds.isNotEmpty()
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete_selected))
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -349,7 +351,7 @@ fun GalleryScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "MemGallery",
+                            text = stringResource(R.string.gallery_brand),
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -365,7 +367,7 @@ fun GalleryScreen(
                                 ) {
                                     Icon(
                                         Icons.Default.Search,
-                                        contentDescription = "Search",
+                                        contentDescription = stringResource(R.string.gallery_cd_search),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -382,7 +384,7 @@ fun GalleryScreen(
                             ) {
                                 Icon(
                                     Icons.AutoMirrored.Filled.TrendingUp,
-                                    contentDescription = "Activity Stats",
+                                    contentDescription = stringResource(R.string.gallery_cd_activity_stats),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -399,7 +401,7 @@ fun GalleryScreen(
                             ) {
                                 Icon(
                                     Icons.Default.Settings,
-                                    contentDescription = "Settings",
+                                    contentDescription = stringResource(R.string.gallery_cd_settings),
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -429,8 +431,8 @@ fun GalleryScreen(
                                 value = searchText,
                                 onValueChange = viewModel::onSearchTextChange,
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Search memories...", style = MaterialTheme.typography.bodyLarge) },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                                placeholder = { Text(stringResource(R.string.gallery_search_placeholder), style = MaterialTheme.typography.bodyLarge) },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.gallery_cd_search)) },
                                 shape = RoundedCornerShape(24.dp),
                                 colors = TextFieldDefaults.colors(
                                     focusedIndicatorColor = Color.Transparent,
@@ -452,10 +454,19 @@ fun GalleryScreen(
                             val filters = listOf("All", "Images", "Notes", "Audio", "Bookmarks", "Collections")
                             items(filters) { filter ->
                                     val isSelected = selectedFilter == filter
+                                    val filterLabel = when (filter) {
+                                        "All" -> stringResource(R.string.gallery_filter_all)
+                                        "Images" -> stringResource(R.string.gallery_filter_images)
+                                        "Notes" -> stringResource(R.string.gallery_filter_notes)
+                                        "Audio" -> stringResource(R.string.gallery_filter_audio)
+                                        "Bookmarks" -> stringResource(R.string.gallery_filter_bookmarks)
+                                        "Collections" -> stringResource(R.string.gallery_filter_collections)
+                                        else -> filter
+                                    }
                                     FilterChip(
                                         selected = isSelected,
                                         onClick = { viewModel.onFilterSelected(filter) },
-                                        label = { Text(filter) },
+                                        label = { Text(filterLabel) },
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -487,7 +498,7 @@ fun GalleryScreen(
                      horizontalAlignment = Alignment.CenterHorizontally
                  ) {
                      Text(
-                         "Memory Activity",
+                         stringResource(R.string.gallery_stats_title),
                          style = MaterialTheme.typography.titleLarge,
                          fontWeight = FontWeight.Bold,
                          modifier = Modifier.padding(bottom = 24.dp)
@@ -596,19 +607,19 @@ fun GalleryScreen(
         if (showDeleteMultipleMemoriesDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteMultipleMemoriesDialog = false },
-                title = { Text("Confirm Deletion") },
-                text = { Text("Are you sure you want to permanently delete these ${selectedMemoryIds.size} memories?") },
+                title = { Text(stringResource(R.string.gallery_dialog_confirm_delete_title)) },
+                text = { Text(stringResource(R.string.gallery_dialog_confirm_bulk_delete_body, selectedMemoryIds.size)) },
                 confirmButton = {
                     Button(onClick = {
                         viewModel.deleteSelectedMemories()
                         showDeleteMultipleMemoriesDialog = false
                     }) {
-                        Text("Delete All")
+                        Text(stringResource(R.string.gallery_button_delete_all))
                     }
                 },
                 dismissButton = {
                     Button(onClick = { showDeleteMultipleMemoriesDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 }
             )
@@ -634,7 +645,7 @@ private fun MemoryOptionsSheet(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "Options for ${memory.aiTitle ?: "Memory"}",
+            stringResource(R.string.gallery_options_for, memory.aiTitle ?: stringResource(R.string.gallery_options_memory_fallback)),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -644,7 +655,7 @@ private fun MemoryOptionsSheet(
             onClick = { showDeleteMediaDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Delete Media")
+            Text(stringResource(R.string.gallery_button_delete_media))
         }
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -652,7 +663,7 @@ private fun MemoryOptionsSheet(
             onClick = { showDeleteFullMemoryDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Delete Full Memory")
+            Text(stringResource(R.string.gallery_button_delete_full_memory))
         }
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -663,12 +674,12 @@ private fun MemoryOptionsSheet(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Hide Memory")
+            Text(stringResource(R.string.gallery_button_hide_memory))
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-            Text("Dismiss")
+            Text(stringResource(R.string.common_dismiss))
         }
     }
 
@@ -696,20 +707,20 @@ private fun MemoryOptionsSheet(
     if (showDeleteFullMemoryDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteFullMemoryDialog = false },
-            title = { Text("Confirm Deletion") },
-            text = { Text("Are you sure you want to permanently delete this memory?") },
+            title = { Text(stringResource(R.string.gallery_dialog_confirm_delete_title)) },
+            text = { Text(stringResource(R.string.gallery_dialog_confirm_single_delete_body)) },
             confirmButton = {
                 Button(onClick = {
                     viewModel.deleteFullMemory(memory.id)
                     showDeleteFullMemoryDialog = false
                     onDismiss()
                 }) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 Button(onClick = { showDeleteFullMemoryDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -718,20 +729,20 @@ private fun MemoryOptionsSheet(
     if (showHideMemoryPrompt) {
         AlertDialog(
             onDismissRequest = { showHideMemoryPrompt = false },
-            title = { Text("Hide Memory?") },
-            text = { Text("All media has been deleted. Do you want to hide this memory from the gallery?") },
+            title = { Text(stringResource(R.string.gallery_dialog_hide_title)) },
+            text = { Text(stringResource(R.string.gallery_dialog_hide_body)) },
             confirmButton = {
                 Button(onClick = {
                     viewModel.hideMemory(memory.id)
                     showHideMemoryPrompt = false
                     onDismiss()
                 }) {
-                    Text("Hide")
+                    Text(stringResource(R.string.gallery_button_hide))
                 }
             },
             dismissButton = {
                 Button(onClick = { showHideMemoryPrompt = false }) {
-                    Text("Keep Visible")
+                    Text(stringResource(R.string.gallery_button_keep_visible))
                 }
             }
         )
@@ -749,21 +760,21 @@ private fun DeleteMediaDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete Media") },
+        title = { Text(stringResource(R.string.gallery_dialog_delete_media_title)) },
         text = {
             Column {
-                Text("Which media do you want to delete?")
+                Text(stringResource(R.string.gallery_dialog_delete_media_question))
                 Spacer(modifier = Modifier.height(8.dp))
                 if (memory.imageUri != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = deleteImage, onCheckedChange = { deleteImage = it })
-                        Text("Image")
+                        Text(stringResource(R.string.gallery_checkbox_image))
                     }
                 }
                 if (memory.audioFilePath != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = deleteAudio, onCheckedChange = { deleteAudio = it })
-                        Text("Audio")
+                        Text(stringResource(R.string.gallery_checkbox_audio))
                     }
                 }
             }
@@ -773,12 +784,12 @@ private fun DeleteMediaDialog(
                 onClick = { onConfirm(deleteImage, deleteAudio) },
                 enabled = deleteImage || deleteAudio
             ) {
-                Text("Delete")
+                Text(stringResource(R.string.common_delete))
             }
         },
         dismissButton = {
             Button(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -852,7 +863,7 @@ fun HighlightMemoryCard(
             ) {
                 SuggestionChip(
                     onClick = { },
-                    label = { Text("Featured: $tag") },
+                    label = { Text(stringResource(R.string.gallery_chip_featured, tag)) },
                     colors = SuggestionChipDefaults.suggestionChipColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
                         labelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -861,7 +872,7 @@ fun HighlightMemoryCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = memory.aiTitle ?: "Untitled Memory",
+                    text = memory.aiTitle ?: stringResource(R.string.gallery_untitled_memory),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color.White,
                     maxLines = 2,

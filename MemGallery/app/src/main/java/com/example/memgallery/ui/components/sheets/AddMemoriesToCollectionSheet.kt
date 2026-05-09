@@ -8,8 +8,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.ui.components.MemoryCard
 
@@ -32,20 +34,20 @@ fun AddMemoriesToCollectionSheet(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Add Memories", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.sheet_add_memories_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Button(
                 onClick = { onAdd(selectedIds.toList()) },
                 enabled = selectedIds.isNotEmpty()
             ) {
-                Text("Add (${selectedIds.size})")
+                Text(stringResource(R.string.sheet_add_memories_button, selectedIds.size))
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (memories.isEmpty()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("No other memories available to add.")
+                Text(stringResource(R.string.sheet_add_memories_empty))
             }
         } else {
             LazyVerticalStaggeredGrid(

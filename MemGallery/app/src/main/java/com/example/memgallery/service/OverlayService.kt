@@ -95,14 +95,14 @@ class OverlayService : Service() {
     private fun startForegroundService() {
         val channelId = "overlay_service"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "App Overlay", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(channelId, getString(R.string.notif_channel_overlay_name), NotificationManager.IMPORTANCE_LOW)
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("MemGallery Overlay")
-            .setContentText("Tap an edge gesture to capture.")
+            .setContentTitle(getString(R.string.notif_overlay_title))
+            .setContentText(getString(R.string.notif_overlay_text))
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
@@ -132,7 +132,7 @@ class OverlayService : Service() {
             } else {
                 // Background - show toast
                 launch(kotlinx.coroutines.Dispatchers.Main) {
-                    android.widget.Toast.makeText(applicationContext, "Saved to MemGallery", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(applicationContext, applicationContext.getString(R.string.overlay_saved), android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -188,8 +188,8 @@ class OverlayService : Service() {
                     android.util.Log.e("OverlayService", "Failed to save URL", error)
                     launch(kotlinx.coroutines.Dispatchers.Main) {
                         android.widget.Toast.makeText(
-                            applicationContext, 
-                            "Failed to save bookmark: ${error.message}", 
+                            applicationContext,
+                            applicationContext.getString(R.string.overlay_bookmark_failed, error.message ?: ""),
                             android.widget.Toast.LENGTH_LONG
                         ).show()
                     }
@@ -205,8 +205,8 @@ class OverlayService : Service() {
                     android.util.Log.e("OverlayService", "Failed to save URL", error)
                     launch(kotlinx.coroutines.Dispatchers.Main) {
                         android.widget.Toast.makeText(
-                            applicationContext, 
-                            "Failed to save bookmark: ${error.message}", 
+                            applicationContext,
+                            applicationContext.getString(R.string.overlay_bookmark_failed, error.message ?: ""),
                             android.widget.Toast.LENGTH_LONG
                         ).show()
                     }
@@ -404,10 +404,10 @@ class OverlayAudioRecorder(private val context: android.content.Context, private
                 startTimerAndPolling()
             } catch (e: java.io.IOException) {
                 e.printStackTrace()
-                error = "Failed to start recording"
+                error = context.getString(R.string.overlay_recording_failed_to_start)
             } catch (e: IllegalStateException) {
                 e.printStackTrace()
-                error = "Failed to start recording"
+                error = context.getString(R.string.overlay_recording_failed_to_start)
             }
         }
     }
@@ -423,17 +423,17 @@ class OverlayAudioRecorder(private val context: android.content.Context, private
         } catch (e: RuntimeException) {
             e.printStackTrace()
             outputFile?.delete()
-            error = "Recording failed. Too short?"
+            error = context.getString(R.string.overlay_recording_too_short)
         } finally {
             mediaRecorder = null
             recordingJob?.cancel()
             isRecording = false
-            
+
             if (success && outputFile?.exists() == true) {
                 recordedFilePath = outputFile?.absolutePath
             } else {
                 recordedFilePath = null
-                if (!success && error == null) error = "Recording failed."
+                if (!success && error == null) error = context.getString(R.string.overlay_recording_failed)
             }
         }
     }

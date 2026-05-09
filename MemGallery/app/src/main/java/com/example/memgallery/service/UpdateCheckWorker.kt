@@ -69,7 +69,7 @@ class UpdateCheckWorker @AssistedInject constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "App Updates",
+                applicationContext.getString(R.string.notif_channel_updates_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             )
             notificationManager.createNotificationChannel(channel)
@@ -88,8 +88,8 @@ class UpdateCheckWorker @AssistedInject constructor(
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             // Use standard app icon if specific update icon is missing
             .setSmallIcon(applicationContext.applicationInfo.icon)
-            .setContentTitle("New Update Available")
-            .setContentText("Version $version is now available. Tap to open MemGallery.")
+            .setContentTitle(applicationContext.getString(R.string.notif_update_title))
+            .setContentText(applicationContext.getString(R.string.notif_update_text, version))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

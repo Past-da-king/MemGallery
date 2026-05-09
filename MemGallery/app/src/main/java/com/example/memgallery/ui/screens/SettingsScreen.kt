@@ -26,12 +26,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.ui.viewmodels.ApiKeyUiState
 import com.example.memgallery.ui.viewmodels.BackupUiState
 import androidx.activity.compose.BackHandler
@@ -135,16 +137,16 @@ fun SettingsScreen(
         Scaffold(
             topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "Settings",
+                        stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -164,19 +166,19 @@ fun SettingsScreen(
             // AI Provider & API Configuration Card
             SettingsCard(
                 icon = Icons.Default.Key,
-                title = "AI Configuration",
-                description = "Choose your AI provider and configure API keys"
+                title = stringResource(R.string.settings_card_ai_title),
+                description = stringResource(R.string.settings_card_ai_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Provider Selector
                     val aiProvider by viewModel.aiProvider.collectAsState()
-                    
+
                     Text(
-                        "AI Provider",
+                        stringResource(R.string.settings_ai_provider_label),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
-                    
+
                     SingleChoiceSegmentedButtonRow(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -185,28 +187,28 @@ fun SettingsScreen(
                             onClick = { viewModel.setAiProvider("GEMINI") },
                             selected = aiProvider == "GEMINI"
                         ) {
-                            Text("Gemini")
+                            Text(stringResource(R.string.settings_ai_provider_gemini))
                         }
                         SegmentedButton(
                             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
                             onClick = { viewModel.setAiProvider("GROQ") },
                             selected = aiProvider == "GROQ"
                         ) {
-                            Text("Groq")
+                            Text(stringResource(R.string.settings_ai_provider_groq))
                         }
                         SegmentedButton(
                             shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
                             onClick = { viewModel.setAiProvider("LOCAL") },
                             selected = aiProvider == "LOCAL"
                         ) {
-                            Text("Local")
+                            Text(stringResource(R.string.settings_ai_provider_local))
                         }
                         SegmentedButton(
                             shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
                             onClick = { viewModel.setAiProvider("OPENAI_COMPATIBLE") },
                             selected = aiProvider == "OPENAI_COMPATIBLE"
                         ) {
-                            Text("Custom")
+                            Text(stringResource(R.string.settings_ai_provider_custom))
                         }
                     }
                     
@@ -220,7 +222,7 @@ fun SettingsScreen(
                         var showGeminiModelSheet by remember { mutableStateOf(false) }
 
                         Text(
-                            "Gemini API Key",
+                            stringResource(R.string.settings_gemini_api_key_label),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary
@@ -263,7 +265,7 @@ fun SettingsScreen(
                         var showModelSheet by remember { mutableStateOf(false) }
                         
                         Text(
-                            "Groq API Key",
+                            stringResource(R.string.settings_groq_api_key_label),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.tertiary
@@ -305,14 +307,14 @@ fun SettingsScreen(
                         }
 
                         Text(
-                            "Local Model (Gemma 3)",
+                            stringResource(R.string.settings_local_model_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.secondary
                         )
-                        
+
                         Text(
-                            "Run AI completely on-device. Privacy focused, no internet required.",
+                            stringResource(R.string.settings_local_model_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -327,7 +329,7 @@ fun SettingsScreen(
                             ) {
                                 Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Import Model (.bin, .literlm, .task)")
+                                Text(stringResource(R.string.settings_local_model_import))
                             }
                             
                             // Download Link Helper
@@ -338,7 +340,7 @@ fun SettingsScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Download Compatible Models (MediaPipe)")
+                                Text(stringResource(R.string.settings_local_model_download_link))
                             }
                         } else {
                             Surface(
@@ -351,7 +353,7 @@ fun SettingsScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Model Loaded", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                                        Text(stringResource(R.string.settings_local_model_loaded), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -367,7 +369,7 @@ fun SettingsScreen(
                                     ) {
                                         Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Delete & Clear")
+                                        Text(stringResource(R.string.settings_local_model_delete))
                                     }
                                 }
                             }
@@ -376,10 +378,10 @@ fun SettingsScreen(
                         // Import Status
                         if (localModelImportState is ApiKeyUiState.Loading) {
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
-                            Text("Importing model... This may take a moment.", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.settings_local_model_importing), style = MaterialTheme.typography.bodySmall)
                         } else if (localModelImportState is ApiKeyUiState.Error) {
                              Text(
-                                "Error: ${(localModelImportState as ApiKeyUiState.Error).message}",
+                                stringResource(R.string.settings_error_with_message, (localModelImportState as ApiKeyUiState.Error).message),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -391,14 +393,14 @@ fun SettingsScreen(
                         val customUiState by viewModel.customUiState.collectAsState()
 
                         Text(
-                            "OpenAI Compatible Configuration",
+                            stringResource(R.string.settings_custom_provider_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.secondary
                         )
-                        
+
                         Text(
-                             "Connect to LocalAI, Ollama, vLLM, or other OpenAI-compatible APIs.",
+                             stringResource(R.string.settings_custom_provider_description),
                              style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -423,8 +425,8 @@ fun SettingsScreen(
             // Appearance Card
             SettingsCard(
                 icon = Icons.Default.Palette,
-                title = "Appearance",
-                description = "Customize look and feel"
+                title = stringResource(R.string.settings_card_appearance_title),
+                description = stringResource(R.string.settings_card_appearance_description)
             ) {
                 AppearanceSection(
                     appThemeMode = viewModel.appThemeMode.collectAsState().value,
@@ -441,15 +443,15 @@ fun SettingsScreen(
             // Features Card
             SettingsCard(
                 icon = Icons.Default.PhotoLibrary,
-                title = "Features",
-                description = "Manage app features and capabilities"
+                title = stringResource(R.string.settings_card_features_title),
+                description = stringResource(R.string.settings_card_features_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Screenshot Auto-indexing
                     SettingToggleItem(
                         icon = Icons.Default.Screenshot,
-                        title = "Auto-index Screenshots",
-                        description = "Automatically process new screenshots with AI",
+                        title = stringResource(R.string.settings_toggle_auto_index_title),
+                        description = stringResource(R.string.settings_toggle_auto_index_description),
                         checked = autoIndexScreenshots,
                         onCheckedChange = { isChecked ->
                             if (isChecked) {
@@ -459,35 +461,35 @@ fun SettingsScreen(
                             }
                         }
                     )
-                    
+
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     SettingToggleItem(
                         icon = Icons.Default.AutoAwesome,
-                        title = "Show Highlighted Memory",
-                        description = "Showcase a random memory at the top",
+                        title = stringResource(R.string.settings_toggle_highlight_title),
+                        description = stringResource(R.string.settings_toggle_highlight_description),
                         checked = viewModel.showHighlights.collectAsState().value,
                         onCheckedChange = { viewModel.setShowHighlights(it) }
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    
+
                     // Task Screen
                     SettingToggleItem(
                         icon = Icons.Default.Task,
-                        title = "Task Manager",
-                        description = "Show task manager screen in the app",
+                        title = stringResource(R.string.settings_toggle_task_manager_title),
+                        description = stringResource(R.string.settings_toggle_task_manager_description),
                         checked = taskScreenEnabled,
                         onCheckedChange = { viewModel.setTaskScreenEnabled(it) }
                     )
-                    
+
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    
+
                     // Share Menu
                     SettingToggleItem(
                         icon = Icons.Default.Share,
-                        title = "Share Menu",
-                        description = "Show MemGallery in system share menu",
+                        title = stringResource(R.string.settings_toggle_share_menu_title),
+                        description = stringResource(R.string.settings_toggle_share_menu_description),
                         checked = showInShareSheet,
                         onCheckedChange = { viewModel.setShowInShareSheet(it) }
                     )
@@ -497,8 +499,8 @@ fun SettingsScreen(
             // Data Management Card
             SettingsCard(
                 icon = Icons.Default.Save,
-                title = "Data Management",
-                description = "Backup and restore your memories"
+                title = stringResource(R.string.settings_card_data_title),
+                description = stringResource(R.string.settings_card_data_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
@@ -511,7 +513,7 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Export Backup")
+                        Text(stringResource(R.string.settings_button_export_backup))
                     }
 
                     OutlinedButton(
@@ -521,7 +523,7 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Import Backup")
+                        Text(stringResource(R.string.settings_button_import_backup))
                     }
                     
                     if (backupUiState is BackupUiState.Loading) {
@@ -533,15 +535,15 @@ fun SettingsScreen(
             // Notifications Card
             SettingsCard(
                 icon = Icons.Default.Notifications,
-                title = "Notifications",
-                description = "Manage notification preferences"
+                title = stringResource(R.string.settings_card_notifications_title),
+                description = stringResource(R.string.settings_card_notifications_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Master Toggle
                     SettingToggleItem(
                         icon = Icons.Default.NotificationsActive,
-                        title = "Enable Notifications",
-                        description = "Get notified about actions from memories",
+                        title = stringResource(R.string.settings_toggle_notifications_title),
+                        description = stringResource(R.string.settings_toggle_notifications_description),
                         checked = notificationsEnabled,
                         onCheckedChange = { viewModel.toggleNotifications(it) }
                     )
@@ -549,18 +551,18 @@ fun SettingsScreen(
                     // Filter Options
                     if (notificationsEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        
+
                         Text(
-                            "Notify me for:",
+                            stringResource(R.string.settings_notify_for_label),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(start = 40.dp, top = 4.dp, bottom = 8.dp)
                         )
 
                         val filters = listOf(
-                            "ALL" to "All Actions",
-                            "EVENTS" to "Events Only",
-                            "TODOS" to "To-Dos Only"
+                            "ALL" to stringResource(R.string.settings_notify_filter_all),
+                            "EVENTS" to stringResource(R.string.settings_notify_filter_events),
+                            "TODOS" to stringResource(R.string.settings_notify_filter_todos)
                         )
 
                         filters.forEach { (value, label) ->
@@ -590,8 +592,8 @@ fun SettingsScreen(
             // Support & Feedback Card
             SettingsCard(
                 icon = Icons.Default.Info,
-                title = "Support",
-                description = "Get help and provide feedback"
+                title = stringResource(R.string.settings_card_support_title),
+                description = stringResource(R.string.settings_card_support_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(
@@ -621,12 +623,12 @@ fun SettingsScreen(
                         
                         Column {
                             Text(
-                                "Send Feedback",
+                                stringResource(R.string.settings_section_send_feedback_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Report bugs or suggest new features",
+                                stringResource(R.string.settings_section_send_feedback_description),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -676,13 +678,13 @@ fun SettingsScreen(
                     
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Advanced",
+                            text = stringResource(R.string.settings_card_advanced_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "AI Persona & Edge Gestures",
+                            text = stringResource(R.string.settings_card_advanced_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -690,7 +692,7 @@ fun SettingsScreen(
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Open Advanced Settings",
+                        contentDescription = stringResource(R.string.settings_cd_open_advanced),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -737,13 +739,13 @@ fun SettingsScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "About & Updates",
+                            text = stringResource(R.string.settings_card_about_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Version ${com.example.memgallery.BuildConfig.VERSION_NAME}",
+                            text = stringResource(R.string.settings_version_label, com.example.memgallery.BuildConfig.VERSION_NAME),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -760,7 +762,7 @@ fun SettingsScreen(
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Open About & Updates",
+                        contentDescription = stringResource(R.string.settings_cd_open_about),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -911,8 +913,8 @@ fun ApiKeySection(
         OutlinedTextField(
             value = apiKey,
             onValueChange = onApiKeyChange,
-            label = { Text("Gemini API Key") },
-            placeholder = { Text("AIza...") },
+            label = { Text(stringResource(R.string.settings_gemini_api_key_label)) },
+            placeholder = { Text(stringResource(R.string.settings_gemini_placeholder)) },
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             leadingIcon = {
@@ -927,7 +929,7 @@ fun ApiKeySection(
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = image,
-                        contentDescription = "Toggle visibility",
+                        contentDescription = stringResource(R.string.settings_cd_toggle_visibility),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -956,7 +958,7 @@ fun ApiKeySection(
                     ) {
                         Icon(
                             Icons.Default.CheckCircle,
-                            contentDescription = "Success",
+                            contentDescription = stringResource(R.string.common_success),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -983,7 +985,7 @@ fun ApiKeySection(
                     ) {
                         Icon(
                             Icons.Default.Error,
-                            contentDescription = "Error",
+                            contentDescription = stringResource(R.string.common_error),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
                         )
@@ -1009,7 +1011,7 @@ fun ApiKeySection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Validating...",
+                        stringResource(R.string.common_validating),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1036,7 +1038,7 @@ fun ApiKeySection(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Validate")
+                Text(stringResource(R.string.common_validate))
             }
 
             OutlinedButton(
@@ -1051,7 +1053,7 @@ fun ApiKeySection(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Clear")
+                Text(stringResource(R.string.common_clear))
             }
         }
     }
@@ -1071,8 +1073,8 @@ fun GroqApiKeySection(
         OutlinedTextField(
             value = apiKey,
             onValueChange = onApiKeyChange,
-            label = { Text("Groq API Key") },
-            placeholder = { Text("gsk_...") },
+            label = { Text(stringResource(R.string.settings_groq_api_key_label)) },
+            placeholder = { Text(stringResource(R.string.settings_groq_placeholder)) },
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             leadingIcon = {
@@ -1087,7 +1089,7 @@ fun GroqApiKeySection(
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = image,
-                        contentDescription = "Toggle visibility",
+                        contentDescription = stringResource(R.string.settings_cd_toggle_visibility),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1116,7 +1118,7 @@ fun GroqApiKeySection(
                     ) {
                         Icon(
                             Icons.Default.CheckCircle,
-                            contentDescription = "Success",
+                            contentDescription = stringResource(R.string.common_success),
                             tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -1143,7 +1145,7 @@ fun GroqApiKeySection(
                     ) {
                         Icon(
                             Icons.Default.Error,
-                            contentDescription = "Error",
+                            contentDescription = stringResource(R.string.common_error),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
                         )
@@ -1170,7 +1172,7 @@ fun GroqApiKeySection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Saving...",
+                        stringResource(R.string.common_saving),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1200,7 +1202,7 @@ fun GroqApiKeySection(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Save")
+                Text(stringResource(R.string.common_save))
             }
 
             OutlinedButton(
@@ -1215,7 +1217,7 @@ fun GroqApiKeySection(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Clear")
+                Text(stringResource(R.string.common_clear))
             }
         }
     }
@@ -1236,15 +1238,19 @@ fun AppearanceSection(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Theme Mode
         Text(
-            "Theme Mode",
+            stringResource(R.string.settings_section_theme_mode),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium
         )
-        
+
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier.fillMaxWidth()
         ) {
-            val options = listOf("Light", "System", "Dark")
+            val options = listOf(
+                stringResource(R.string.settings_theme_light),
+                stringResource(R.string.settings_theme_system),
+                stringResource(R.string.settings_theme_dark)
+            )
             val values = listOf("LIGHT", "SYSTEM", "DARK")
             
             values.forEachIndexed { index, value ->
@@ -1264,8 +1270,8 @@ fun AppearanceSection(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             SettingToggleItem(
                 icon = Icons.Default.ColorLens,
-                title = "Dynamic Color",
-                description = "Use system wallpaper colors",
+                title = stringResource(R.string.settings_toggle_dynamic_color_title),
+                description = stringResource(R.string.settings_toggle_dynamic_color_description),
                 checked = dynamicThemingEnabled,
                 onCheckedChange = onDynamicThemingChange
             )
@@ -1278,7 +1284,7 @@ fun AppearanceSection(
             }
             
             Text(
-                "Accent Color",
+                stringResource(R.string.settings_section_accent_color),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium
             )
@@ -1350,8 +1356,8 @@ fun AppearanceSection(
         // AMOLED Mode
         SettingToggleItem(
             icon = Icons.Default.DarkMode,
-            title = "AMOLED Mode",
-            description = "Pure black background in dark mode",
+            title = stringResource(R.string.settings_toggle_amoled_title),
+            description = stringResource(R.string.settings_toggle_amoled_description),
             checked = amoledModeEnabled,
             onCheckedChange = onAmoledModeChange
         )
@@ -1379,7 +1385,7 @@ fun GridModelSelection(
         ) {
            Column(modifier = Modifier.weight(1f)) {
                Text(
-                   text = "Model",
+                   text = stringResource(R.string.settings_field_model),
                    style = MaterialTheme.typography.labelSmall,
                    color = MaterialTheme.colorScheme.onSurfaceVariant
                )
@@ -1392,7 +1398,7 @@ fun GridModelSelection(
            }
            Icon(
                imageVector = Icons.Default.ArrowDropDown,
-               contentDescription = "Select Model"
+               contentDescription = stringResource(R.string.settings_cd_select_model)
            )
         }
     }
@@ -1420,7 +1426,7 @@ fun GroqModelSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                "Select Groq Model",
+                stringResource(R.string.settings_sheet_select_groq_model),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -1459,7 +1465,7 @@ fun GroqModelSheet(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = "Selected",
+                                        contentDescription = stringResource(R.string.common_selected),
                                         tint = MaterialTheme.colorScheme.tertiary
                                     )
                                 }
@@ -1473,20 +1479,20 @@ fun GroqModelSheet(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 LimitBadge(
-                                    label = "RPM", 
-                                    value = model.rpm.toString(), 
+                                    label = stringResource(R.string.settings_badge_rpm),
+                                    value = model.rpm.toString(),
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     textColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 LimitBadge(
-                                    label = "TPM", 
-                                    value = if (model.tpm >= 1000) "${model.tpm/1000}K" else model.tpm.toString(), 
+                                    label = stringResource(R.string.settings_badge_tpm),
+                                    value = if (model.tpm >= 1000) "${model.tpm/1000}K" else model.tpm.toString(),
                                     color = MaterialTheme.colorScheme.secondaryContainer,
                                     textColor = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 LimitBadge(
-                                    label = "RPD", 
-                                    value = if (model.rpd >= 1000) "${model.rpd/1000}K" else model.rpd.toString(), 
+                                    label = stringResource(R.string.settings_badge_rpd),
+                                    value = if (model.rpd >= 1000) "${model.rpd/1000}K" else model.rpd.toString(),
                                     color = MaterialTheme.colorScheme.surfaceVariant,
                                     textColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1515,10 +1521,10 @@ fun AboutScreenOverlay(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("About & Updates") },
+                title = { Text(stringResource(R.string.settings_about_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -1547,7 +1553,7 @@ fun AboutScreenOverlay(
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = com.example.memgallery.R.mipmap.ic_launcher_foreground),
-                        contentDescription = "MemGallery Icon",
+                        contentDescription = stringResource(R.string.settings_cd_app_icon),
                         modifier = Modifier.size(120.dp)
                     )
                 }
@@ -1556,13 +1562,13 @@ fun AboutScreenOverlay(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "MemGallery",
+                text = stringResource(R.string.settings_about_brand),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black
             )
 
             Text(
-                text = "Version ${com.example.memgallery.BuildConfig.VERSION_NAME}",
+                text = stringResource(R.string.settings_version_label, com.example.memgallery.BuildConfig.VERSION_NAME),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1595,13 +1601,13 @@ fun AboutScreenOverlay(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "Update Available",
+                                    stringResource(R.string.settings_about_update_available_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    "New version $latestAvailableVersion is ready",
+                                    stringResource(R.string.settings_about_update_available_body, latestAvailableVersion ?: ""),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -1612,7 +1618,7 @@ fun AboutScreenOverlay(
                     when (updateCheckState) {
                         is ApiKeyUiState.Loading -> {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                            Text("Checking...", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.settings_about_checking), style = MaterialTheme.typography.bodySmall)
                         }
                         is ApiKeyUiState.Success -> {
                             Text(
@@ -1629,7 +1635,7 @@ fun AboutScreenOverlay(
                             )
                         }
                         else -> {
-                           Text("Make sure you are on the latest version", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                           Text(stringResource(R.string.settings_about_up_to_date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     
@@ -1640,7 +1646,7 @@ fun AboutScreenOverlay(
                     ) {
                         Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Check for Updates")
+                        Text(stringResource(R.string.settings_about_check_updates))
                     }
 
                     if (latestChangeLog != null) {
@@ -1651,7 +1657,7 @@ fun AboutScreenOverlay(
                         ) {
                             Icon(Icons.Default.List, null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("View Changelog")
+                            Text(stringResource(R.string.settings_about_view_changelog))
                         }
                     }
                 }
@@ -1660,7 +1666,7 @@ fun AboutScreenOverlay(
             Spacer(modifier = Modifier.weight(1f))
             
             Text(
-                "Designed with ❤️ under full privacy",
+                stringResource(R.string.settings_about_footer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.padding(bottom = 32.dp)
@@ -1726,8 +1732,8 @@ fun CustomProviderSection(
         OutlinedTextField(
             value = baseUrl,
             onValueChange = onBaseUrlChange,
-            label = { Text("Base URL") },
-            placeholder = { Text("https://api.openai.com/v1/") },
+            label = { Text(stringResource(R.string.settings_custom_base_url_label)) },
+            placeholder = { Text(stringResource(R.string.settings_custom_base_url_placeholder)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium
@@ -1736,8 +1742,8 @@ fun CustomProviderSection(
         OutlinedTextField(
             value = modelName,
             onValueChange = onModelNameChange,
-            label = { Text("Model Name") },
-            placeholder = { Text("gpt-4o") },
+            label = { Text(stringResource(R.string.settings_custom_model_name_label)) },
+            placeholder = { Text(stringResource(R.string.settings_custom_model_name_placeholder)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium
@@ -1746,14 +1752,14 @@ fun CustomProviderSection(
         OutlinedTextField(
             value = apiKey,
             onValueChange = onApiKeyChange,
-            label = { Text("API Key (Optional for local)") },
+            label = { Text(stringResource(R.string.settings_custom_api_key_label)) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             trailingIcon = {
                 if (apiKey.isNotEmpty()) {
                     IconButton(onClick = onClearKey) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.common_clear))
                     }
                 }
             }
@@ -1767,9 +1773,9 @@ fun CustomProviderSection(
             if (uiState is ApiKeyUiState.Loading) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Validating...")
+                Text(stringResource(R.string.common_validating))
             } else {
-                Text("Validate & Save Settings")
+                Text(stringResource(R.string.settings_custom_button_validate_save))
             }
         }
 
@@ -1798,11 +1804,11 @@ private val FALLBACK_GEMINI_MODELS = listOf(
     "gemini-2.0-flash-lite"
 )
 
-private fun describeGeminiModel(id: String): String = when {
-    id.contains("flash-lite") -> "Fastest, lowest cost"
-    id.contains("pro") -> "Highest reasoning capability"
-    id.contains("flash") -> "Balanced speed and quality"
-    else -> ""
+private fun describeGeminiModelResId(id: String): Int = when {
+    id.contains("flash-lite") -> R.string.settings_model_helper_fastest
+    id.contains("pro") -> R.string.settings_model_helper_highest
+    id.contains("flash") -> R.string.settings_model_helper_balanced
+    else -> 0
 }
 
 @Composable
@@ -1823,7 +1829,7 @@ fun GeminiModelSelection(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Model",
+                    text = stringResource(R.string.settings_field_model),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1836,7 +1842,7 @@ fun GeminiModelSelection(
             }
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Select Model"
+                contentDescription = stringResource(R.string.settings_cd_select_model)
             )
         }
     }
@@ -1877,7 +1883,7 @@ fun GeminiModelSheet(
                     .padding(bottom = 16.dp)
             ) {
                 Text(
-                    "Select Gemini Model",
+                    stringResource(R.string.settings_sheet_select_gemini_model),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
@@ -1891,7 +1897,7 @@ fun GeminiModelSheet(
                     IconButton(onClick = onRefresh) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh model list"
+                            contentDescription = stringResource(R.string.settings_cd_refresh_models)
                         )
                     }
                 }
@@ -1903,7 +1909,8 @@ fun GeminiModelSheet(
             ) {
                 effectiveModels.forEach { modelId ->
                     val isSelected = modelId == currentModelId
-                    val description = describeGeminiModel(modelId)
+                    val descriptionResId = describeGeminiModelResId(modelId)
+                    val description = if (descriptionResId != 0) stringResource(descriptionResId) else ""
                     Card(
                         onClick = { onModelSelected(modelId) },
                         colors = CardDefaults.cardColors(
@@ -1933,7 +1940,7 @@ fun GeminiModelSheet(
                             if (isSelected) {
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Selected",
+                                    contentDescription = stringResource(R.string.common_selected),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }

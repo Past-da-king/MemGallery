@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memgallery.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -73,15 +74,15 @@ class AudioCaptureViewModel @Inject constructor(
                 startTimerAndPolling()
             } catch (e: IOException) {
                 Log.e("AudioCaptureViewModel", "prepare() or start() failed", e)
-                _error.value = "Failed to start recording: ${e.message}"
+                _error.value = context.getString(R.string.vm_audio_failed_to_start_with_msg, e.message ?: "")
                 _isRecording.value = false
             } catch (e: IllegalStateException) {
                 Log.e("AudioCaptureViewModel", "start() failed in illegal state", e)
-                _error.value = "Recording could not be started"
+                _error.value = context.getString(R.string.vm_audio_could_not_start)
                 _isRecording.value = false
             } catch (e: Exception) {
                 Log.e("AudioCaptureViewModel", "Unexpected error starting recording", e)
-                _error.value = "An unexpected error occurred"
+                _error.value = context.getString(R.string.vm_audio_unexpected)
                 _isRecording.value = false
             }
         }
@@ -100,7 +101,7 @@ class AudioCaptureViewModel @Inject constructor(
             // RuntimeException is thrown if stop() is called immediately after start()
             Log.e("AudioCaptureViewModel", "stop() failed, likely recording was too short", e)
             outputFile?.delete()
-            _error.value = "Recording failed. Please record for at least 1 second."
+            _error.value = context.getString(R.string.vm_audio_too_short)
         } finally {
             mediaRecorder = null
             recordingJob?.cancel()
@@ -113,7 +114,7 @@ class AudioCaptureViewModel @Inject constructor(
             } else {
                 _recordedFilePath.value = null
                 if (!success && _error.value == null) {
-                    _error.value = "Recording failed. File was not saved."
+                    _error.value = context.getString(R.string.vm_audio_not_saved)
                 }
                 Log.e("AudioCaptureViewModel", "Recording file does not exist or recording failed")
             }

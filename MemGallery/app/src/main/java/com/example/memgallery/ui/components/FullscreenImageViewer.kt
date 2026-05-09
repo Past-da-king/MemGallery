@@ -27,12 +27,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
+import com.example.memgallery.R
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -107,7 +109,7 @@ fun FullscreenImageViewer(
                     ) {
                         Image(
                             painter = rememberAsyncImagePainter(model = imageUris[page]),
-                            contentDescription = "$memoryTitle ${page + 1}",
+                            contentDescription = stringResource(R.string.fullscreen_cd_image_index, memoryTitle, page + 1),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer(
@@ -157,8 +159,8 @@ fun FullscreenImageViewer(
                                     .background(Color.White.copy(alpha = 0.15f), CircleShape)
                             ) {
                                 Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack, 
-                                    contentDescription = "Back", 
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.common_back),
                                     tint = Color.White,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -173,8 +175,8 @@ fun FullscreenImageViewer(
                                         .background(Color.White.copy(alpha = 0.15f), CircleShape)
                                 ) {
                                     Icon(
-                                        Icons.Default.Share, 
-                                        contentDescription = "Share", 
+                                        Icons.Default.Share,
+                                        contentDescription = stringResource(R.string.common_share),
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -189,8 +191,8 @@ fun FullscreenImageViewer(
                                         .background(Color.White.copy(alpha = 0.15f), CircleShape)
                                 ) {
                                     Icon(
-                                        Icons.Default.Edit, 
-                                        contentDescription = "Edit", 
+                                        Icons.Default.Edit,
+                                        contentDescription = stringResource(R.string.common_edit),
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -240,7 +242,7 @@ fun FullscreenImageViewer(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = "Image ${pagerState.currentPage + 1} of ${imageUris.size}",
+                                    text = stringResource(R.string.fullscreen_image_caption, pagerState.currentPage + 1, imageUris.size),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = Color.White.copy(alpha = 0.7f)
                                 )

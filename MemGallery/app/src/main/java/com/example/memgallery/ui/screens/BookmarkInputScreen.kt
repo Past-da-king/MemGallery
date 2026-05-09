@@ -16,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +64,7 @@ fun BookmarkInputScreen(
                     title = { },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -86,7 +88,7 @@ fun BookmarkInputScreen(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         icon = { Icon(Icons.Default.Check, contentDescription = null) },
-                        text = { Text("Save Bookmark", fontWeight = FontWeight.Bold) }
+                        text = { Text(stringResource(R.string.bookmark_save), fontWeight = FontWeight.Bold) }
                     )
                 }
             }
@@ -100,14 +102,14 @@ fun BookmarkInputScreen(
             ) {
                 // Header
                 Text(
-                    text = "Save a Link",
+                    text = stringResource(R.string.bookmark_header_title),
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Paste a web link to create a new memory. The content will be analyzed by AI.",
+                    text = stringResource(R.string.bookmark_header_body),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -118,8 +120,8 @@ fun BookmarkInputScreen(
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text("URL") },
-                    placeholder = { Text("https://example.com") },
+                    label = { Text(stringResource(R.string.bookmark_url_label)) },
+                    placeholder = { Text(stringResource(R.string.common_url_placeholder)) },
                     leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -136,7 +138,7 @@ fun BookmarkInputScreen(
 
                 // Note Input
                 Text(
-                    "Add a note (optional)",
+                    stringResource(R.string.bookmark_note_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -151,7 +153,7 @@ fun BookmarkInputScreen(
                         .heightIn(min = 150.dp),
                     placeholder = {
                         Text(
-                            "What's on your mind?",
+                            stringResource(R.string.common_whats_on_your_mind),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )

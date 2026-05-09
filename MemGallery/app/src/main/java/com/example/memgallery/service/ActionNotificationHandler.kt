@@ -23,7 +23,6 @@ class ActionNotificationHandler @Inject constructor(
 ) {
     companion object {
         private const val CHANNEL_ID = "action_notifications"
-        private const val CHANNEL_NAME = "Action Alerts"
     }
 
     init {
@@ -34,10 +33,10 @@ class ActionNotificationHandler @Inject constructor(
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                context.getString(R.string.notif_channel_action_alerts_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifications for events and to-dos from your memories"
+                description = context.getString(R.string.notif_channel_action_alerts_desc)
             }
 
             val notificationManager = context.getSystemService(NotificationManager::class.java)
@@ -99,10 +98,10 @@ class ActionNotificationHandler @Inject constructor(
 
     private fun getActionTitle(type: String): String {
         return when (type) {
-            "EVENT" -> "📅 Event Reminder"
-            "TODO" -> "✅ To-Do Alert"
-            "REMINDER" -> "🔔 Reminder"
-            else -> "Action Alert"
+            "EVENT" -> context.getString(R.string.notif_title_event)
+            "TODO" -> context.getString(R.string.notif_title_todo)
+            "REMINDER" -> context.getString(R.string.notif_title_reminder)
+            else -> context.getString(R.string.notif_title_action)
         }
     }
 }

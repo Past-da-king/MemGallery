@@ -16,10 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.components.MemoryCard
 import com.example.memgallery.ui.components.sheets.AddMemoriesToCollectionSheet
@@ -50,7 +52,7 @@ fun CollectionDetailScreen(
             TopAppBar(
                 title = {
                     if (selectionModeActive) {
-                        Text("${selectedMemoryIds.size} selected")
+                        Text(stringResource(R.string.gallery_selection_count, selectedMemoryIds.size))
                     } else {
                         Text(collectionName, fontWeight = FontWeight.Bold)
                     }
@@ -67,7 +69,7 @@ fun CollectionDetailScreen(
                     ) {
                         Icon(
                             imageVector = if (selectionModeActive) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 },
@@ -77,7 +79,7 @@ fun CollectionDetailScreen(
                             onClick = { viewModel.removeSelectedMemoriesFromCollection(collectionId) },
                             enabled = selectedMemoryIds.isNotEmpty()
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Remove from Collection")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.collection_cd_remove_from_collection))
                         }
                     } else {
                         IconButton(
@@ -86,7 +88,7 @@ fun CollectionDetailScreen(
                                 showAddSheet = true
                             }
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Memories")
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.collection_cd_add_memories))
                         }
                     }
                 }
@@ -96,7 +98,7 @@ fun CollectionDetailScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (memories.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No memories in this collection yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.collection_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyVerticalStaggeredGrid(

@@ -40,11 +40,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.TaskEntity
 import com.example.memgallery.ui.components.sheets.AddTaskSheet
 import com.example.memgallery.ui.components.FullMonthCalendar
@@ -189,7 +191,7 @@ fun TaskScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Show all upcoming",
+                                text = stringResource(R.string.tasks_chip_show_upcoming),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Medium
                             )
@@ -208,7 +210,7 @@ fun TaskScreen(
                 if (events.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Events", 
+                            title = stringResource(R.string.tasks_section_events),
                             icon = Icons.Default.Event,
                             isExpanded = isEventsExpanded,
                             canExpand = events.size > 3,
@@ -228,7 +230,7 @@ fun TaskScreen(
                 if (todos.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "To-Do", 
+                            title = stringResource(R.string.tasks_section_todos),
                             icon = Icons.Default.Check,
                             isExpanded = isTodosExpanded,
                             canExpand = todos.size > 3,
@@ -263,7 +265,7 @@ fun TaskScreen(
                 .padding(24.dp)
                 .navigationBarsPadding()
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Task")
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_cd_add_task))
         }
 
         // Detail Bottom Sheet
@@ -366,13 +368,13 @@ fun TaskHeader(
     onToggleCalendar: () -> Unit
 ) {
     val title = when (selectedDate) {
-        LocalDate.now() -> "My Day"
-        LocalDate.now().plusDays(1) -> "Tomorrow"
-        null -> "Upcoming"
+        LocalDate.now() -> stringResource(R.string.tasks_header_my_day)
+        LocalDate.now().plusDays(1) -> stringResource(R.string.tasks_header_tomorrow)
+        null -> stringResource(R.string.tasks_header_upcoming)
         else -> selectedDate.format(DateTimeFormatter.ofPattern("MMMM d"))
     }
 
-    val subtitle = selectedDate?.format(DateTimeFormatter.ofPattern("EEEE, yyyy")) ?: "All upcoming items"
+    val subtitle = selectedDate?.format(DateTimeFormatter.ofPattern("EEEE, yyyy")) ?: stringResource(R.string.tasks_subtitle_all_upcoming)
 
     Row(
         modifier = Modifier
@@ -396,7 +398,7 @@ fun TaskHeader(
         }
         Icon(
             imageVector = if (isCalendarExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = "Toggle Calendar",
+            contentDescription = stringResource(R.string.tasks_cd_toggle_calendar),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -477,7 +479,7 @@ fun SectionHeader(
         if (canExpand) {
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = if (isExpanded) "Show Less" else "See All",
+                text = if (isExpanded) stringResource(R.string.tasks_show_less) else stringResource(R.string.tasks_see_all),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -627,13 +629,13 @@ fun TaskDetailContent(task: TaskEntity, onEdit: () -> Unit, onViewMemory: () -> 
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (task.type == "EVENT") "Event Details" else "Task Details",
+                    text = if (task.type == "EVENT") stringResource(R.string.tasks_detail_event) else stringResource(R.string.tasks_detail_task),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
             IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.common_edit), tint = MaterialTheme.colorScheme.primary)
             }
         }
         
@@ -658,7 +660,7 @@ fun TaskDetailContent(task: TaskEntity, onEdit: () -> Unit, onViewMemory: () -> 
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("View Source Memory")
+                Text(stringResource(R.string.tasks_view_source_memory))
             }
         }
         
@@ -692,7 +694,7 @@ fun TaskDetailContent(task: TaskEntity, onEdit: () -> Unit, onViewMemory: () -> 
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Repeats: ${task.recurrenceRule ?: "Custom"}",
+                    text = stringResource(R.string.tasks_repeats_label, task.recurrenceRule ?: stringResource(R.string.tasks_repeats_custom)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -726,12 +728,12 @@ fun EmptyState() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "No tasks yet",
+            text = stringResource(R.string.tasks_empty_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Capture a memory to generate tasks!",
+            text = stringResource(R.string.tasks_empty_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )

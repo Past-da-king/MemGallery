@@ -12,8 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 import java.io.File
 import java.text.SimpleDateFormat
@@ -60,7 +62,7 @@ fun CameraCaptureScreen(navController: NavController) {
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Requesting camera permission...")
+        Text(stringResource(R.string.camera_requesting_permission))
     }
 }
 

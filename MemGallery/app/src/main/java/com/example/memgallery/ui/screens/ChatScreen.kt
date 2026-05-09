@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -57,6 +58,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.ChatEntity
 import com.example.memgallery.data.local.entity.ChatMessageEntity
 import com.example.memgallery.ui.viewmodels.ChatViewModel
@@ -108,6 +110,7 @@ fun ChatScreen(
     val currentTool by viewModel.currentTool.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val copiedToClipboardMessage = stringResource(R.string.chat_snackbar_copied)
 
     // Audio recording state
     // Audio recording state from ViewModel
@@ -236,7 +239,7 @@ fun ChatScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val currentChatTitle = chats.find { it.id == currentChatId }?.title ?: "New Chat"
+                val currentChatTitle = chats.find { it.id == currentChatId }?.title ?: stringResource(R.string.chat_default_title)
                 Text(
                     text = currentChatTitle,
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
@@ -255,7 +258,7 @@ fun ChatScreen(
                     ) {
                         Icon(
                             Icons.Default.History,
-                            contentDescription = "History",
+                            contentDescription = stringResource(R.string.chat_cd_history),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(24.dp)
                         )
@@ -272,7 +275,7 @@ fun ChatScreen(
                         ) {
                             Icon(
                                 Icons.Default.Save,
-                                contentDescription = "Save Chat",
+                                contentDescription = stringResource(R.string.chat_cd_save),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -340,9 +343,9 @@ fun ChatScreen(
                                 message = message,
                                 displayedMemories = displayedMemories,
                                 onSaveAsNote = { viewModel.saveMessageAsNote(message.content) },
-                                onCopy = { 
+                                onCopy = {
                                     clipboardManager.setText(AnnotatedString(message.content))
-                                    scope.launch { snackbarHostState.showSnackbar("Copied to clipboard") }
+                                    scope.launch { snackbarHostState.showSnackbar(copiedToClipboardMessage) }
                                 },
                                 isPlaying = isPlaying && currentPlayingAudioPath == message.audioFilePath,
                                 audioProgress = if (currentPlayingAudioPath == message.audioFilePath) audioProgress else 0f,
@@ -434,13 +437,13 @@ fun ChatScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Microphone Access",
+                    stringResource(R.string.chat_sheet_mic_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "MemGallery needs microphone access to send voice messages to Gemini.",
+                    stringResource(R.string.chat_sheet_mic_body),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -453,13 +456,13 @@ fun ChatScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = CircleShape
                 ) {
-                    Text("Grant Permission")
+                    Text(stringResource(R.string.common_grant_permission))
                 }
                 TextButton(
                     onClick = { showPermissionSheet = false },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Not Now")
+                    Text(stringResource(R.string.common_not_now))
                 }
             }
         }
@@ -511,7 +514,7 @@ fun EnhancedChatInputBar(
                     ) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "Attach",
+                            contentDescription = stringResource(R.string.chat_cd_attach),
                             tint = MaterialTheme.colorScheme.primary, // Dynamic color
                             modifier = Modifier.size(20.dp)
                         )
@@ -575,9 +578,9 @@ fun EnhancedChatInputBar(
                             value = inputMessage,
                             onValueChange = onValueChange,
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { 
+                            placeholder = {
                                 Text(
-                                    "Ask Gemini...", 
+                                    stringResource(R.string.chat_input_placeholder),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
@@ -627,7 +630,7 @@ fun EnhancedChatInputBar(
                                 ) {
                                     Icon(
                                         Icons.Default.Stop,
-                                        contentDescription = "Stop Recording",
+                                        contentDescription = stringResource(R.string.chat_cd_stop_recording),
                                         tint = MaterialTheme.colorScheme.onErrorContainer
                                     )
                                 }
@@ -642,7 +645,7 @@ fun EnhancedChatInputBar(
                                 ) {
                                     Icon(
                                         Icons.AutoMirrored.Filled.Send,
-                                        contentDescription = "Send",
+                                        contentDescription = stringResource(R.string.chat_cd_send),
                                         tint = MaterialTheme.colorScheme.onPrimary
                                     )
                                 }
@@ -657,7 +660,7 @@ fun EnhancedChatInputBar(
                                 ) {
                                     Icon(
                                         Icons.Default.Mic,
-                                        contentDescription = "Record Audio",
+                                        contentDescription = stringResource(R.string.chat_cd_record_audio),
                                         tint = primaryColor // Dynamic color as requested
                                     )
                                 }
@@ -717,7 +720,7 @@ fun EmptyStateWelcome() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "How can I help you?",
+            text = stringResource(R.string.chat_empty_title),
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
@@ -726,7 +729,7 @@ fun EmptyStateWelcome() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "I can analyze your memories, answer questions, or just chat.\nTry sending an image, voice note, or document!",
+            text = stringResource(R.string.chat_empty_body),
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
             ),
@@ -751,9 +754,10 @@ fun MessageBubble(
     onMemoryClick: (com.example.memgallery.data.local.entity.MemoryEntity) -> Unit = {}
 ) {
     val isUser = message.role == "user"
-    
-    // Logic to hide text bubble if it's just a placeholder for media
-    val isPlaceholder = message.content == "🎤 Voice message" || message.content == "📎 Attachment"
+
+    // Logic to hide text bubble if it's just a placeholder for media.
+    // Compares against DB-persisted markers (kept English in ChatViewModel companion). Do not localize.
+    val isPlaceholder = message.content == ChatViewModel.VOICE_MESSAGE_MARKER || message.content == ChatViewModel.ATTACHMENT_MARKER
     val hasMedia = message.audioFilePath != null || message.imageUri != null
     val showTextBubble = !isPlaceholder || !hasMedia
     
@@ -797,13 +801,13 @@ fun MessageBubble(
                         ) {
                             Icon(
                                 Icons.Default.AttachFile,
-                                contentDescription = "Attachment",
+                                contentDescription = stringResource(R.string.chat_cd_attachment),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Attachment",
+                                stringResource(R.string.chat_label_attachment),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
@@ -811,7 +815,7 @@ fun MessageBubble(
                     } else {
                         coil.compose.AsyncImage(
                             model = message.imageUri,
-                            contentDescription = "Attachment",
+                            contentDescription = stringResource(R.string.chat_cd_attachment),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
                         )
@@ -855,10 +859,10 @@ fun MessageBubble(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.ContentCopy, "Copy", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.ContentCopy, stringResource(R.string.chat_cd_copy), modifier = Modifier.size(16.dp))
                 }
                 IconButton(onClick = onSaveAsNote, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Save, "Save as Note", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Save, stringResource(R.string.chat_cd_save_as_note), modifier = Modifier.size(16.dp))
                 }
             }
 
@@ -905,24 +909,24 @@ fun PremiumAttachmentSheet(
             .padding(bottom = 32.dp)
     ) {
         Text(
-            "Share Content",
+            stringResource(R.string.chat_sheet_share_title),
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.padding(bottom = 24.dp)
         )
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             AttachmentOption(
                 icon = Icons.Default.Image,
-                label = "Gallery",
+                label = stringResource(R.string.chat_attachment_gallery),
                 color = MaterialTheme.colorScheme.primary,
                 onClick = onImageClick
             )
             AttachmentOption(
                 icon = Icons.Default.Description,
-                label = "Document",
+                label = stringResource(R.string.chat_attachment_document),
                 color = MaterialTheme.colorScheme.primary,
                 onClick = onDocumentClick
             )
@@ -975,13 +979,13 @@ fun CompactAudioPlayer(audioPath: String) {
         ) {
             Icon(
                 Icons.Default.Mic,
-                contentDescription = "Voice",
+                contentDescription = stringResource(R.string.chat_cd_voice),
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.onSecondaryContainer
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                "🎤 Voice message",
+                stringResource(R.string.chat_voice_message_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
@@ -1005,7 +1009,7 @@ fun LoadingIndicator() {
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            "Thinking...",
+            stringResource(R.string.chat_thinking),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1043,20 +1047,20 @@ fun ChatHistoryList(
                 IconButton(onClick = onClearSelection) {
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "Cancel selection",
+                        contentDescription = stringResource(R.string.chat_cd_cancel_selection),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "${selectedChatIds.size} selected",
+                        text = stringResource(R.string.gallery_selection_count, selectedChatIds.size),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Long-press to add more, tap to remove",
+                        text = stringResource(R.string.chat_selection_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1072,7 +1076,7 @@ fun ChatHistoryList(
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             }
         } else {
@@ -1082,14 +1086,16 @@ fun ChatHistoryList(
                     .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)
             ) {
                 Text(
-                    text = "Conversations",
+                    text = stringResource(R.string.chat_section_conversations),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = if (chats.isEmpty()) "No chats yet" else "${chats.size} chat${if (chats.size == 1) "" else "s"}",
+                    text = if (chats.isEmpty()) stringResource(R.string.chat_no_chats)
+                           else if (chats.size == 1) stringResource(R.string.vm_chats_count_one, chats.size)
+                           else stringResource(R.string.vm_chats_count_many, chats.size),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1126,13 +1132,13 @@ fun ChatHistoryList(
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Start a new chat",
+                            text = stringResource(R.string.chat_new_chat_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Talk to your memory bank",
+                            text = stringResource(R.string.chat_new_chat_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
@@ -1196,7 +1202,7 @@ private fun ChatHistoryRow(
     }
     val borderWidth = if (isSelected || isActive) 1.5.dp else 0.dp
 
-    val displayTitle = chat.title.ifBlank { "New chat" }
+    val displayTitle = chat.title.ifBlank { stringResource(R.string.chat_history_fallback_title) }
     val initial = displayTitle.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "·"
 
     Surface(
@@ -1272,7 +1278,7 @@ private fun ChatHistoryRow(
                             color = MaterialTheme.colorScheme.primary
                         ) {
                             Text(
-                                text = "Active",
+                                text = stringResource(R.string.chat_active_badge),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onPrimary,
@@ -1308,7 +1314,7 @@ private fun ChatHistoryRow(
                 ) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete chat",
+                        contentDescription = stringResource(R.string.chat_cd_delete_chat),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -1342,14 +1348,14 @@ private fun ChatHistoryEmptyState() {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "No conversations yet",
+            text = stringResource(R.string.chat_no_conversations_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Tap Start a new chat to begin.",
+            text = stringResource(R.string.chat_no_conversations_body),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -1357,6 +1363,7 @@ private fun ChatHistoryEmptyState() {
     }
 }
 
+@Composable
 private fun relativeTime(timestampMs: Long): String {
     val now = System.currentTimeMillis()
     val diffMs = (now - timestampMs).coerceAtLeast(0L)
@@ -1365,11 +1372,11 @@ private fun relativeTime(timestampMs: Long): String {
     val hours = min / 60
     val days = hours / 24
     return when {
-        sec < 45 -> "now"
-        min < 60 -> "${min}m"
-        hours < 24 -> "${hours}h"
-        days < 2 -> "yesterday"
-        days < 7 -> "${days}d"
+        sec < 45 -> stringResource(R.string.chat_time_now)
+        min < 60 -> stringResource(R.string.chat_time_minutes, min.toInt())
+        hours < 24 -> stringResource(R.string.chat_time_hours, hours.toInt())
+        days < 2 -> stringResource(R.string.chat_time_yesterday)
+        days < 7 -> stringResource(R.string.chat_time_days, days.toInt())
         else -> SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestampMs))
     }
 }

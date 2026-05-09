@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memgallery.R
 import com.example.memgallery.data.remote.GeminiService
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.service.EdgeGestureService
@@ -346,7 +347,7 @@ class SettingsViewModel @Inject constructor(
             _apiKeyUiState.value = ApiKeyUiState.Loading
             val key = _apiKey.value
             if (key.isBlank()) {
-                _apiKeyUiState.value = ApiKeyUiState.Error("API Key cannot be empty.")
+                _apiKeyUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_api_key_empty))
                 return@launch
             }
 
@@ -356,9 +357,9 @@ class SettingsViewModel @Inject constructor(
                 settingsRepository.saveApiKey(key)
                 geminiService.initialize(key)
                 chatGeminiService.initialize(key)
-                _apiKeyUiState.value = ApiKeyUiState.Success("Success! Key is valid.")
+                _apiKeyUiState.value = ApiKeyUiState.Success(context.getString(R.string.vm_api_key_valid))
             }.onFailure {
-                _apiKeyUiState.value = ApiKeyUiState.Error("Error: Invalid Key.")
+                _apiKeyUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_api_key_invalid))
             }
         }
     }
@@ -389,16 +390,16 @@ class SettingsViewModel @Inject constructor(
             _groqApiKeyUiState.value = ApiKeyUiState.Loading
             val key = _groqApiKey.value
             if (key.isBlank()) {
-                _groqApiKeyUiState.value = ApiKeyUiState.Error("API Key cannot be empty.")
+                _groqApiKeyUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_api_key_empty))
                 return@launch
             }
 
             try {
                 // Simple validation - try to create a client and make a test request
                 settingsRepository.saveGroqApiKey(key)
-                _groqApiKeyUiState.value = ApiKeyUiState.Success("Success! Groq key saved.")
+                _groqApiKeyUiState.value = ApiKeyUiState.Success(context.getString(R.string.vm_groq_saved))
             } catch (e: Exception) {
-                _groqApiKeyUiState.value = ApiKeyUiState.Error("Error: ${e.message}")
+                _groqApiKeyUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_error_with_msg, e.message ?: ""))
             }
         }
     }
@@ -675,9 +676,9 @@ class SettingsViewModel @Inject constructor(
 
                 val absolutePath = file.absolutePath
                 settingsRepository.setLocalModelPath(absolutePath)
-                _localModelImportState.value = ApiKeyUiState.Success("Model imported successfully")
+                _localModelImportState.value = ApiKeyUiState.Success(context.getString(R.string.vm_local_model_imported))
             } catch (e: Exception) {
-                _localModelImportState.value = ApiKeyUiState.Error("Import failed: ${e.message}")
+                _localModelImportState.value = ApiKeyUiState.Error(context.getString(R.string.vm_local_import_failed, e.message ?: ""))
             }
         }
     }
@@ -728,9 +729,9 @@ class SettingsViewModel @Inject constructor(
             _backupUiState.value = BackupUiState.Loading
             backupRepository.exportBackup(uri).collect { result ->
                 result.onSuccess {
-                    _backupUiState.value = BackupUiState.Success("Backup exported successfully!")
+                    _backupUiState.value = BackupUiState.Success(context.getString(R.string.vm_backup_exported))
                 }.onFailure { e ->
-                    _backupUiState.value = BackupUiState.Error("Export failed: ${e.localizedMessage}")
+                    _backupUiState.value = BackupUiState.Error(context.getString(R.string.vm_backup_export_failed, e.localizedMessage ?: ""))
                 }
             }
         }
@@ -741,9 +742,9 @@ class SettingsViewModel @Inject constructor(
             _backupUiState.value = BackupUiState.Loading
             backupRepository.importBackup(uri).collect { result ->
                 result.onSuccess { count ->
-                    _backupUiState.value = BackupUiState.Success("Imported $count memories successfully!")
+                    _backupUiState.value = BackupUiState.Success(context.getString(R.string.vm_backup_imported, count))
                 }.onFailure { e ->
-                    _backupUiState.value = BackupUiState.Error("Import failed: ${e.localizedMessage}")
+                    _backupUiState.value = BackupUiState.Error(context.getString(R.string.vm_backup_import_failed, e.localizedMessage ?: ""))
                 }
             }
         }
@@ -766,18 +767,18 @@ class SettingsViewModel @Inject constructor(
                         
                         val isNewer = isNewerVersion(latestRelease.tagName, BuildConfig.VERSION_NAME)
                         if (isNewer) {
-                            _updateCheckState.value = ApiKeyUiState.Success("New version ${latestRelease.tagName} available!")
+                            _updateCheckState.value = ApiKeyUiState.Success(context.getString(R.string.vm_update_new_version, latestRelease.tagName))
                         } else {
-                            _updateCheckState.value = ApiKeyUiState.Success("App is up to date.")
+                            _updateCheckState.value = ApiKeyUiState.Success(context.getString(R.string.vm_update_up_to_date))
                         }
                     } else {
-                        _updateCheckState.value = ApiKeyUiState.Error("Failed to parse release data.")
+                        _updateCheckState.value = ApiKeyUiState.Error(context.getString(R.string.vm_update_parse_failed))
                     }
                 } else {
-                    _updateCheckState.value = ApiKeyUiState.Error("Failed to check for updates: ${response.message()}")
+                    _updateCheckState.value = ApiKeyUiState.Error(context.getString(R.string.vm_update_failed_with_msg, response.message() ?: ""))
                 }
             } catch (e: Exception) {
-                _updateCheckState.value = ApiKeyUiState.Error("Network error: ${e.message}")
+                _updateCheckState.value = ApiKeyUiState.Error(context.getString(R.string.vm_update_network_error, e.message ?: ""))
             }
         }
     }
@@ -832,9 +833,9 @@ class SettingsViewModel @Inject constructor(
                 settingsRepository.setCustomBaseUrl(url)
                 settingsRepository.setCustomModelName(model)
                 settingsRepository.saveCustomApiKey(key)
-                _customUiState.value = ApiKeyUiState.Success("Settings validated and saved!")
+                _customUiState.value = ApiKeyUiState.Success(context.getString(R.string.vm_custom_validated))
             }.onFailure { e ->
-                _customUiState.value = ApiKeyUiState.Error("Validation failed: ${e.message}")
+                _customUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_custom_validation_failed, e.message ?: ""))
             }
         }
     }

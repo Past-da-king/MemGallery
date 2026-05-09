@@ -24,10 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.service.EdgeGestureService
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
 import androidx.compose.ui.window.Dialog
@@ -80,10 +82,10 @@ fun AdvancedSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Advanced Settings") },
+                title = { Text(stringResource(R.string.advanced_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -103,17 +105,17 @@ fun AdvancedSettingsScreen(
             // 1. AI System Prompt Section
             SettingsCard(
                 icon = Icons.Default.Psychology,
-                title = "Custom AI Persona",
-                description = "Define how the AI behaves"
+                title = stringResource(R.string.advanced_card_persona_title),
+                description = stringResource(R.string.advanced_card_persona_description)
             ) {
                 Column {
                     Text(
-                        "System Prompt",
+                        stringResource(R.string.advanced_section_system_prompt),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "These instructions are added to every AI request and take precedence over default behavior.",
+                        stringResource(R.string.advanced_system_prompt_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 12.dp)
@@ -128,7 +130,7 @@ fun AdvancedSettingsScreen(
                         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                             if (userSystemPrompt.isBlank()) {
                                 Text(
-                                    "Tap to set a custom persona...",
+                                    stringResource(R.string.advanced_system_prompt_empty),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontStyle = FontStyle.Italic
@@ -145,7 +147,7 @@ fun AdvancedSettingsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Edit Prompt", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.advanced_button_edit_prompt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -153,16 +155,17 @@ fun AdvancedSettingsScreen(
             }
 
             if (showSystemPromptEditor) {
+                val personaSavedMessage = stringResource(R.string.advanced_toast_persona_saved)
                 FullScreenTextEditor(
-                    title = "System Prompt",
+                    title = stringResource(R.string.advanced_editor_system_prompt_title),
                     initialText = userSystemPrompt,
-                    placeholder = "e.g., 'Be sarcastic', 'Focus on technical details'",
+                    placeholder = stringResource(R.string.advanced_editor_system_prompt_placeholder),
                     onDismiss = { showSystemPromptEditor = false },
                     onSave = {
                         viewModel.onUserSystemPromptChange(it)
                         viewModel.saveUserSystemPrompt()
                         showSystemPromptEditor = false
-                        android.widget.Toast.makeText(context, "Persona Saved", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, personaSavedMessage, android.widget.Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -172,13 +175,13 @@ fun AdvancedSettingsScreen(
             // 1.5 User Context & Memory Section
             SettingsCard(
                 icon = Icons.Default.Memory,
-                title = "User Context & Memory",
-                description = "Manage what the AI knows"
+                title = stringResource(R.string.advanced_card_user_context_title),
+                description = stringResource(R.string.advanced_card_user_context_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Context Summary Field
                     Text(
-                        "User Context Summary",
+                        stringResource(R.string.advanced_section_user_context),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -193,7 +196,7 @@ fun AdvancedSettingsScreen(
                         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                             if (userContextSummary.isBlank()) {
                                 Text(
-                                    "No context generated yet. Tap to edit manually or generate below.",
+                                    stringResource(R.string.advanced_user_context_empty),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontStyle = FontStyle.Italic
@@ -210,7 +213,7 @@ fun AdvancedSettingsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Open Full Editor", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.advanced_button_open_full_editor), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -231,11 +234,11 @@ fun AdvancedSettingsScreen(
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Generating...")
+                                Text(stringResource(R.string.advanced_button_generating))
                             } else {
                                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Regenerate Context")
+                                Text(stringResource(R.string.advanced_button_regenerate_context))
                             }
                         }
                     }
@@ -244,18 +247,23 @@ fun AdvancedSettingsScreen(
 
                     // Frequency Settings
                     Text(
-                        "Auto-Generation Frequency",
+                        stringResource(R.string.advanced_section_auto_gen_frequency),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "How often should the AI scan your memories to update its context?",
+                        stringResource(R.string.advanced_auto_gen_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        val options = listOf("Always", "Daily", "Weekly", "Manual")
+                        val options = listOf(
+                            stringResource(R.string.advanced_freq_always),
+                            stringResource(R.string.advanced_freq_daily),
+                            stringResource(R.string.advanced_freq_weekly),
+                            stringResource(R.string.advanced_freq_manual)
+                        )
                         val values = listOf("ALWAYS", "DAILY", "WEEKLY", "MANUAL")
                         values.forEachIndexed { index, value ->
                             SegmentedButton(
@@ -276,16 +284,17 @@ fun AdvancedSettingsScreen(
             }
             
             if (showUserContextEditor) {
+                val userContextSavedMessage = stringResource(R.string.advanced_toast_user_context_saved)
                 FullScreenTextEditor(
-                    title = "User Context",
+                    title = stringResource(R.string.advanced_editor_user_context_title),
                     initialText = userContextSummary,
-                    placeholder = "Enter your custom context here...",
+                    placeholder = stringResource(R.string.advanced_editor_user_context_placeholder),
                     onDismiss = { showUserContextEditor = false },
                     onSave = {
                         viewModel.onUserContextSummaryChange(it)
                         viewModel.saveUserContextSummary()
                         showUserContextEditor = false
-                        android.widget.Toast.makeText(context, "User Context Saved", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, userContextSavedMessage, android.widget.Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -293,19 +302,19 @@ fun AdvancedSettingsScreen(
             // 2. Behavior Configuration Section
             SettingsCard(
                 icon = Icons.Default.Tune,
-                title = "Behavior",
-                description = "Customize app interactions"
+                title = stringResource(R.string.advanced_card_behavior_title),
+                description = stringResource(R.string.advanced_card_behavior_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
                     // 1.8 Max Tool Calls Section
                     Text(
-                        "Max AI Tool Calls: ${maxToolCalls}",
+                        stringResource(R.string.advanced_max_tool_calls, maxToolCalls),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "Limit the number of steps the AI can take to solve a query.",
+                        stringResource(R.string.advanced_max_tool_calls_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -320,42 +329,42 @@ fun AdvancedSettingsScreen(
 
                     SettingToggleItem(
                         icon = Icons.Default.Event,
-                        title = "Auto-Generate Reminders",
-                        description = "Allow AI to automatically create tasks and reminders from your memories",
+                        title = stringResource(R.string.advanced_toggle_auto_reminders_title),
+                        description = stringResource(R.string.advanced_toggle_auto_reminders_description),
                         checked = autoRemindersEnabled,
                         onCheckedChange = viewModel::setAutoRemindersEnabled
                     )
 
                     SettingToggleItem(
                         icon = Icons.Default.Delete,
-                        title = "Synchronized Deletion",
-                        description = "Deleting a memory also deletes the original file from your gallery",
+                        title = stringResource(R.string.advanced_toggle_sync_delete_title),
+                        description = stringResource(R.string.advanced_toggle_sync_delete_description),
                         checked = syncDeletionEnabled,
                         onCheckedChange = viewModel::setSyncDeletionEnabled
                     )
 
                     SettingToggleItem(
                         icon = Icons.Default.Mic,
-                        title = "Audio Auto-Start",
-                        description = "Start recording immediately when sheet opens",
+                        title = stringResource(R.string.advanced_toggle_audio_autostart_title),
+                        description = stringResource(R.string.advanced_toggle_audio_autostart_description),
                         checked = audioAutoStart,
                         onCheckedChange = viewModel::setAudioAutoStart
                     )
 
                     HorizontalDivider()
 
-                    Text("Post-Capture Action", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.advanced_section_post_capture), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Text(
-                        "Choose what happens after capturing a note, audio, or link.",
+                        stringResource(R.string.advanced_post_capture_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = postCaptureBehavior == "FOREGROUND",
                             onClick = { viewModel.setPostCaptureBehavior("FOREGROUND") },
-                            label = { Text("Open App") },
+                            label = { Text(stringResource(R.string.advanced_post_capture_open_app)) },
                             leadingIcon = if (postCaptureBehavior == "FOREGROUND") {
                                 { Icon(Icons.Default.Check, contentDescription = null) }
                             } else null
@@ -363,7 +372,7 @@ fun AdvancedSettingsScreen(
                         FilterChip(
                             selected = postCaptureBehavior == "BACKGROUND",
                             onClick = { viewModel.setPostCaptureBehavior("BACKGROUND") },
-                            label = { Text("Stay in Background") },
+                            label = { Text(stringResource(R.string.advanced_post_capture_stay_background)) },
                             leadingIcon = if (postCaptureBehavior == "BACKGROUND") {
                                 { Icon(Icons.Default.Check, contentDescription = null) }
                             } else null
@@ -373,9 +382,9 @@ fun AdvancedSettingsScreen(
                     HorizontalDivider()
 
                     // External Task Manager Integration
-                    Text("External Task Manager", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.advanced_section_external_task_manager), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Text(
-                        "Forward approved tasks to your preferred task app.",
+                        stringResource(R.string.advanced_external_task_manager_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -389,15 +398,15 @@ fun AdvancedSettingsScreen(
             // 3. Overlay & Gestures Section
             SettingsCard(
                 icon = Icons.Default.Swipe,
-                title = "Overlay & Gestures",
-                description = "Configure how you access the overlay"
+                title = stringResource(R.string.advanced_card_overlay_title),
+                description = stringResource(R.string.advanced_card_overlay_description)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Edge Gesture Settings
                     SettingToggleItem(
                         icon = Icons.Default.PowerSettingsNew,
-                        title = "Enable Edge Gesture",
-                        description = "Show a handle on the screen edge",
+                        title = stringResource(R.string.advanced_toggle_edge_gesture_title),
+                        description = stringResource(R.string.advanced_toggle_edge_gesture_description),
                         checked = edgeGestureEnabled,
                         onCheckedChange = { enabled ->
                             if (enabled && !Settings.canDrawOverlays(context)) {
@@ -421,7 +430,7 @@ fun AdvancedSettingsScreen(
                             ) {
                                 Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Overlay permission required", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.advanced_overlay_permission_required), color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -429,19 +438,22 @@ fun AdvancedSettingsScreen(
                     HorizontalDivider()
 
                     // Appearance
-                    Text("Appearance & Position", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    
+                    Text(stringResource(R.string.advanced_section_appearance_position), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+
                     SettingToggleItem(
                         icon = Icons.Default.Visibility,
-                        title = "Visible Handle",
-                        description = "Show the visual indicator",
+                        title = stringResource(R.string.advanced_toggle_visible_handle_title),
+                        description = stringResource(R.string.advanced_toggle_visible_handle_description),
                         checked = isVisible,
                         onCheckedChange = viewModel::setEdgeGestureVisible
                     )
 
                     if (!dualHandles) {
                         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            val options = listOf("Left Edge", "Right Edge")
+                            val options = listOf(
+                                stringResource(R.string.advanced_edge_left),
+                                stringResource(R.string.advanced_edge_right)
+                            )
                             val values = listOf("LEFT", "RIGHT")
                             values.forEachIndexed { index, value ->
                                 SegmentedButton(
@@ -457,28 +469,28 @@ fun AdvancedSettingsScreen(
 
                     SettingToggleItem(
                         icon = Icons.Default.CompareArrows,
-                        title = "Dual Handles",
-                        description = "Show handles on both sides",
+                        title = stringResource(R.string.advanced_toggle_dual_handles_title),
+                        description = stringResource(R.string.advanced_toggle_dual_handles_description),
                         checked = dualHandles,
                         onCheckedChange = viewModel::setEdgeGestureDualHandles
                     )
 
                     // Sliders
-                    Text("Vertical Position: $positionY%", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.advanced_slider_vertical_position, positionY), style = MaterialTheme.typography.bodyMedium)
                     Slider(
                         value = positionY.toFloat(),
                         onValueChange = { viewModel.setEdgeGesturePositionY(it.toInt()) },
                         valueRange = 0f..100f
                     )
 
-                    Text("Height: $heightPercent%", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.advanced_slider_height, heightPercent), style = MaterialTheme.typography.bodyMedium)
                     Slider(
                         value = heightPercent.toFloat(),
                         onValueChange = { viewModel.setEdgeGestureHeightPercent(it.toInt()) },
                         valueRange = 10f..100f
                     )
 
-                    Text("Thickness: ${widthDp}dp", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.advanced_slider_thickness, widthDp), style = MaterialTheme.typography.bodyMedium)
                     Slider(
                         value = widthDp.toFloat(),
                         onValueChange = { viewModel.setEdgeGestureWidth(it.toInt()) },
@@ -488,22 +500,22 @@ fun AdvancedSettingsScreen(
                     HorizontalDivider()
 
                     // Gesture Mappings
-                    Text("Gesture Actions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.advanced_section_gesture_actions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
 
                     ActionDropdown(
-                        label = "Swipe Up",
+                        label = stringResource(R.string.advanced_gesture_swipe_up),
                         selectedAction = swipeUpAction,
                         onActionSelected = viewModel::setEdgeGestureActionSwipeUp
                     )
 
                     ActionDropdown(
-                        label = "Swipe Down",
+                        label = stringResource(R.string.advanced_gesture_swipe_down),
                         selectedAction = swipeDownAction,
                         onActionSelected = viewModel::setEdgeGestureActionSwipeDown
                     )
 
                     ActionDropdown(
-                        label = "Double Tap",
+                        label = stringResource(R.string.advanced_gesture_double_tap),
                         selectedAction = doubleTapAction,
                         onActionSelected = viewModel::setEdgeGestureActionDoubleTap
                     )
@@ -521,15 +533,16 @@ fun ActionDropdown(
     onActionSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val noneLabel = stringResource(R.string.common_none)
     val actions = mapOf(
-        "NONE" to "None",
-        "QUICK_CAPTURE" to "Quick Capture (Menu)",
-        "ADD_TASK" to "Add Task Sheet",
-        "ADD_URL" to "Add URL Sheet",
-        "ADD_MEMORY" to "Add Memory Sheet",
-        "QUICK_AUDIO" to "Quick Audio",
-        "QUICK_TEXT" to "Quick Text",
-        "CAMERA" to "Open Camera"
+        "NONE" to noneLabel,
+        "QUICK_CAPTURE" to stringResource(R.string.advanced_action_quick_capture_menu),
+        "ADD_TASK" to stringResource(R.string.advanced_action_add_task_sheet),
+        "ADD_URL" to stringResource(R.string.advanced_action_add_url_sheet),
+        "ADD_MEMORY" to stringResource(R.string.advanced_action_add_memory_sheet),
+        "QUICK_AUDIO" to stringResource(R.string.advanced_action_quick_audio),
+        "QUICK_TEXT" to stringResource(R.string.advanced_action_quick_text),
+        "CAMERA" to stringResource(R.string.advanced_action_open_camera)
     )
 
     ExposedDropdownMenuBox(
@@ -538,7 +551,7 @@ fun ActionDropdown(
         modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
-            value = actions[selectedAction] ?: "None",
+            value = actions[selectedAction] ?: noneLabel,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -572,12 +585,13 @@ fun ExternalTaskManagerDropdown(
     onManagerSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val noneLabel = stringResource(R.string.common_none)
     val managers = mapOf(
-        "NONE" to "None (Keep in MemGallery only)",
-        "TICKTICK" to "TickTick",
-        "GOOGLE_TASKS" to "Google Tasks",
-        "TODOIST" to "Todoist",
-        "SHARE" to "System Share..."
+        "NONE" to stringResource(R.string.advanced_external_none),
+        "TICKTICK" to stringResource(R.string.advanced_external_ticktick),
+        "GOOGLE_TASKS" to stringResource(R.string.advanced_external_google_tasks),
+        "TODOIST" to stringResource(R.string.advanced_external_todoist),
+        "SHARE" to stringResource(R.string.advanced_external_system_share)
     )
 
     ExposedDropdownMenuBox(
@@ -586,10 +600,10 @@ fun ExternalTaskManagerDropdown(
         modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
-            value = managers[selectedManager] ?: "None",
+            value = managers[selectedManager] ?: noneLabel,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Target App") },
+            label = { Text(stringResource(R.string.advanced_target_app_label)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
             modifier = Modifier
@@ -635,12 +649,12 @@ fun FullScreenTextEditor(
                     title = { Text(title) },
                     navigationIcon = {
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                         }
                     },
                     actions = {
                         IconButton(onClick = { onSave(text) }) {
-                            Icon(Icons.Default.Check, contentDescription = "Save")
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.common_save))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

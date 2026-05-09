@@ -18,9 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.memgallery.R
 
 @Composable
 fun ThinkingProcessAccordion(
@@ -59,20 +61,20 @@ fun ThinkingProcessAccordion(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Psychology,
-                            contentDescription = "Thinking",
+                            contentDescription = stringResource(R.string.streaming_cd_thinking),
                             tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Thinking Process",
+                            text = stringResource(R.string.streaming_thinking_section),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.tertiary
                         )
                     }
                     Icon(
                         Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Expand",
+                        contentDescription = stringResource(R.string.streaming_cd_expand),
                         modifier = Modifier.rotate(rotationState),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )

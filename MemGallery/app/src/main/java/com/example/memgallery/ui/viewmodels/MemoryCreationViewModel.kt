@@ -1,9 +1,12 @@
 package com.example.memgallery.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memgallery.R
 import com.example.memgallery.data.repository.MemoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +22,7 @@ sealed interface MemoryCreationUiState {
 
 @HiltViewModel
 class MemoryCreationViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val memoryRepository: MemoryRepository,
     private val urlMetadataExtractor: com.example.memgallery.utils.UrlMetadataExtractor,
     private val fileUtils: com.example.memgallery.utils.FileUtils
@@ -85,7 +89,7 @@ class MemoryCreationViewModel @Inject constructor(
         val bookmarkUrl = _draftBookmarkUrl.value
 
         if (imageUris.isEmpty() && audioUri == null && userText.isNullOrBlank() && bookmarkUrl.isNullOrBlank()) {
-            _uiState.value = MemoryCreationUiState.Error("At least one input is required.")
+            _uiState.value = MemoryCreationUiState.Error(context.getString(R.string.vm_memory_required))
             return
         }
 
@@ -102,7 +106,7 @@ class MemoryCreationViewModel @Inject constructor(
             result.onSuccess { newId ->
                 _uiState.value = MemoryCreationUiState.Success(newId)
             }.onFailure { exception ->
-                _uiState.value = MemoryCreationUiState.Error(exception.message ?: "An unknown error occurred.")
+                _uiState.value = MemoryCreationUiState.Error(exception.message ?: context.getString(R.string.vm_unknown_error))
             }
         }
     }

@@ -7,8 +7,10 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,23 +28,23 @@ fun AddUrlSheet(
             .imePadding() // Handle keyboard
     ) {
         Text(
-            text = "Add Link",
+            text = stringResource(R.string.sheet_url_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "Paste a URL to save",
+            text = stringResource(R.string.sheet_url_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
             value = tempUrl,
             onValueChange = { tempUrl = it },
-            placeholder = { Text("https://example.com") },
+            placeholder = { Text(stringResource(R.string.common_url_placeholder)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             singleLine = true,
@@ -74,7 +76,7 @@ fun AddUrlSheet(
             )
         ) {
             Text(
-                text = "Add Link",
+                text = stringResource(R.string.sheet_url_button),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

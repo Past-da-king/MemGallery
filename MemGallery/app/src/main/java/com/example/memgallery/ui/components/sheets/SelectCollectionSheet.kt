@@ -11,8 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.CollectionEntity
 
 @Composable
@@ -28,11 +30,11 @@ fun SelectCollectionSheet(
             .padding(16.dp)
             .navigationBarsPadding()
     ) {
-        Text("Add to Collection", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.sheet_select_collection_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         ListItem(
-            headlineContent = { Text("Create New Collection") },
+            headlineContent = { Text(stringResource(R.string.sheet_select_collection_create_new)) },
             leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
             modifier = Modifier.clickable { onCreateNew() }
         )

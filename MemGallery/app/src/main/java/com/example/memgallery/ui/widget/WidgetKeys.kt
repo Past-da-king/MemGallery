@@ -1,12 +1,16 @@
 package com.example.memgallery.ui.widget
 
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
 object WidgetKeys {
     val widgetDataKey = stringPreferencesKey("widget_pulse_data")
     val lastUpdateKey = stringPreferencesKey("widget_last_update")
-    val themeColorKey = androidx.datastore.preferences.core.intPreferencesKey("widget_theme_color")
+    val themeColorKey = intPreferencesKey("widget_theme_color")
     val themeModeKey = stringPreferencesKey("widget_theme_mode")
+    val amoledModeKey = booleanPreferencesKey("widget_amoled_mode")
+    val dynamicThemingKey = booleanPreferencesKey("widget_dynamic_theming")
 }
 
 data class WidgetMemoryItem(

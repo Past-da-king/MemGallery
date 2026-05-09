@@ -7,9 +7,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.memgallery.R
 import io.noties.markwon.Markwon
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +34,7 @@ fun ChangeLogBottomSheet(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "What's New in $versionName",
+                text = stringResource(R.string.changelog_title, versionName),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
@@ -60,7 +62,7 @@ fun ChangeLogBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
             ) {
-                Text("Awesome!")
+                Text(stringResource(R.string.changelog_button))
             }
         }
     }

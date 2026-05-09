@@ -11,8 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 
 @Composable
 fun QuickTextSheet(
@@ -39,7 +41,7 @@ fun QuickTextSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Quick Note",
+                stringResource(R.string.sheet_quick_text_title),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -56,7 +58,7 @@ fun QuickTextSheet(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Save")
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.common_save))
             }
         }
 
@@ -71,7 +73,7 @@ fun QuickTextSheet(
                 .focusRequester(focusRequester),
             placeholder = {
                 Text(
-                    "What's on your mind?",
+                    stringResource(R.string.common_whats_on_your_mind),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )

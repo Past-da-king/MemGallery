@@ -5,6 +5,7 @@ import android.content.Intent
 import android.provider.CalendarContract
 import android.provider.AlarmClock
 import android.widget.Toast
+import com.example.memgallery.R
 import com.example.memgallery.data.remote.dto.ActionDto
 import java.util.Calendar
 import java.util.TimeZone
@@ -12,22 +13,22 @@ import java.util.TimeZone
 object ActionHandler {
 
     fun handleAction(context: Context, action: ActionDto) {
-        val intent = getActionIntent(action)
+        val intent = getActionIntent(context, action)
         if (intent != null) {
             if (intent.resolveActivity(context.packageManager) != null) {
                 context.startActivity(intent)
             } else {
-                Toast.makeText(context, "No app found to handle this action", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.action_no_app_found), Toast.LENGTH_SHORT).show()
             }
         } else {
-             Toast.makeText(context, "Unknown action type", Toast.LENGTH_SHORT).show()
+             Toast.makeText(context, context.getString(R.string.action_unknown_type), Toast.LENGTH_SHORT).show()
         }
     }
 
-    fun getActionIntent(action: ActionDto): Intent? {
+    fun getActionIntent(context: Context, action: ActionDto): Intent? {
         return when (action.type) {
             "EVENT" -> createCalendarEventIntent(action)
-            "TODO", "REMINDER" -> createNoteOrReminderIntent(action)
+            "TODO", "REMINDER" -> createNoteOrReminderIntent(context, action)
             else -> null
         }
     }
@@ -46,19 +47,19 @@ object ActionHandler {
         }
     }
 
-    private fun createNoteOrReminderIntent(action: ActionDto): Intent {
-        // Try to create a note/reminder. 
+    private fun createNoteOrReminderIntent(context: Context, action: ActionDto): Intent {
+        // Try to create a note/reminder.
         // ACTION_SEND is a generic way to share text to note apps.
         // For specific reminders, AlarmClock.ACTION_SET_ALARM could be used if it's a time-based reminder,
         // but "Note" is safer for general TODOs.
-        
+
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, "${action.description} ${action.date ?: ""} ${action.time ?: ""}")
-            putExtra(Intent.EXTRA_TITLE, "New Action")
+            putExtra(Intent.EXTRA_TITLE, context.getString(R.string.action_new_action_title))
         }
-        
-        return Intent.createChooser(intent, "Save Action to...")
+
+        return Intent.createChooser(intent, context.getString(R.string.action_save_action_chooser))
     }
 
     private fun parseDateTime(dateStr: String, timeStr: String?): Long {

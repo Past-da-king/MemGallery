@@ -10,8 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 
 @Composable
 fun CreateCollectionSheet(
@@ -43,13 +45,13 @@ fun CreateCollectionSheet(
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "New Collection", 
-            style = MaterialTheme.typography.headlineSmall, 
+            text = stringResource(R.string.sheet_collection_title),
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
-        
+
         Text(
-            text = "Organize your memories intelligently",
+            text = stringResource(R.string.sheet_collection_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -60,7 +62,7 @@ fun CreateCollectionSheet(
         TextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Collection Name") },
+            label = { Text(stringResource(R.string.sheet_collection_name_label)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
@@ -79,7 +81,7 @@ fun CreateCollectionSheet(
         TextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text("Description (for AI sorting)") },
+            label = { Text(stringResource(R.string.sheet_collection_description_label)) },
             modifier = Modifier.fillMaxWidth(),
             minLines = 3,
             maxLines = 5,
@@ -109,7 +111,7 @@ fun CreateCollectionSheet(
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
         ) {
             Text(
-                text = "Create Collection",
+                text = stringResource(R.string.sheet_collection_button),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

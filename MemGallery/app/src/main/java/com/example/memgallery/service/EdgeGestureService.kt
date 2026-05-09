@@ -46,12 +46,12 @@ class EdgeGestureService : Service() {
     private fun startForegroundService() {
         val channelId = "edge_gesture_service"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Edge Gestures", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(channelId, getString(R.string.notif_channel_edge_name), NotificationManager.IMPORTANCE_LOW)
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("MemGallery Gestures")
+            .setContentTitle(getString(R.string.notif_edge_title))
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
         startForeground(2002, notification)

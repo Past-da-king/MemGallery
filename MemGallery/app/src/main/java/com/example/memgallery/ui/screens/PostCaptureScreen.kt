@@ -19,12 +19,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.MemoryCreationViewModel
 import com.example.memgallery.ui.viewmodels.MemoryCreationUiState
@@ -136,13 +138,13 @@ fun PostCaptureScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditMode) "Edit Memory" else "New Memory Captured") },
+                title = { Text(if (isEditMode) stringResource(R.string.post_capture_edit_title) else stringResource(R.string.post_capture_new_title)) },
                 actions = {
                     IconButton(onClick = {
                         navController.popBackStack(route = Screen.Gallery.route, inclusive = false)
                         creationViewModel.resetState()
                     }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                     }
                 }
             )
@@ -188,11 +190,11 @@ fun PostCaptureScreen(
                                 ) {
                                     Image(
                                         painter = rememberAsyncImagePainter(model = Uri.parse(uri)),
-                                        contentDescription = "Captured Image $index",
+                                        contentDescription = stringResource(R.string.post_capture_cd_captured_image, index),
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )
-                                    
+
                                     // Delete Button Overlay
                                     IconButton(
                                         onClick = { creationViewModel.removeDraftImageUri(uri) },
@@ -203,8 +205,8 @@ fun PostCaptureScreen(
                                             .background(Color.Black.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape)
                                     ) {
                                         Icon(
-                                            Icons.Default.Close, 
-                                            contentDescription = "Remove Image", 
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.post_capture_cd_remove_image),
                                             tint = Color.White,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -224,8 +226,8 @@ fun PostCaptureScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Default.Add, contentDescription = "Add More")
-                                        Text("Add", style = MaterialTheme.typography.labelMedium)
+                                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.post_capture_cd_add_more))
+                                        Text(stringResource(R.string.post_capture_label_add), style = MaterialTheme.typography.labelMedium)
                                     }
                                 }
                             }
@@ -247,12 +249,12 @@ fun PostCaptureScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 imageVector = Icons.Default.AddAPhoto,
-                                contentDescription = "Add Image",
+                                contentDescription = stringResource(R.string.post_capture_cd_add_image),
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Tap to add images", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.post_capture_empty_tap_add), style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -261,21 +263,21 @@ fun PostCaptureScreen(
 
                 if (draftAudioUri != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                        Icon(Icons.Default.Mic, contentDescription = "Audio Added")
+                        Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.post_capture_cd_audio_added))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Audio added")
+                        Text(stringResource(R.string.post_capture_audio_added_status))
                     }
                 }
                 if (draftUserText != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                        Icon(Icons.Default.EditNote, contentDescription = "Text Added")
+                        Icon(Icons.Default.EditNote, contentDescription = stringResource(R.string.post_capture_cd_text_added))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(draftUserText!!, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
                 if (draftBookmarkUrl != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                        Icon(Icons.Default.Link, contentDescription = "URL Added")
+                        Icon(Icons.Default.Link, contentDescription = stringResource(R.string.post_capture_cd_url_added))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(draftBookmarkUrl!!, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
@@ -297,9 +299,9 @@ fun PostCaptureScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     enabled = draftAudioUri == null
                 ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Add Audio", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.post_capture_cd_add_audio), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Audio")
+                    Text(stringResource(R.string.post_capture_label_audio))
                 }
                 Button(
                     onClick = { navController.navigate(Screen.TextInput.createRoute(imageUri = draftImageUris.firstOrNull(), audioUri = draftAudioUri, userText = draftUserText, bookmarkUrl = draftBookmarkUrl, memoryId = memoryId)) },
@@ -307,9 +309,9 @@ fun PostCaptureScreen(
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Icon(Icons.Default.EditNote, contentDescription = "Add Text", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.EditNote, contentDescription = stringResource(R.string.post_capture_cd_add_text), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Text")
+                    Text(stringResource(R.string.post_capture_label_text))
                 }
                 Button(
                     onClick = { showUrlSheet = true },
@@ -317,9 +319,9 @@ fun PostCaptureScreen(
                     shape = RoundedCornerShape(24.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Icon(Icons.Default.Link, contentDescription = "Add URL", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Link, contentDescription = stringResource(R.string.post_capture_cd_add_url), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("URL")
+                    Text(stringResource(R.string.post_capture_label_url))
                 }
             }
 
@@ -358,9 +360,9 @@ fun PostCaptureScreen(
                 } else if (isEditMode && memory == null) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Icon(Icons.Default.AddCircle, contentDescription = "Save Now", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.AddCircle, contentDescription = stringResource(R.string.post_capture_cd_save_now), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (isEditMode) "Update" else "Save Now")
+                    Text(if (isEditMode) stringResource(R.string.common_update) else stringResource(R.string.post_capture_save_now))
                 }
             }
 
@@ -401,23 +403,23 @@ fun PostCaptureScreen(
                         .imePadding() // Handle keyboard
                 ) {
                     Text(
-                        text = "Add Link",
+                        text = stringResource(R.string.post_capture_sheet_add_link_title),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Paste a URL to save",
+                        text = stringResource(R.string.post_capture_sheet_add_link_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     OutlinedTextField(
                         value = tempUrl,
                         onValueChange = { tempUrl = it },
-                        placeholder = { Text("https://example.com") },
+                        placeholder = { Text(stringResource(R.string.common_url_placeholder)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true,
@@ -447,7 +449,7 @@ fun PostCaptureScreen(
                         )
                     ) {
                         Text(
-                            text = "Add Link",
+                            text = stringResource(R.string.post_capture_button_add_link),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -465,22 +467,22 @@ private fun AddImageSourceSheet(
     onCameraClick: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text("Add an image", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+        Text(stringResource(R.string.post_capture_sheet_add_image), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
         Row(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onGalleryClick).padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Image, contentDescription = "Choose from Gallery")
+            Icon(Icons.Default.Image, contentDescription = stringResource(R.string.post_capture_choose_gallery))
             Spacer(modifier = Modifier.width(16.dp))
-            Text("Choose from Gallery", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.post_capture_choose_gallery), style = MaterialTheme.typography.bodyLarge)
         }
         Row(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onCameraClick).padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.PhotoCamera, contentDescription = "Take a Picture")
+            Icon(Icons.Default.PhotoCamera, contentDescription = stringResource(R.string.post_capture_take_picture))
             Spacer(modifier = Modifier.width(16.dp))
-            Text("Take a Picture", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.post_capture_take_picture), style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

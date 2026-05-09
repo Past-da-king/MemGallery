@@ -1,16 +1,20 @@
 package com.example.memgallery.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memgallery.R
 import com.example.memgallery.data.repository.MemoryRepository
 import com.example.memgallery.data.local.entity.MemoryEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class CollectionDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val memoryRepository: MemoryRepository
 ) : ViewModel() {
 
@@ -30,7 +34,7 @@ class CollectionDetailViewModel @Inject constructor(
         viewModelScope.launch {
             memoryRepository.getAllCollections().collect { collections ->
                 val collection = collections.find { it.id == collectionId }
-                _collectionName.value = collection?.name ?: "Collection"
+                _collectionName.value = collection?.name ?: context.getString(R.string.collection_default_title)
             }
         }
         viewModelScope.launch {

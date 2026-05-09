@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.TaskEntity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -72,9 +74,9 @@ fun AddTaskSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    Triple("EVENT", "Event", Icons.Default.Event),
-                    Triple("TODO", "Task", Icons.Default.Check),
-                    Triple("REMINDER", "Reminder", Icons.Default.AccessTime)
+                    Triple("EVENT", stringResource(R.string.sheet_task_type_event), Icons.Default.Event),
+                    Triple("TODO", stringResource(R.string.sheet_task_type_task), Icons.Default.Check),
+                    Triple("REMINDER", stringResource(R.string.sheet_task_type_reminder), Icons.Default.AccessTime)
                 ).forEach { (key, label, icon) ->
                     FilterChip(
                         selected = type == key,
@@ -103,12 +105,12 @@ fun AddTaskSheet(
             TextField(
                 value = title,
                 onValueChange = { title = it },
-                placeholder = { 
+                placeholder = {
                     Text(
-                        "What needs to be done?", 
+                        stringResource(R.string.sheet_task_what_to_do),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    ) 
+                    )
                 },
                 textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
                 colors = TextFieldDefaults.colors(
@@ -124,12 +126,12 @@ fun AddTaskSheet(
             TextField(
                 value = description,
                 onValueChange = { description = it },
-                placeholder = { 
+                placeholder = {
                     Text(
-                        "Add details...", 
+                        stringResource(R.string.sheet_task_add_details),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    ) 
+                    )
                 },
                 textStyle = MaterialTheme.typography.bodyLarge,
                 colors = TextFieldDefaults.colors(
@@ -172,7 +174,7 @@ fun AddTaskSheet(
                 // Time Chip
                 SuggestionChip(
                     onClick = { showTimePicker = true },
-                    label = { Text(time.ifBlank { "Time" }) },
+                    label = { Text(time.ifBlank { stringResource(R.string.sheet_task_time_fallback) }) },
                     icon = { 
                         Icon(
                             Icons.Default.AccessTime, 
@@ -194,7 +196,7 @@ fun AddTaskSheet(
                         contentColor = if(isRecurring) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
-                    Icon(Icons.Default.Repeat, contentDescription = "Repeat")
+                    Icon(Icons.Default.Repeat, contentDescription = stringResource(R.string.sheet_task_cd_repeat))
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -206,7 +208,7 @@ fun AddTaskSheet(
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 24.dp)
                 ) {
-                    Text(if (taskToEdit != null) "Update" else "Save")
+                    Text(if (taskToEdit != null) stringResource(R.string.common_update) else stringResource(R.string.common_save))
                 }
             }
         }
@@ -231,7 +233,7 @@ fun AddTaskSheet(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showDatePicker = false }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.common_cancel))
                         }
                         TextButton(onClick = {
                             datePickerState.selectedDateMillis?.let { millis ->
@@ -241,7 +243,7 @@ fun AddTaskSheet(
                             }
                             showDatePicker = false
                         }) {
-                            Text("OK")
+                            Text(stringResource(R.string.common_ok))
                         }
                     }
                 }
@@ -259,7 +261,7 @@ fun AddTaskSheet(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Select Time",
+                        stringResource(R.string.sheet_task_select_time),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -269,13 +271,13 @@ fun AddTaskSheet(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.common_cancel))
                         }
                         TextButton(onClick = {
                             time = String.format("%02d:%02d", timePickerState.hour, timePickerState.minute)
                             showTimePicker = false
                         }) {
-                            Text("OK")
+                            Text(stringResource(R.string.common_ok))
                         }
                     }
                 }

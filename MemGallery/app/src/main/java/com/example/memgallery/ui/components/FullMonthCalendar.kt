@@ -18,8 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -47,7 +49,7 @@ fun FullMonthCalendar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.calendar_cd_prev_month))
             }
             
             Text(
@@ -58,7 +60,7 @@ fun FullMonthCalendar(
             )
 
             IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month")
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.calendar_cd_next_month))
             }
         }
 
@@ -66,7 +68,15 @@ fun FullMonthCalendar(
 
         // Days of Week
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            val daysOfWeek = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+            val daysOfWeek = listOf(
+                stringResource(R.string.calendar_dow_sun),
+                stringResource(R.string.calendar_dow_mon),
+                stringResource(R.string.calendar_dow_tue),
+                stringResource(R.string.calendar_dow_wed),
+                stringResource(R.string.calendar_dow_thu),
+                stringResource(R.string.calendar_dow_fri),
+                stringResource(R.string.calendar_dow_sat)
+            )
             daysOfWeek.forEach { day ->
                 Text(
                     text = day.uppercase(),

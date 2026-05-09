@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.SettingsViewModel
 import kotlinx.coroutines.launch
@@ -111,7 +113,7 @@ fun OnboardingScreen(
                 )
             ) {
                 Text(
-                    text = "Skip",
+                    text = stringResource(R.string.common_skip),
                     style = MaterialTheme.typography.labelLarge
                 )
             }
@@ -159,7 +161,7 @@ fun OnboardingScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                    Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.common_next))
                 }
             }
         }
@@ -222,7 +224,7 @@ fun WelcomePage() {
             )
             Image(
                 painter = androidx.compose.ui.res.painterResource(id = com.example.memgallery.R.mipmap.ic_launcher_foreground),
-                contentDescription = "MemGallery Icon",
+                contentDescription = stringResource(R.string.settings_cd_app_icon),
                 modifier = Modifier.size(140.dp)
             )
         }
@@ -230,7 +232,7 @@ fun WelcomePage() {
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
-            text = "YOUR SECOND BRAIN",
+            text = stringResource(R.string.onboarding_brand_label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold,
@@ -241,7 +243,7 @@ fun WelcomePage() {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "MemGallery",
+            text = stringResource(R.string.onboarding_brand_title),
             style = MaterialTheme.typography.displayMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -252,7 +254,7 @@ fun WelcomePage() {
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "Capture. Process. Recall.",
+            text = stringResource(R.string.onboarding_brand_tagline),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -268,7 +270,7 @@ fun WelcomePage() {
             modifier = Modifier.alpha(bodyAlpha)
         ) {
             Text(
-                text = "Stays on your device. No cloud.",
+                text = stringResource(R.string.onboarding_privacy_chip),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -289,7 +291,7 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Choose Your Intelligence",
+            text = stringResource(R.string.onboarding_choose_intelligence_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -298,7 +300,7 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Pick the AI engine that powers MemGallery. You can change this anytime in Settings.",
+            text = stringResource(R.string.onboarding_choose_intelligence_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -308,8 +310,9 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
 
         // Google Gemini
         AiProviderCard(
-            title = "Google Gemini",
-            description = "Google's trusted multimodal AI. Good balance of speed and reasoning.",
+            title = stringResource(R.string.onboarding_provider_gemini_title),
+            description = stringResource(R.string.onboarding_provider_gemini_desc),
+            icon = Icons.Default.AutoAwesome,
             isSelected = aiProvider == "GEMINI",
             onClick = { viewModel.setAiProvider("GEMINI") }
         )
@@ -318,8 +321,9 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
 
         // Groq
         AiProviderCard(
-            title = "Groq LPU (Llama)",
-            description = "Blazing fast inference. Best for real-time interactions.",
+            title = stringResource(R.string.onboarding_provider_groq_title),
+            description = stringResource(R.string.onboarding_provider_groq_desc),
+            icon = Icons.Default.Bolt,
             isSelected = aiProvider == "GROQ",
             onClick = { viewModel.setAiProvider("GROQ") }
         )
@@ -328,8 +332,9 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
 
         // OpenAI-compatible (OpenRouter, Together, self-hosted, etc.)
         AiProviderCard(
-            title = "OpenAI-Compatible",
-            description = "OpenRouter, OpenAI, Together AI, or any compatible endpoint.",
+            title = stringResource(R.string.onboarding_provider_openai_title),
+            description = stringResource(R.string.onboarding_provider_openai_desc),
+            icon = Icons.Default.Hub,
             isSelected = aiProvider == "OPENAI_COMPATIBLE",
             onClick = { viewModel.setAiProvider("OPENAI_COMPATIBLE") }
         )
@@ -340,6 +345,7 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
 fun AiProviderCard(
     title: String,
     description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -358,11 +364,7 @@ fun AiProviderCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = when {
-                    title.contains("Groq") -> Icons.Default.Bolt
-                    title.contains("Compatible") -> Icons.Default.Hub
-                    else -> Icons.Default.AutoAwesome
-                },
+                imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
@@ -386,7 +388,7 @@ fun AiProviderCard(
             if (isSelected) {
                 Icon(
                     Icons.Default.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(R.string.common_selected),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -425,7 +427,7 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(28.dp))
 
         Text(
-            text = "Connect Your AI",
+            text = stringResource(R.string.onboarding_connect_ai_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -435,7 +437,7 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Add your key now, or skip and set this up anytime from Settings.",
+            text = stringResource(R.string.onboarding_connect_ai_body),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -458,10 +460,10 @@ private fun StandardKeySetupBlock(
     val apiKey by if (isGroq) viewModel.groqApiKey.collectAsState() else viewModel.apiKey.collectAsState()
     val apiKeyUiState by if (isGroq) viewModel.groqApiKeyUiState.collectAsState() else viewModel.apiKeyUiState.collectAsState()
 
-    val providerName = if (isGroq) "Groq Cloud" else "Google AI Studio"
+    val providerName = if (isGroq) stringResource(R.string.onboarding_provider_groq_cloud) else stringResource(R.string.onboarding_provider_google_ai)
     val providerUrl = if (isGroq) "console.groq.com" else "aistudio.google.com"
-    val inputLabel = if (isGroq) "Groq API Key" else "Google AI Studio API Key"
-    val placeholder = if (isGroq) "gsk_..." else "AIzaSy..."
+    val inputLabel = if (isGroq) stringResource(R.string.onboarding_field_groq_key) else stringResource(R.string.onboarding_field_google_key)
+    val placeholder = if (isGroq) stringResource(R.string.settings_groq_placeholder) else stringResource(R.string.settings_gemini_placeholder)
 
     // Get-the-key instructions
     Surface(
@@ -471,14 +473,14 @@ private fun StandardKeySetupBlock(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Get a free key from $providerName",
+                text = stringResource(R.string.onboarding_card_get_key_title, providerName),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Visit $providerUrl, sign in, create an API key, and paste it below.",
+                text = stringResource(R.string.onboarding_card_get_key_body, providerUrl),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -517,14 +519,14 @@ private fun StandardKeySetupBlock(
         if (apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Loading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
         } else {
-            Text("Validate & Save")
+            Text(stringResource(R.string.onboarding_validate_save))
         }
     }
 
     Spacer(modifier = Modifier.height(10.dp))
 
     Text(
-        text = "Don't have a key? Tap Skip in the corner.",
+        text = stringResource(R.string.onboarding_no_key_caption),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -546,14 +548,14 @@ private fun OpenAiCompatibleSetupBlock(viewModel: SettingsViewModel) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "OpenAI-compatible endpoint",
+                text = stringResource(R.string.onboarding_openai_card_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Works with OpenRouter, OpenAI, Together AI, or any server that speaks the OpenAI Chat Completions format.",
+                text = stringResource(R.string.onboarding_openai_card_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -566,8 +568,8 @@ private fun OpenAiCompatibleSetupBlock(viewModel: SettingsViewModel) {
         value = baseUrl,
         onValueChange = viewModel::setCustomBaseUrl,
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Base URL") },
-        placeholder = { Text("https://openrouter.ai/api/v1/") },
+        label = { Text(stringResource(R.string.settings_custom_base_url_label)) },
+        placeholder = { Text(stringResource(R.string.onboarding_openai_base_url_placeholder)) },
         singleLine = true,
         shape = RoundedCornerShape(12.dp)
     )
@@ -578,8 +580,8 @@ private fun OpenAiCompatibleSetupBlock(viewModel: SettingsViewModel) {
         value = modelName,
         onValueChange = viewModel::setCustomModelName,
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Model") },
-        placeholder = { Text("e.g. google/gemini-2.5-flash") },
+        label = { Text(stringResource(R.string.onboarding_openai_model_label)) },
+        placeholder = { Text(stringResource(R.string.onboarding_openai_model_placeholder)) },
         singleLine = true,
         shape = RoundedCornerShape(12.dp)
     )
@@ -590,8 +592,8 @@ private fun OpenAiCompatibleSetupBlock(viewModel: SettingsViewModel) {
         value = apiKey,
         onValueChange = viewModel::onCustomApiKeyChange,
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("API Key") },
-        placeholder = { Text("sk-...") },
+        label = { Text(stringResource(R.string.onboarding_openai_key_label)) },
+        placeholder = { Text(stringResource(R.string.onboarding_openai_key_placeholder)) },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         isError = uiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error
@@ -611,14 +613,14 @@ private fun OpenAiCompatibleSetupBlock(viewModel: SettingsViewModel) {
         if (uiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Loading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
         } else {
-            Text("Validate & Save")
+            Text(stringResource(R.string.onboarding_validate_save))
         }
     }
 
     Spacer(modifier = Modifier.height(10.dp))
 
     Text(
-        text = "Don't have it ready? Tap Skip in the corner.",
+        text = stringResource(R.string.onboarding_no_key_caption_alt),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -650,7 +652,7 @@ private fun KeyValidationFeedback(state: com.example.memgallery.ui.viewmodels.Ap
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Connected",
+                    text = stringResource(R.string.onboarding_status_connected),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
@@ -722,7 +724,7 @@ fun PermissionsPage() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Enable Powers",
+            text = stringResource(R.string.onboarding_powers_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -731,7 +733,7 @@ fun PermissionsPage() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "To function as your second brain, MemGallery needs access to your senses.",
+            text = stringResource(R.string.onboarding_powers_body),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -740,7 +742,7 @@ fun PermissionsPage() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Media Access allows auto-detection of screenshots.\n\nNote: Android requires access to all photos. Your privacy is protected - the app only processes screenshots.",
+            text = stringResource(R.string.onboarding_media_access_explainer),
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -751,17 +753,17 @@ fun PermissionsPage() {
 
         PermissionItem(
             icon = Icons.Default.Notifications,
-            title = "Notifications",
-            desc = "For AI insights and reminders",
+            title = stringResource(R.string.onboarding_perm_notifications_title),
+            desc = stringResource(R.string.onboarding_perm_notifications_desc),
             isGranted = hasNotificationPermission
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
         PermissionItem(
             icon = Icons.Default.CameraAlt,
-            title = "Camera",
-            desc = "To capture visual memories",
+            title = stringResource(R.string.onboarding_perm_camera_title),
+            desc = stringResource(R.string.onboarding_perm_camera_desc),
             isGranted = hasCameraPermission
         )
 
@@ -769,8 +771,8 @@ fun PermissionsPage() {
 
         PermissionItem(
             icon = Icons.Default.Mic,
-            title = "Microphone",
-            desc = "To record audio notes",
+            title = stringResource(R.string.onboarding_perm_mic_title),
+            desc = stringResource(R.string.onboarding_perm_mic_desc),
             isGranted = hasAudioPermission
         )
 
@@ -778,8 +780,8 @@ fun PermissionsPage() {
 
         PermissionItem(
             icon = Icons.Default.PhotoLibrary,
-            title = "Media",
-            desc = "To auto-index screenshots",
+            title = stringResource(R.string.onboarding_perm_media_title),
+            desc = stringResource(R.string.onboarding_perm_media_desc),
             isGranted = hasMediaPermission
         )
 
@@ -787,8 +789,8 @@ fun PermissionsPage() {
 
         PermissionItem(
             icon = Icons.Default.Layers,
-            title = "Quick Capture",
-            desc = "Instant capture from anywhere",
+            title = stringResource(R.string.onboarding_perm_overlay_title),
+            desc = stringResource(R.string.onboarding_perm_overlay_desc),
             isGranted = hasOverlayPermission,
             onClick = {
                 if (!hasOverlayPermission) {
@@ -806,7 +808,7 @@ fun PermissionsPage() {
             shape = RoundedCornerShape(12.dp),
             enabled = !hasNotificationPermission || !hasCameraPermission || !hasAudioPermission || !hasMediaPermission
         ) {
-            Text(if (!hasNotificationPermission || !hasCameraPermission || !hasAudioPermission || !hasMediaPermission) "Grant Standard Permissions" else "Standard Permissions Granted")
+            Text(if (!hasNotificationPermission || !hasCameraPermission || !hasAudioPermission || !hasMediaPermission) stringResource(R.string.onboarding_grant_standard) else stringResource(R.string.onboarding_standard_granted))
         }
         
         if (!hasOverlayPermission) {
@@ -819,7 +821,7 @@ fun PermissionsPage() {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Enable Quick Capture Overlay")
+                Text(stringResource(R.string.onboarding_enable_overlay))
             }
         }
     }
@@ -862,13 +864,13 @@ fun PermissionItem(
         if (isGranted) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = "Granted",
+                contentDescription = stringResource(R.string.onboarding_cd_granted),
                 tint = MaterialTheme.colorScheme.primary
             )
         } else if (onClick != {}) {
              Icon(
                 imageVector = Icons.Default.ArrowForward,
-                contentDescription = "Enable",
+                contentDescription = stringResource(R.string.onboarding_cd_enable),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
             )
@@ -886,7 +888,7 @@ fun HowItWorksPage(onGetStarted: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "How it Works",
+            text = stringResource(R.string.onboarding_how_it_works_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -894,11 +896,11 @@ fun HowItWorksPage(onGetStarted: () -> Unit) {
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        StepItem(number = "1", title = "Capture", desc = "Take photos, record audio, save web bookmarks, or share content from other apps.")
+        StepItem(number = "1", title = stringResource(R.string.onboarding_step_capture_title), desc = stringResource(R.string.onboarding_step_capture_desc))
         Spacer(modifier = Modifier.height(24.dp))
-        StepItem(number = "2", title = "Process", desc = "AI analyzes your memories to make them searchable.")
+        StepItem(number = "2", title = stringResource(R.string.onboarding_step_process_title), desc = stringResource(R.string.onboarding_step_process_desc))
         Spacer(modifier = Modifier.height(24.dp))
-        StepItem(number = "3", title = "Recall", desc = "Ask questions or search to instantly retrieve information.")
+        StepItem(number = "3", title = stringResource(R.string.onboarding_step_recall_title), desc = stringResource(R.string.onboarding_step_recall_desc))
 
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -913,7 +915,7 @@ fun HowItWorksPage(onGetStarted: () -> Unit) {
             )
         ) {
             Text(
-                text = "Get Started",
+                text = stringResource(R.string.onboarding_get_started),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

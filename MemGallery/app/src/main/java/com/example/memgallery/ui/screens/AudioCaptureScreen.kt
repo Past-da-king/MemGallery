@@ -29,12 +29,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 import com.example.memgallery.ui.viewmodels.AudioCaptureViewModel
 import java.io.File
@@ -125,7 +127,7 @@ fun AudioCaptureScreen(
                         if (isRecording) viewModel.stopRecording()
                         navController.popBackStack()
                     }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -147,7 +149,7 @@ fun AudioCaptureScreen(
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (isRecording) "Recording..." else "Ready to Record",
+                    text = if (isRecording) stringResource(R.string.audio_capture_recording) else stringResource(R.string.audio_capture_ready),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -231,7 +233,7 @@ fun AudioCaptureScreen(
                 ) {
                     Icon(
                         imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                        contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
+                        contentDescription = if (isRecording) stringResource(R.string.audio_capture_cd_stop) else stringResource(R.string.audio_capture_cd_start),
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -258,13 +260,13 @@ fun AudioCaptureScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "Microphone Access",
+                        stringResource(R.string.audio_capture_mic_sheet_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "MemGallery needs microphone access to record your voice notes and index them for searching.",
+                        stringResource(R.string.audio_capture_mic_sheet_body),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -277,13 +279,13 @@ fun AudioCaptureScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = CircleShape
                     ) {
-                        Text("Grant Permission")
+                        Text(stringResource(R.string.common_grant_permission))
                     }
                     TextButton(
                         onClick = { showPermissionSheet = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Not Now")
+                        Text(stringResource(R.string.common_not_now))
                     }
                 }
             }

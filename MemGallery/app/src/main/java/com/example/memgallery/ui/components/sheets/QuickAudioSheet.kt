@@ -21,10 +21,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.memgallery.R
 import com.example.memgallery.ui.screens.AudioVisualizer
 import kotlinx.coroutines.delay
 
@@ -86,7 +88,7 @@ fun QuickAudioSheet(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "Quick Audio Note",
+            stringResource(R.string.sheet_quick_audio_title),
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -96,7 +98,7 @@ fun QuickAudioSheet(
             // Permission denied state
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "Microphone Permission Required",
+                    stringResource(R.string.sheet_quick_audio_perm_required),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -113,7 +115,7 @@ fun QuickAudioSheet(
                 ) {
                     Icon(Icons.Default.Settings, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Grant Permission")
+                    Text(stringResource(R.string.common_grant_permission))
                 }
             }
         } else {
@@ -178,7 +180,7 @@ fun QuickAudioSheet(
                 ) {
                     Icon(
                         imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                        contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
+                        contentDescription = if (isRecording) stringResource(R.string.audio_capture_cd_stop) else stringResource(R.string.audio_capture_cd_start),
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -191,11 +193,11 @@ fun QuickAudioSheet(
                     onClick = { onRecordingSaved(recordedFilePath) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Send Audio Note")
+                    Text(stringResource(R.string.sheet_quick_audio_send))
                 }
             } else {
                  Text(
-                    text = if (isRecording) "Tap to stop" else "Tap to record",
+                    text = if (isRecording) stringResource(R.string.sheet_quick_audio_tap_stop) else stringResource(R.string.sheet_quick_audio_tap_record),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -10,8 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,10 +31,10 @@ fun TextInputScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("New Note") },
+                title = { Text(stringResource(R.string.text_input_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -67,7 +69,7 @@ fun TextInputScreen(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Continue")
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.text_input_cd_continue))
             }
         }
     ) { padding ->
@@ -83,7 +85,7 @@ fun TextInputScreen(
                 modifier = Modifier.fillMaxSize(),
                 placeholder = {
                     Text(
-                        "What's on your mind?",
+                        stringResource(R.string.common_whats_on_your_mind),
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )

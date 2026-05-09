@@ -124,6 +124,9 @@ fun AppNavigation(
             "text_note" -> {
                 navController.navigate(Screen.TextInput.createRoute(null, null, null, null))
             }
+            "camera_capture" -> {
+                navController.navigate(Screen.CameraCapture.route)
+            }
             // "add_memory" will need to trigger bottom sheet in GalleryScreen
             // This is handled differently as it's not a separate screen
         }

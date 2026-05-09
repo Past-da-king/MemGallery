@@ -19,10 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.memgallery.R
 import com.example.memgallery.ui.viewmodels.FeedbackUiState
 import com.example.memgallery.ui.viewmodels.FeedbackViewModel
 
@@ -48,10 +50,10 @@ fun FeedbackScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Send Feedback", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.feedback_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -91,14 +93,14 @@ fun FeedbackScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
-                    "Help us improve MemGallery",
+                    stringResource(R.string.feedback_header_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Text(
-                    "Describe your issue or suggest a feature. No personal info required.",
+                    stringResource(R.string.feedback_header_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -114,7 +116,7 @@ fun FeedbackScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
-                    placeholder = { Text("Feedback or Bug description...") },
+                    placeholder = { Text(stringResource(R.string.feedback_placeholder)) },
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -139,9 +141,9 @@ fun FeedbackScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text("Include System Logs", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.feedback_toggle_logs_title), style = MaterialTheme.typography.titleSmall)
                         Text(
-                            "Helps us fix crashes and performance issues.",
+                            stringResource(R.string.feedback_toggle_logs_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -168,7 +170,7 @@ fun FeedbackScreen(
                     } else {
                         Icon(Icons.Default.Send, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Submit to GitHub", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.feedback_button_submit), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -209,7 +211,7 @@ fun FeedbackScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
-                            "Feedback Sent!",
+                            stringResource(R.string.feedback_success_title),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -217,7 +219,7 @@ fun FeedbackScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            "Thank you for helping us improve MemGallery. Your report has been posted to our GitHub.",
+                            stringResource(R.string.feedback_success_body),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -234,7 +236,7 @@ fun FeedbackScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Done", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.common_done), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -247,7 +249,7 @@ fun FeedbackScreen(
                         .padding(16.dp),
                     action = {
                         TextButton(onClick = { viewModel.resetState() }) {
-                            Text("Dismiss", color = MaterialTheme.colorScheme.inversePrimary)
+                            Text(stringResource(R.string.common_dismiss), color = MaterialTheme.colorScheme.inversePrimary)
                         }
                     }
                 ) {

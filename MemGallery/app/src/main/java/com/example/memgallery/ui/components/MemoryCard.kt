@@ -21,9 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.MemoryEntity
 import java.util.Random
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -67,7 +69,7 @@ fun MemoryCard(
             if (memory.imageUri != null || memory.bookmarkImageUrl != null) {
                 Image(
                     painter = rememberAsyncImagePainter(model = memory.imageUri ?: memory.bookmarkImageUrl),
-                    contentDescription = memory.aiTitle ?: "Memory",
+                    contentDescription = memory.aiTitle ?: stringResource(R.string.memory_card_cd_default),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -106,7 +108,7 @@ fun MemoryCard(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = memory.aiTitle ?: "Untitled Memory",
+                    text = memory.aiTitle ?: stringResource(R.string.memory_card_untitled),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     ),
@@ -136,7 +138,7 @@ fun MemoryCard(
                     if (memory.imageUri != null || memory.bookmarkImageUrl != null) {
                         Icon(
                             imageVector = Icons.Outlined.PhotoCamera,
-                            contentDescription = "Image",
+                            contentDescription = stringResource(R.string.memory_card_cd_image),
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -144,7 +146,7 @@ fun MemoryCard(
                     if (memory.audioFilePath != null) {
                         Icon(
                             imageVector = Icons.Outlined.Mic,
-                            contentDescription = "Audio",
+                            contentDescription = stringResource(R.string.memory_card_cd_audio),
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -152,7 +154,7 @@ fun MemoryCard(
                     if (!memory.userText.isNullOrBlank()) {
                         Icon(
                             imageVector = Icons.Outlined.EditNote,
-                            contentDescription = "Text",
+                            contentDescription = stringResource(R.string.memory_card_cd_text),
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -160,7 +162,7 @@ fun MemoryCard(
                     if (memory.bookmarkUrl != null) {
                         Icon(
                             imageVector = Icons.Outlined.Bookmark,
-                            contentDescription = "Bookmark",
+                            contentDescription = stringResource(R.string.memory_card_cd_bookmark),
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -168,7 +170,7 @@ fun MemoryCard(
                     if (memory.status == "PENDING") {
                         Icon(
                             imageVector = Icons.Default.HourglassEmpty,
-                            contentDescription = "Pending",
+                            contentDescription = stringResource(R.string.memory_card_cd_pending),
                             tint = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.size(16.dp)
                         )

@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -41,6 +42,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.remote.dto.ActionDto
 import com.example.memgallery.ui.components.AudioPlayer
@@ -107,14 +109,16 @@ fun MemoryDetailScreen(
         }
     }
 
+    val notePrefix = stringResource(R.string.memory_detail_share_note_prefix)
+    val shareChooserTitle = stringResource(R.string.memory_detail_share_chooser_title)
     val shareMemory = { mem: MemoryEntity ->
         val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
             type = "text/plain"
-            
+
             val sb = StringBuilder()
             if (!mem.aiTitle.isNullOrBlank()) sb.append(mem.aiTitle).append("\n\n")
             if (!mem.aiSummary.isNullOrBlank()) sb.append(mem.aiSummary).append("\n\n")
-            if (!mem.userText.isNullOrBlank()) sb.append("Note: ").append(mem.userText).append("\n\n")
+            if (!mem.userText.isNullOrBlank()) sb.append(notePrefix).append(mem.userText).append("\n\n")
             if (!mem.bookmarkUrl.isNullOrBlank()) sb.append(mem.bookmarkUrl)
             
             putExtra(android.content.Intent.EXTRA_TEXT, sb.toString())
@@ -141,7 +145,7 @@ fun MemoryDetailScreen(
                 }
             }
         }
-        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Memory"))
+        context.startActivity(android.content.Intent.createChooser(shareIntent, shareChooserTitle))
     }
 
     Scaffold(
@@ -153,7 +157,7 @@ fun MemoryDetailScreen(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Default.Share, contentDescription = "Share")
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.common_share))
             }
         }
     ) { padding ->
@@ -376,7 +380,7 @@ fun MemoryDetailContent(
                     // Title & Date
                     item {
                         Text(
-                            text = memory.aiTitle ?: "Untitled Memory",
+                            text = memory.aiTitle ?: stringResource(R.string.gallery_untitled_memory),
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -408,7 +412,7 @@ fun MemoryDetailContent(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Bookmark", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.memory_detail_section_bookmark), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     
@@ -442,7 +446,7 @@ fun MemoryDetailContent(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("AI Summary", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.memory_detail_section_ai_summary), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(memory.aiSummary, style = MaterialTheme.typography.bodyLarge)
@@ -471,7 +475,7 @@ fun MemoryDetailContent(
                     // User Note (Expandable)
                     if (memory.userText != null) {
                         item {
-                            ExpandableSection(title = "Your Note", content = memory.userText)
+                            ExpandableSection(title = stringResource(R.string.memory_detail_section_your_note), content = memory.userText)
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
@@ -479,14 +483,14 @@ fun MemoryDetailContent(
                     // AI Analysis Sections (Expandable)
                     if (memory.aiImageAnalysis != null) {
                         item {
-                            ExpandableSection(title = "Image Analysis", content = memory.aiImageAnalysis)
+                            ExpandableSection(title = stringResource(R.string.memory_detail_section_image_analysis), content = memory.aiImageAnalysis)
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                     
                     if (memory.aiAudioTranscription != null) {
                         item {
-                            ExpandableSection(title = "Audio Transcription", content = memory.aiAudioTranscription)
+                            ExpandableSection(title = stringResource(R.string.memory_detail_section_audio_transcription), content = memory.aiAudioTranscription)
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
@@ -494,7 +498,7 @@ fun MemoryDetailContent(
                     // Tags
                     if (!memory.aiTags.isNullOrEmpty()) {
                         item {
-                            Text("Tags", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(stringResource(R.string.memory_detail_section_tags), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                             Spacer(modifier = Modifier.height(8.dp))
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
@@ -521,7 +525,7 @@ fun MemoryDetailContent(
 
                     // Actions
                     item {
-                        Text("Suggested Actions", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.memory_detail_section_suggested_actions), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     
@@ -550,9 +554,9 @@ fun MemoryDetailContent(
                             onClick = { showAddTaskSheet = true },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Manual Reminder", modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.memory_detail_add_manual_reminder), modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add Manual Reminder")
+                            Text(stringResource(R.string.memory_detail_add_manual_reminder))
                         }
                     }
                     
@@ -578,7 +582,7 @@ fun MemoryDetailContent(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
             }
 
             IconButton(
@@ -588,7 +592,7 @@ fun MemoryDetailContent(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.common_edit))
             }
         }
 
@@ -601,7 +605,7 @@ fun MemoryDetailContent(
                     onDismissRequest = { showFullscreenImage = false },
                     onShare = onShare,
                     onEdit = onEdit,
-                    memoryTitle = memory.aiTitle ?: "Memory",
+                    memoryTitle = memory.aiTitle ?: stringResource(R.string.memory_detail_fallback),
                     creationTimestamp = memory.creationTimestamp
                 )
             }
@@ -647,7 +651,7 @@ fun ExpandableSection(title: String, content: String) {
                 Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Collapse" else "Expand"
+                    contentDescription = if (expanded) stringResource(R.string.memory_detail_cd_collapse) else stringResource(R.string.memory_detail_cd_expand)
                 )
             }
             AnimatedVisibility(visible = expanded) {
@@ -682,7 +686,7 @@ fun ActionCard(action: ActionDto, onAction: () -> Unit) {
                 Text(action.description, style = MaterialTheme.typography.bodyMedium)
             }
             IconButton(onClick = onAction) {
-                Icon(Icons.Default.Check, contentDescription = "Do Action")
+                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.memory_detail_cd_do_action))
             }
         }
     }

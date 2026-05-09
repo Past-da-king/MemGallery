@@ -17,8 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.TaskEntity
 
 @Composable
@@ -38,13 +40,13 @@ fun UnapprovedTasksSheet(
             .navigationBarsPadding()
     ) {
         Text(
-            text = "Review New Tasks",
+            text = stringResource(R.string.sheet_unapproved_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "AI has detected ${tasks.size} new tasks. Review and approve them.",
+            text = stringResource(R.string.sheet_unapproved_body, tasks.size),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -65,7 +67,7 @@ fun UnapprovedTasksSheet(
                     }
                 }
             ) {
-                Text(if (allSelected) "Deselect All" else "Select All")
+                Text(if (allSelected) stringResource(R.string.common_deselect_all) else stringResource(R.string.common_select_all))
             }
             
             Row {
@@ -76,7 +78,7 @@ fun UnapprovedTasksSheet(
                     },
                     enabled = selectedTasks.isNotEmpty()
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.sheet_unapproved_cd_delete_selected), tint = MaterialTheme.colorScheme.error)
                 }
                 IconButton(
                     onClick = {
@@ -85,7 +87,7 @@ fun UnapprovedTasksSheet(
                     },
                     enabled = selectedTasks.isNotEmpty()
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = "Approve Selected", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.sheet_unapproved_cd_approve_selected), tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -124,13 +126,13 @@ fun UnapprovedTasksSheet(
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Text("Reject All")
+                Text(stringResource(R.string.sheet_unapproved_reject_all))
             }
             Button(
                 onClick = { onApprove(tasks) },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Approve All")
+                Text(stringResource(R.string.sheet_unapproved_approve_all))
             }
         }
     }
