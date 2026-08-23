@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=Past-da-king&project=MemGallery&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # MemGallery 🧠📸
 
 <p align="center">
