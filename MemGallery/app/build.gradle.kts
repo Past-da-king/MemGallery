@@ -24,8 +24,8 @@ android {
         applicationId = "com.example.memgallery"
         minSdk = 24
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.3.3"
+        versionCode = 20
+        versionName = "0.3.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -111,6 +111,11 @@ dependencies {
     // Glance Widget
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+
+    // Agent Bridge — embedded HTTP + SSE server
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.zxing.core)
 
     // Networking
     implementation(libs.retrofit)

@@ -13,15 +13,37 @@ object ChatSystemPrompt {
 
     /**
      * Returns the full system prompt with the current timestamp injected.
+     *
+     * When `includeTools` is false (e.g. for the Local provider, which can't actually
+     * invoke tools), the AVAILABLE TOOLS section and tool-driven REASONING/RESPONSE
+     * guidance are stripped so the model doesn't promise capabilities it doesn't have.
      */
-    fun generate(maxToolCalls: Int = 3): String {
+    fun generate(maxToolCalls: Int = 3, includeTools: Boolean = true): String {
         val now = LocalDateTime.now()
         val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         val dayOfWeek = now.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }
-        
+
         val currentDate = now.format(dateFormatter)
         val currentTime = now.format(timeFormatter)
+
+        if (!includeTools) {
+            return """
+# MemGallery AI Assistant
+
+## IDENTITY
+You are **MemGallery Assistant**, a helpful, intelligent AI built into the MemGallery app. Your purpose is to help users with their saved memories, tasks, and collections, using only the conversational context the user provides — you have NO database or web-search tools available in this mode.
+
+## CURRENT DATE & TIME
+- **Today's Date**: $currentDate ($dayOfWeek)
+- **Current Time**: $currentTime
+
+## RESPONSE STYLE
+- Be conversational and helpful.
+- If the user asks about specific stored data (memories, tasks, collections) and you don't have it in the conversation, say so plainly and ask them to share or paste the relevant context.
+- Use markdown for formatting.
+""".trimIndent()
+        }
 
         return """
 # MemGallery AI Assistant

@@ -20,9 +20,14 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         CollectionEntity::class, 
         MemoryCollectionCrossRef::class,
         com.example.memgallery.data.local.entity.ChatEntity::class,
-        com.example.memgallery.data.local.entity.ChatMessageEntity::class
-    ], 
-    version = 17, 
+        com.example.memgallery.data.local.entity.ChatMessageEntity::class,
+        com.example.memgallery.data.local.entity.AgentClientEntity::class,
+        com.example.memgallery.data.local.entity.AgentAskEntity::class,
+        com.example.memgallery.data.local.entity.AgentEventEntity::class,
+        com.example.memgallery.data.local.entity.AgentWebhookEntity::class,
+        com.example.memgallery.data.local.entity.AgentAuditEntity::class
+    ],
+    version = 18,
     exportSchema = false
 )
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class, com.example.memgallery.data.local.converters.IntListConverter::class)
@@ -31,6 +36,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun collectionDao(): CollectionDao
     abstract fun chatDao(): com.example.memgallery.data.local.dao.ChatDao
+    abstract fun agentClientDao(): com.example.memgallery.data.local.dao.AgentClientDao
+    abstract fun agentAskDao(): com.example.memgallery.data.local.dao.AgentAskDao
+    abstract fun agentOutboxDao(): com.example.memgallery.data.local.dao.AgentOutboxDao
+    abstract fun agentAuditDao(): com.example.memgallery.data.local.dao.AgentAuditDao
 
     companion object {
         val MIGRATION_14_15 = object : androidx.room.migration.Migration(14, 15) {
@@ -203,6 +212,139 @@ abstract class AppDatabase : RoomDatabase() {
                         throw e
                     }
                 }
+            }
+        }
+
+        /**
+         * v18 — Agent Bridge.
+         *
+         * Additive only: five new agent tables, project semantics on `collections`, and
+         * provenance/sync columns on `tasks`. Nothing existing is rewritten, so a failed
+         * upgrade can never lose memories.
+         */
+        val MIGRATION_17_18 = object : androidx.room.migration.Migration(17, 18) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                val addColumns = listOf(
+                    // tasks: provenance + project link + sync clock
+                    "ALTER TABLE tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'USER'",
+                    "ALTER TABLE tasks ADD COLUMN externalId TEXT",
+                    "ALTER TABLE tasks ADD COLUMN projectId INTEGER",
+                    "ALTER TABLE tasks ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0",
+                    // collections become projects
+                    "ALTER TABLE collections ADD COLUMN status TEXT NOT NULL DEFAULT 'ACTIVE'",
+                    "ALTER TABLE collections ADD COLUMN color INTEGER",
+                    "ALTER TABLE collections ADD COLUMN targetDate TEXT",
+                    "ALTER TABLE collections ADD COLUMN archived INTEGER NOT NULL DEFAULT 0",
+                    "ALTER TABLE collections ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0"
+                )
+                for (sql in addColumns) {
+                    try {
+                        database.execSQL(sql)
+                    } catch (e: android.database.sqlite.SQLiteException) {
+                        if (e.message?.contains("duplicate column name") == true) {
+                            android.util.Log.w("Migration_17_18", "Column already exists, skipping: ${e.message}")
+                        } else {
+                            throw e
+                        }
+                    }
+                }
+
+                // Existing tasks have never been "updated"; seed the clock from creation so
+                // the first mirror sync doesn't treat every row as brand new.
+                try {
+                    database.execSQL("UPDATE tasks SET updatedAt = creationTimestamp WHERE updatedAt = 0")
+                } catch (e: Exception) {
+                    android.util.Log.e("Migration_17_18", "Failed to backfill tasks.updatedAt", e)
+                }
+
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_projectId` ON `tasks` (`projectId`)")
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `agent_clients` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `tokenHash` TEXT NOT NULL,
+                        `tokenSalt` TEXT NOT NULL,
+                        `tokenPrefix` TEXT NOT NULL,
+                        `scopes` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `lastSeenAt` INTEGER,
+                        `revoked` INTEGER NOT NULL,
+                        `dailyAiQuota` INTEGER NOT NULL,
+                        `aiUsedToday` INTEGER NOT NULL,
+                        `quotaDay` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_clients_tokenPrefix` ON `agent_clients` (`tokenPrefix`)")
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `agent_asks` (
+                        `id` TEXT NOT NULL,
+                        `clientId` TEXT,
+                        `askedBy` TEXT NOT NULL,
+                        `kind` TEXT NOT NULL,
+                        `question` TEXT NOT NULL,
+                        `contextText` TEXT,
+                        `optionsJson` TEXT,
+                        `answer` TEXT,
+                        `status` TEXT NOT NULL,
+                        `priority` TEXT NOT NULL,
+                        `deepLink` TEXT,
+                        `createdAt` INTEGER NOT NULL,
+                        `expiresAt` INTEGER,
+                        `answeredAt` INTEGER,
+                        `notificationId` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_asks_status` ON `agent_asks` (`status`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_asks_clientId` ON `agent_asks` (`clientId`)")
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `agent_events` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `entityId` TEXT,
+                        `payloadJson` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `deliveredAt` INTEGER,
+                        `attempts` INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_events_createdAt` ON `agent_events` (`createdAt`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_events_deliveredAt` ON `agent_events` (`deliveredAt`)")
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `agent_webhooks` (
+                        `id` TEXT NOT NULL,
+                        `clientId` TEXT,
+                        `url` TEXT NOT NULL,
+                        `eventTypes` TEXT NOT NULL,
+                        `secret` TEXT NOT NULL,
+                        `active` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `lastStatus` TEXT,
+                        `lastAttemptAt` INTEGER,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_webhooks_clientId` ON `agent_webhooks` (`clientId`)")
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `agent_audit` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `clientId` TEXT,
+                        `clientName` TEXT NOT NULL,
+                        `action` TEXT NOT NULL,
+                        `entityType` TEXT NOT NULL,
+                        `entityId` TEXT,
+                        `detail` TEXT,
+                        `at` INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_audit_at` ON `agent_audit` (`at`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_audit_clientId` ON `agent_audit` (`clientId`)")
             }
         }
 

@@ -1,3 +1,4 @@
+@file:OptIn(kotlinx.coroutines.FlowPreview::class)
 package com.example.memgallery.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
@@ -10,11 +11,17 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
+
+private fun String.foldForSearch(): String =
+    java.text.Normalizer.normalize(this, java.text.Normalizer.Form.NFD)
+        .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+        .lowercase()
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
@@ -71,17 +78,21 @@ class GalleryViewModel @Inject constructor(
     private val _memories = memoryRepository.getMemories()
 
     val memories: StateFlow<List<MemoryEntity>> = combine(
-        _searchText,
+        _searchText.debounce(150L),
         _memories,
         _selectedFilter
     ) { text, allMemories, filter ->
         val filteredBySearch = if (text.isBlank()) {
             allMemories
         } else {
-            allMemories.filter {
-                it.aiTitle?.contains(text, ignoreCase = true) ?: false ||
-                it.aiSummary?.contains(text, ignoreCase = true) ?: false ||
-                it.aiTags?.any { tag -> tag.contains(text, ignoreCase = true) } ?: false
+            val q = text.foldForSearch()
+            allMemories.filter { m ->
+                m.aiTitle?.foldForSearch()?.contains(q) == true ||
+                m.aiSummary?.foldForSearch()?.contains(q) == true ||
+                m.aiTags?.any { tag -> tag.foldForSearch().contains(q) } == true ||
+                m.userText?.foldForSearch()?.contains(q) == true ||
+                m.aiImageAnalysis?.foldForSearch()?.contains(q) == true ||
+                m.aiAudioTranscription?.foldForSearch()?.contains(q) == true
             }
         }
 

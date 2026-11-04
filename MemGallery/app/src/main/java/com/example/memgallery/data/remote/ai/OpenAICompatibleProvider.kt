@@ -221,10 +221,10 @@ class OpenAICompatibleProvider @Inject constructor(
                 
                 // Parse the JSON content
                 try {
-                    val resultDto = gson.fromJson(content, AiAnalysisDto::class.java)
+                    val resultDto = gson.fromJson(cleanContent, AiAnalysisDto::class.java)
                     Result.success(resultDto)
                 } catch (e: Exception) {
-                    Result.failure(Exception("Failed to parse JSON from AI: $content", e))
+                    Result.failure(Exception("Failed to parse JSON from AI: $cleanContent", e))
                 }
             }
         } catch (e: Exception) {
@@ -335,7 +335,10 @@ class OpenAICompatibleProvider @Inject constructor(
         messages: JSONArray,
         toolExecutor: ToolExecutor?
     ): Result<String> {
-        var currentMessages = messages
+        // Snapshot the original messages so the parameter is never mutated.
+        // currentMessages is a deep clone that we're free to append to during the tool loop.
+        val originalMessages = JSONArray(messages.toString())
+        var currentMessages = JSONArray(messages.toString())
         var toolCallCount = 0
         val maxToolCalls = try { settingsRepository.maxToolCallsFlow.first() } catch (e: Exception) { 5 }
 
@@ -413,22 +416,25 @@ class OpenAICompatibleProvider @Inject constructor(
                     val fnArgsStr = function.optString("arguments", "{}")
 
                     Log.d(TAG, "Executing tool: $fnName with args: $fnArgsStr")
-                    
-                    val argsMap = try {
+
+                    val argsMap: Map<String, Any?>? = try {
                         @Suppress("UNCHECKED_CAST")
-                        gson.fromJson(fnArgsStr, Map::class.java) as? Map<String, Any?> ?: emptyMap()
+                        gson.fromJson(fnArgsStr, Map::class.java) as? Map<String, Any?>
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed to parse tool arguments: $fnArgsStr", e)
-                        emptyMap<String, Any?>()
+                        null
                     }
 
-                    val result = try {
+                    val result = if (argsMap == null) {
+                        Log.w(TAG, "Refusing to execute $fnName: tool arguments JSON failed to parse: $fnArgsStr")
+                        "Error: arguments JSON invalid. Re-emit with valid JSON."
+                    } else try {
                         toolExecutor?.executeTool(fnName, argsMap) ?: "Tool executor not available"
                     } catch (e: Exception) {
                         Log.e(TAG, "Tool execution failed: $fnName", e)
                         "Tool execution error: ${e.message}"
                     }
-                    
+
                     Log.d(TAG, "Tool $fnName result: ${result.take(200)}...")
                     
                     currentMessages.put(JSONObject().apply {
@@ -451,8 +457,8 @@ class OpenAICompatibleProvider @Inject constructor(
                 
                 if (isToolError && toolCallCount == 0 && toolExecutor != null) {
                     Log.w(TAG, "Tool request failed ($msg). Retrying without tools.")
-                    // Retry without tools
-                    return executeChatRequest(url, key, model, messages, null)
+                    // Retry without tools using the unmutated original message history
+                    return executeChatRequest(url, key, model, originalMessages, null)
                 }
                 Log.e(TAG, "API request failed", e)
                 return Result.failure(e)
@@ -462,7 +468,9 @@ class OpenAICompatibleProvider @Inject constructor(
 
     private fun buildOpenAITools(toolExecutor: ToolExecutor): JSONArray {
         val tools = JSONArray()
-        toolExecutor.getToolDefinitions().forEach { def ->
+        // webSearch is a Gemini-only capability (it relies on the GoogleSearch tool
+        // wired to a Gemini client); don't advertise it on OpenAI-compatible providers.
+        toolExecutor.getToolDefinitions().filter { it.name != "webSearch" }.forEach { def ->
             tools.put(JSONObject().apply {
                 put("type", "function")
                 put("function", JSONObject().apply {

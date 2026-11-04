@@ -41,12 +41,36 @@ class MemGalleryApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var hiltWorkerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var agentSettings: com.example.memgallery.agent.AgentBridgeSettings
+
     override fun onCreate() {
         super.onCreate()
         screenshotObserver.start()
         enqueueMemoryProcessingWorker()
         enqueueUpdateCheckWorker()
         checkAndStartEdgeGestureService()
+        checkAndStartAgentBridge()
+    }
+
+    /**
+     * Brings the bridge back on cold start, and arms the 15-minute sync floor. The floor
+     * is scheduled whenever a hub is configured — it is the tier that still works when
+     * Tailscale is off, the push socket is dead and the phone is in a pocket.
+     */
+    private fun checkAndStartAgentBridge() {
+        applicationScope.launch {
+            try {
+                if (agentSettings.mirrorEnabled.first() || agentSettings.hubUrl.first() != null) {
+                    com.example.memgallery.agent.sync.MirrorSyncWorker.schedule(this@MemGalleryApplication)
+                }
+                if (agentSettings.enabled.first()) {
+                    com.example.memgallery.service.AgentBridgeService.start(this@MemGalleryApplication)
+                }
+            } catch (e: Exception) {
+                Log.e("MemGalleryApp", "Failed to start Agent Bridge: ${e.message}")
+            }
+        }
     }
 
     private fun checkAndStartEdgeGestureService() {

@@ -14,6 +14,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Agent Bridge: the listening socket and the ntfy wake channel both need the
+         process to stay awake while the foreground service is up. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -244,6 +247,19 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
             
+        <!-- Agent Bridge: embedded HTTP + SSE server. dataSync, because that is exactly
+             what it does — and without a foreground service the socket dies silently,
+             which looks to an agent like the phone being switched off. -->
+        <service
+            android:name=".service.AgentBridgeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Turns a notification tap into the answer a waiting agent is long-polling for. -->
+        <receiver
+            android:name=".receiver.AgentActionReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".receiver.BootReceiver"
             android:enabled="true"

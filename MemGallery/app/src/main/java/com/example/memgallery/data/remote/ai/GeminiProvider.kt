@@ -81,7 +81,9 @@ class GeminiProvider @Inject constructor(
     override suspend fun validateApiKey(apiKey: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val tempClient = Client.builder().apiKey(apiKey).build()
-            tempClient.models.generateContent(currentModel(), "test", GenerateContentConfig.builder().build())
+            // Always validate against a known-good cheap model rather than the user's
+            // selected one (which may not exist yet, e.g. the misnamed default fallback).
+            tempClient.models.generateContent("gemini-2.5-flash-lite", "test", GenerateContentConfig.builder().build())
             Result.success(true)
         } catch (e: Exception) {
             Log.e(TAG, "API key validation failed", e)
@@ -513,10 +515,15 @@ class GeminiProvider @Inject constructor(
     }
     
     private fun parseJsonResponse(responseText: String): Result<AiAnalysisDto> {
-        val cleanedResponseText = responseText
-            .removePrefix("```json")
-            .removeSuffix("```")
-            .trim()
+        // Robustly extract JSON by taking the substring between the first '{' and the
+        // last '}'. Falls back to the raw text if no braces are found.
+        val first = responseText.indexOf('{')
+        val last = responseText.lastIndexOf('}')
+        val cleanedResponseText = if (first != -1 && last != -1 && last > first) {
+            responseText.substring(first, last + 1)
+        } else {
+            responseText
+        }
         return try {
             Result.success(gson.fromJson(cleanedResponseText, AiAnalysisDto::class.java))
         } catch (e: Exception) {

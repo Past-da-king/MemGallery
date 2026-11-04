@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Helper for driving the Windows Gradle wrapper from WSL (sets JAVA_HOME to the
+# Android Studio JBR). Local convenience, not part of the build.
+_wslbuild.bat

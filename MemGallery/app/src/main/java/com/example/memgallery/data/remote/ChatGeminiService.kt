@@ -458,13 +458,17 @@ class ChatGeminiService @Inject constructor(
     private suspend fun buildSystemPrompt(): String {
         val userContext = settingsRepository.userContextSummaryFlow.first()
         val provider = providerFactory.getProvider()
+        val providerType = providerFactory.getProviderType()
         val maxToolCalls = settingsRepository.maxToolCallsFlow.first()
 
-        // Use compact prompt if the provider is currently using a model with tight limits (like Maverick)
-        val baseInstruction = if (provider.providerName == "Groq") {
-            ChatSystemPrompt.generateCompact(maxToolCalls)
-        } else {
-            ChatSystemPrompt.generate(maxToolCalls)
+        // The Local provider can't actually execute tools, so don't advertise them.
+        val baseInstruction = when {
+            providerType == AIProviderType.LOCAL ->
+                ChatSystemPrompt.generate(maxToolCalls, includeTools = false)
+            // Use compact prompt if the provider is currently using a model with tight
+            // limits (like Maverick).
+            provider.providerName == "Groq" -> ChatSystemPrompt.generateCompact(maxToolCalls)
+            else -> ChatSystemPrompt.generate(maxToolCalls)
         }
 
         return if (userContext.isNotBlank()) {

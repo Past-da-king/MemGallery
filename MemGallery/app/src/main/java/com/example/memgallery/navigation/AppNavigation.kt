@@ -57,6 +57,8 @@ sealed class Screen(val route: String) {
 
     object AdvancedSettings : Screen("advanced_settings")
 
+    object AgentAccess : Screen("agent_access")
+
     // Add Task with Sheet trigger
     object TaskManager : Screen("task_manager?openAddSheet={openAddSheet}") {
         fun createRoute(openAddSheet: Boolean = false) = "task_manager?openAddSheet=$openAddSheet"
@@ -164,6 +166,15 @@ fun AppNavigation(
             popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
         ) {
             AdvancedSettingsScreen(navController = navController)
+        }
+        composable(
+            route = Screen.AgentAccess.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) {
+            com.example.memgallery.ui.screens.AgentAccessScreen(navController = navController)
         }
         composable(
             route = Screen.TextInput.route,

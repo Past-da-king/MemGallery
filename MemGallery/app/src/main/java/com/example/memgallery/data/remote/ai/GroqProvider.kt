@@ -85,10 +85,12 @@ class GroqProvider @Inject constructor(
                 .apiKey(apiKey)
                 .timeout(Duration.ofSeconds(10))
                 .build()
-            
-            // Simple test message
+
+            // Simple test message — use the currently selected model so validation
+            // actually confirms the chosen model works with this key.
+            val modelId = getSelectedModel()
             val message = ChatMessage("user", "test")
-            val request = ChatCompletionRequest("llama-3.1-8b-instant", listOf(message))
+            val request = ChatCompletionRequest(modelId, listOf(message))
             request.maxTokens = 5
             
             val response = tempClient.chat().createCompletion(request)
@@ -402,7 +404,7 @@ class GroqProvider @Inject constructor(
         while (toolCallCount < maxToolCalls && response.isSuccessful) {
             val assistantMessage = response.data.choices[0].message
             var content = assistantMessage.content ?: ""
-            
+
             // EXTRACT AND LOG REASONING
             val reasoningRegex = "<reasoning>(.*?)</reasoning>".toRegex(RegexOption.DOT_MATCHES_ALL)
             val match = reasoningRegex.find(content)
@@ -411,19 +413,23 @@ class GroqProvider @Inject constructor(
                 Log.d(TAG, "🧠 REASONING: $reasoningText")
                 content = reasoningRegex.replace(content, "").trim()
             }
-            
+
             if (assistantMessage.toolCalls == null || assistantMessage.toolCalls.isEmpty()) {
                 return Result.success(content)
             }
-            
+
             Log.d(TAG, "Assistant requested ${assistantMessage.toolCalls.size} tool call(s)")
-            
+
+            // Overwrite the assistant message's content with the cleaned (reasoning-stripped)
+            // version so the raw <reasoning>...</reasoning> doesn't leak back into history.
+            assistantMessage.content = content
+
             try {
                 val priorMsg = gson.fromJson(gson.toJson(assistantMessage), ChatMessage::class.java)
                 messages.add(priorMsg)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to deep copy assistant message", e)
-                val fallback = ChatMessage("assistant", assistantMessage.content ?: "")
+                val fallback = ChatMessage("assistant", content)
                 fallback.toolCalls = assistantMessage.toolCalls
                 messages.add(fallback)
             }
@@ -432,14 +438,20 @@ class GroqProvider @Inject constructor(
             for (toolCall in assistantMessage.toolCalls) {
                 toolCallCount++
                 if (toolCallCount > maxToolCalls) break
-                
+
                 val toolName = toolCall.function.name
                 val arguments = parseToolArguments(toolCall.function.arguments)
-                
-                Log.d(TAG, "Executing tool: $toolName with args: $arguments")
-                val result = toolExecutor?.executeTool(toolName, arguments) ?: "Tool not found"
-                Log.d(TAG, "Tool Result: ${result.take(200)}...")
-                
+
+                val result: String = if (arguments == null) {
+                    Log.w(TAG, "Refusing to execute $toolName: tool arguments JSON failed to parse: ${toolCall.function.arguments}")
+                    "Error: arguments JSON invalid. Re-emit with valid JSON."
+                } else {
+                    Log.d(TAG, "Executing tool: $toolName with args: $arguments")
+                    val r = toolExecutor?.executeTool(toolName, arguments) ?: "Tool not found"
+                    Log.d(TAG, "Tool Result: ${r.take(200)}...")
+                    r
+                }
+
                 val toolMessage = ChatMessage.createToolMessage(toolCall.id, result)
                 messages.add(toolMessage)
             }
@@ -557,23 +569,17 @@ class GroqProvider @Inject constructor(
         systemPrompt: String,
         toolExecutor: ToolExecutor?
     ): Flow<ChatStreamEvent> = flow {
-        // Groq doesn't support streaming in the same way as Gemini in the Java SDK
-        // We'll simulate streaming by sending the full response
+        // Groq doesn't support streaming in the same way as Gemini in the Java SDK.
+        // Run the full non-streaming call and emit the complete response as a single
+        // Content event. Avoids the "\r" + chunked-with-delay dance that corrupted UI.
         try {
-            emit(ChatStreamEvent.Content("Thinking..."))
-            
             val result = sendMessage(conversationHistory, message, systemPrompt, toolExecutor)
-            
+
             result.onSuccess { response ->
-                emit(ChatStreamEvent.Content("\r")) // Clear "Thinking..."
-                // Emit response in chunks to simulate streaming
-                response.chunked(50).forEach { chunk ->
-                    emit(ChatStreamEvent.Content(chunk))
-                    kotlinx.coroutines.delay(10) // Small delay for visual effect
-                }
+                emit(ChatStreamEvent.Content(response))
                 emit(ChatStreamEvent.Done)
             }
-            
+
             result.onFailure { error ->
                 emit(ChatStreamEvent.Error(error))
             }
@@ -582,7 +588,7 @@ class GroqProvider @Inject constructor(
             emit(ChatStreamEvent.Error(e))
         }
     }
-    
+
     override fun sendMessageWithMediaStream(
         conversationHistory: String,
         message: String?,
@@ -592,21 +598,15 @@ class GroqProvider @Inject constructor(
         toolExecutor: ToolExecutor?
     ): Flow<ChatStreamEvent> = flow {
         try {
-            emit(ChatStreamEvent.Content("Processing media..."))
-            
             val result = sendMessageWithMedia(
                 conversationHistory, message, audioData, imageData, systemPrompt, toolExecutor
             )
-            
+
             result.onSuccess { response ->
-                emit(ChatStreamEvent.Content("\r"))
-                response.chunked(50).forEach { chunk ->
-                    emit(ChatStreamEvent.Content(chunk))
-                    kotlinx.coroutines.delay(10)
-                }
+                emit(ChatStreamEvent.Content(response))
                 emit(ChatStreamEvent.Done)
             }
-            
+
             result.onFailure { error ->
                 emit(ChatStreamEvent.Error(error))
             }
@@ -690,7 +690,9 @@ class GroqProvider @Inject constructor(
     
     // Helper: Build Groq tools from ToolExecutor
     private fun buildGroqTools(toolExecutor: ToolExecutor): List<ChatTool> {
-        val toolDefs = toolExecutor.getToolDefinitions()
+        // webSearch is a Gemini-only capability (it relies on the GoogleSearch tool
+        // wired to a Gemini client); don't advertise it on Groq.
+        val toolDefs = toolExecutor.getToolDefinitions().filter { it.name != "webSearch" }
         return toolDefs.map { def ->
             val parameters = mutableMapOf<String, Any>(
                 "type" to "object",
@@ -710,13 +712,15 @@ class GroqProvider @Inject constructor(
         }
     }
     
-    private fun parseToolArguments(argumentsJson: String): Map<String, Any?> {
+    // Returns null on JSON parse failure so the caller can emit a tool-result error
+    // instead of silently invoking the tool with no arguments.
+    private fun parseToolArguments(argumentsJson: String): Map<String, Any?>? {
         return try {
             @Suppress("UNCHECKED_CAST")
-            gson.fromJson(argumentsJson, Map::class.java) as Map<String, Any?>
+            gson.fromJson(argumentsJson, Map::class.java) as? Map<String, Any?>
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing tool arguments: $argumentsJson", e)
-            emptyMap()
+            null
         }
     }
     

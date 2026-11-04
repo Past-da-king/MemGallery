@@ -633,4 +633,65 @@
     <string name="notif_channel_updates_name">App Updates</string>
     <string name="notif_update_title">New Update Available</string>
     <string name="notif_update_text">Version %1$s is now available. Tap to open MemGallery.</string>
+
+    <!-- Agent Bridge -->
+    <string name="notif_channel_agent_alerts_name">Agent Alerts</string>
+    <string name="notif_channel_agent_alerts_desc">Notifications sent by connected agents. Mute this to silence agents without muting your own reminders.</string>
+    <string name="notif_channel_agent_asks_name">Agent Questions</string>
+    <string name="notif_channel_agent_asks_desc">Questions an agent needs you to answer. Answer straight from the notification.</string>
+    <string name="notif_channel_agent_bridge_name">Agent Bridge</string>
+    <string name="notif_channel_agent_bridge_desc">Silent notice shown while the bridge is reachable. Android requires it.</string>
+    <string name="agent_ask_default_body">%1$s needs an answer</string>
+    <string name="agent_ask_asked_by">Asked by %1$s</string>
+    <string name="agent_ask_yes">Yes</string>
+    <string name="agent_ask_no">No</string>
+    <string name="agent_ask_reply">Reply</string>
+    <string name="agent_ask_reply_hint">Type your answer…</string>
+    <string name="agent_task_proposed_title">An agent proposed a task</string>
+    <string name="agent_bridge_running">Agent Bridge</string>
+    <string name="agent_bridge_starting">Starting…</string>
+    <string name="agent_bridge_status">%1$s · port %2$s</string>
+    <string name="agent_bridge_failed">Not running: %1$s</string>
+
+    <!-- Agent Access screen -->
+    <string name="agent_access_title">Agent Access</string>
+    <string name="agent_access_subtitle">Let agents read your tasks, capture memories and reach you — over Tailscale, from any tool that speaks MCP.</string>
+    <string name="agent_access_enable">Enable Agent Bridge</string>
+    <string name="agent_access_enable_desc">Runs a local HTTP server on this device. Needs at least one token.</string>
+    <string name="agent_access_no_tokens">Create a token before switching the bridge on — it will not bind without one.</string>
+    <string name="agent_access_tokens">Tokens</string>
+    <string name="agent_access_new_token">New token</string>
+    <string name="agent_access_token_name">Name (e.g. claude-code, codex, aos)</string>
+    <string name="agent_access_scopes">Scopes</string>
+    <string name="agent_access_create">Create</string>
+    <string name="agent_access_cancel">Cancel</string>
+    <string name="agent_access_copy">Copy</string>
+    <string name="agent_access_done">Done</string>
+    <string name="agent_access_revoke">Revoke</string>
+    <string name="agent_access_token_once">Copy this now. It is stored hashed and will never be shown again.</string>
+    <string name="agent_access_pairing">Pairing</string>
+    <string name="agent_access_pairing_desc">Run this where your agent lives:</string>
+    <string name="agent_access_network">Network</string>
+    <string name="agent_access_allow_lan">Allow local network</string>
+    <string name="agent_access_allow_lan_desc">Off: only loopback and Tailscale (100.64.0.0/10). On: any device on the current Wi-Fi.</string>
+    <string name="agent_access_port">Port</string>
+    <string name="agent_access_ai">Agents may run AI processing</string>
+    <string name="agent_access_ai_desc">Lets agents create memories that immediately spend your API quota. Per-client daily caps still apply.</string>
+    <string name="agent_access_quiet">Quiet hours</string>
+    <string name="agent_access_quiet_desc">Agent notifications still arrive, but silently, between these hours.</string>
+    <string name="agent_access_hub">Hub (works without Tailscale)</string>
+    <string name="agent_access_hub_desc">A relay on an always-on machine: mirrors your tasks so agents can answer with the phone asleep, and queues writes until this device dials out.</string>
+    <string name="agent_access_hub_url">Hub URL</string>
+    <string name="agent_access_hub_token">Hub token</string>
+    <string name="agent_access_mirror">Push mirror to hub</string>
+    <string name="agent_access_push">Wake pings (ntfy)</string>
+    <string name="agent_access_push_desc">An opaque ping tells this phone to check the hub. No titles, no content, no ids ever leave the device.</string>
+    <string name="agent_access_push_topic">Topic</string>
+    <string name="agent_access_activity">Recent agent activity</string>
+    <string name="agent_access_activity_empty">No agent has touched anything yet.</string>
+    <string name="agent_access_inbox">Agent inbox</string>
+    <string name="agent_access_inbox_empty">Nothing waiting on you.</string>
+    <string name="agent_access_never_seen">never used</string>
+    <string name="agent_access_last_seen">last used %1$s</string>
+    <string name="agent_access_save">Save</string>
 </resources>

@@ -15,7 +15,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["memoryId"])]
+    indices = [Index(value = ["memoryId"]), Index(value = ["projectId"])]
 )
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
@@ -32,5 +32,15 @@ data class TaskEntity(
     val type: String = "TODO", // TODO, EVENT
     val isRecurring: Boolean = false,
     val recurrenceRule: String? = null, // e.g., "DAILY", "WEEKLY", "MONTHLY"
-    val creationTimestamp: Long = System.currentTimeMillis()
+    val creationTimestamp: Long = System.currentTimeMillis(),
+
+    // --- Agent Bridge (v18) ---
+    /** Who created this: "USER", "AI", or "AGENT:<client name>". */
+    val source: String = "USER",
+    /** Caller-owned id, so an agent can upsert idempotently against its own tracker. */
+    val externalId: String? = null,
+    /** Owning project. Points at [CollectionEntity.id]; no FK so deleting a project orphans rather than cascades. */
+    val projectId: Int? = null,
+    /** Last mutation, in epoch millis. Drives mirror sync and last-write-wins. */
+    val updatedAt: Long = System.currentTimeMillis()
 )

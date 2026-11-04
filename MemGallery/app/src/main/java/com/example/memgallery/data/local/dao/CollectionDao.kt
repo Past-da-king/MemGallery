@@ -42,4 +42,24 @@ interface CollectionDao {
     /** Backup: list every memory↔collection link. */
     @Query("SELECT * FROM memory_collection_cross_ref")
     suspend fun getAllCrossRefs(): List<MemoryCollectionCrossRef>
+
+    // --- Agent Bridge (collections double as projects from v18) ---
+
+    @Query("SELECT * FROM collections WHERE id = :id LIMIT 1")
+    suspend fun getCollectionById(id: Int): CollectionEntity?
+
+    @Update
+    suspend fun updateCollection(collection: CollectionEntity)
+
+    @Query("SELECT COUNT(*) FROM memory_collection_cross_ref WHERE collectionId = :collectionId")
+    suspend fun countMemoriesInCollection(collectionId: Int): Int
+
+    @Query("SELECT collectionId FROM memory_collection_cross_ref WHERE memoryId = :memoryId")
+    suspend fun collectionIdsForMemory(memoryId: Int): List<Int>
+
+    @Query("SELECT memoryId FROM memory_collection_cross_ref WHERE collectionId = :collectionId")
+    suspend fun memoryIdsForCollection(collectionId: Int): List<Int>
+
+    @Query("DELETE FROM memory_collection_cross_ref WHERE collectionId = :collectionId")
+    suspend fun clearCollectionLinks(collectionId: Int)
 }

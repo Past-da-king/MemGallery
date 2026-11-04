@@ -16,6 +16,11 @@ import java.util.Locale
 
 private const val TAG = "ChatTools"
 
+private fun String.foldForSearch(): String =
+    java.text.Normalizer.normalize(this, java.text.Normalizer.Form.NFD)
+        .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+        .lowercase()
+
 object ChatTools {
     lateinit var memoryDao: MemoryDao
     lateinit var collectionDao: CollectionDao
@@ -55,8 +60,15 @@ object ChatTools {
         return runBlocking {
             try {
                 val filterMap = parseFilters(filters)
+                if (filterMap == null) {
+                    val errorMsg = "Error: filters JSON invalid. Re-emit with valid JSON, e.g. {\"search\": \"blue\", \"limit\": 10}"
+                    Log.w(TAG, "📤 RESULT: $errorMsg")
+                    Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    _toolEvents.tryEmit(ToolEvent.Finished("Querying Database", "Invalid filters JSON"))
+                    return@runBlocking errorMsg
+                }
                 val limit = (filterMap["limit"] as? Number)?.toInt() ?: 20
-                
+
                 val result = when (table.lowercase()) {
                     "memories" -> queryMemories(filterMap, fields, limit)
                     "tasks" -> queryTasks(filterMap, fields, limit)
@@ -99,14 +111,14 @@ object ChatTools {
         
         // Text search
         filters["search"]?.let { query ->
-            val q = query.toString().lowercase()
+            val q = query.toString().foldForSearch()
             memories = memories.filter { m ->
-                m.aiTitle?.lowercase()?.contains(q) == true ||
-                m.aiSummary?.lowercase()?.contains(q) == true ||
-                m.userText?.lowercase()?.contains(q) == true ||
-                m.aiTags?.any { tag -> tag.lowercase().contains(q) } == true ||
-                m.aiImageAnalysis?.lowercase()?.contains(q) == true ||
-                m.aiAudioTranscription?.lowercase()?.contains(q) == true
+                m.aiTitle?.foldForSearch()?.contains(q) == true ||
+                m.aiSummary?.foldForSearch()?.contains(q) == true ||
+                m.userText?.foldForSearch()?.contains(q) == true ||
+                m.aiTags?.any { tag -> tag.foldForSearch().contains(q) } == true ||
+                m.aiImageAnalysis?.foldForSearch()?.contains(q) == true ||
+                m.aiAudioTranscription?.foldForSearch()?.contains(q) == true
             }
         }
         
@@ -419,18 +431,36 @@ object ChatTools {
         return schema
     }
 
+    // Recognised top-level filter keys across all tables. Anything else triggers a
+    // parse-error response so the model can re-emit valid filters instead of silently
+    // getting back "all rows".
+    private val validFilterKeys = setOf(
+        // memories
+        "id", "search", "dateFrom", "dateTo", "collectionName",
+        "orderBy", "offset", "limit",
+        // tasks
+        "completed", "dueDate", "priority", "type"
+    )
+
     // Helper functions
-    private fun parseFilters(json: String): Map<String, Any?> {
+    // Returns null if the input looks like a JSON object but fails to parse, OR if it
+    // contains unrecognised top-level keys. Returns an empty map for blank/`{}`/`""`
+    // (these mean "no filter, all rows" and are allowed).
+    private fun parseFilters(json: String): Map<String, Any?>? {
+        if (json.isBlank() || json == "{}") return emptyMap()
         return try {
-            if (json.isBlank() || json == "{}") {
-                emptyMap()
-            } else {
-                @Suppress("UNCHECKED_CAST")
-                gson.fromJson(json, Map::class.java) as? Map<String, Any?> ?: emptyMap()
+            @Suppress("UNCHECKED_CAST")
+            val parsed = gson.fromJson(json, Map::class.java) as? Map<String, Any?>
+                ?: return null
+            val unknown = parsed.keys.filter { it !in validFilterKeys }
+            if (unknown.isNotEmpty()) {
+                Log.w(TAG, "Unrecognised filter keys: $unknown")
+                return null
             }
+            parsed
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse filters: $json", e)
-            emptyMap()
+            null
         }
     }
     

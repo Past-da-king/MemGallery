@@ -27,6 +27,8 @@ retrofit = "2.11.0"
 okhttp = "4.12.0"
 mediapipeGenai = "0.10.27"
 glance = "1.1.0"
+ktor = "2.3.12"
+zxing = "3.5.3"
 
 
 
@@ -74,6 +76,12 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 okhttp-sse = { group = "com.squareup.okhttp3", name = "okhttp-sse", version.ref = "okhttp" }
 mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeGenai" }
+
+# Agent Bridge — embedded HTTP server. CIO only: no ContentNegotiation plugin, the
+# bridge owns its own Gson so the wire envelope stays exactly as the OpenAPI spec says.
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-cio = { group = "io.ktor", name = "ktor-server-cio", version.ref = "ktor" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 
 
