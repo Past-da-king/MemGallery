@@ -1,0 +1,392 @@
+﻿<!doctype html>
+<html><head><meta charset="utf-8"><title>MemGallery - Material 3 Expressive</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#DCDAE1;font-family:'Manrope','Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding:44px 36px 56px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;max-width:1290px;margin:0 auto 26px;color:#171619}
+.head h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.head p{font-size:13px;font-weight:600;color:#5D5A63;margin-top:6px}
+.board{display:grid;grid-template-columns:repeat(3,390px);gap:30px;justify-content:center}
+.wrap{width:390px}
+.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;box-shadow:0 26px 60px rgba(20,18,30,.26);background:#000;position:relative}
+.cap{font-size:12px;font-weight:750;color:#5D5A63;margin:10px 4px 0;letter-spacing:.2px}
+.lt{--surface:#FBFAF7;--scl:#FFFFFF;--sclow:#F4F2EC;--sc:#ECE9E1;--sch:#E3DFD5;--on:#171619;--onv:#5D5A63;--out:#8F8C95;--outv:#DCD8CE;--pri:#5B4BFF;--onpri:#FFFFFF;--pric:#E5E0FF;--onpric:#1C0F6E;--sec:#FF6B4A;--ter:#C6F24E;--err:#BA1A1A;--ok:#0F8A5F}
+.dk{--surface:#0E0D12;--scl:#08070B;--sclow:#14131A;--sc:#1A1922;--sch:#24222D;--on:#EDEAF2;--onv:#A8A4B3;--out:#6E6A78;--outv:#322F3A;--pri:#B9AEFF;--onpri:#2A1E6E;--pric:#3A2FA0;--onpric:#E5E0FF;--sec:#FF9B80;--ter:#D6F98A;--err:#FFB4AB;--ok:#6EE7B0}
+.screen{width:100%;height:100%;background:var(--surface);color:var(--on);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sb{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12px;font-weight:750}
+.body{flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column;gap:16px}
+.disp{font-size:34px;line-height:38px;font-weight:800;letter-spacing:-.7px}
+.hd{font-size:26px;line-height:31px;font-weight:760;letter-spacing:-.4px}
+.ttl{font-size:19px;line-height:24px;font-weight:720;letter-spacing:-.2px}
+.bd{font-size:15px;line-height:22px;font-weight:450}
+.lb{font-size:12px;line-height:16px;font-weight:700;letter-spacing:.2px}
+.mut{color:var(--onv)}
+.card{background:var(--sc);border:1px solid var(--outv);border-radius:20px;padding:16px}
+.nav{height:86px;flex:none;display:flex;align-items:center;justify-content:space-around;background:var(--sc);border-top:1px solid var(--outv);padding:0 8px 10px}
+.navi{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--onv);width:62px}
+.navi.on{color:var(--on)}
+.fab{width:60px;height:60px;border-radius:999px;background:var(--pri);color:var(--onpri);display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 10px 22px rgba(91,75,255,.35)}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:11px 18px;font-size:14px;font-weight:720}
+.pf{background:var(--pri);color:var(--onpri)}
+.pt{background:var(--pric);color:var(--onpric)}
+.pi{background:transparent;color:var(--pri);border:1px solid var(--outv)}
+.search{display:flex;align-items:center;gap:10px;background:var(--sc);border:1px solid var(--outv);border-radius:16px;padding:14px 16px;font-size:14px;font-weight:550;color:var(--onv)}
+.tag{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--onv)}
+.dot{width:7px;height:7px;border-radius:99px;background:var(--pri)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{position:relative;height:178px;border-radius:20px;overflow:hidden;border:1px solid var(--outv);background:var(--sclow)}
+.lbl{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 9px;font-size:10px;font-weight:750;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.8));text-shadow:0 1px 3px rgba(0,0,0,.55)}
+svg{display:block}
+</style></head>
+<body>
+<div class="head"><div><h1>MemGallery &middot; Material 3 Expressive</h1><p>Premium pass on every screen. Light and dark. Tap any screen to zoom.</p></div><div class="lb" style="color:#5D5A63">v0.3.4 &nbsp;Â&middot;&nbsp; 5 Nov 2026</div></div>
+<div class="board">
+
+<div class="wrap"><div class="phone lt"><div class="screen">
+  <div class="sb"><span>09:41</span><span style="display:flex;gap:6px;align-items:center;opacity:.85"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4.5a10 10 0 0 1 14 0"/><path d="M3.6 7.2a6.4 6.4 0 0 1 8.8 0"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".8" y=".8" width="19" height="10.4" rx="3"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="currentColor" stroke="none"/><path d="M21.4 4.4v3.2" stroke-linecap="round"/></svg></span></div>
+  <div class="body">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:2px">
+      <div><div class="lb mut">THURSDAY, 5 NOV</div><div class="disp" style="margin-top:5px">Your memory</div></div>
+      <div style="width:44px;height:44px;border-radius:99px;background:var(--pric);color:var(--onpric);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800">AP</div>
+    </div>
+    <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>Search everything you kept</div>
+    <div style="background:var(--pric);color:var(--onpric);border-radius:28px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:30px;line-height:33px;font-weight:800;letter-spacing:-.6px">12 new</div><div class="lb" style="opacity:.72;margin-top:4px">3 screenshots &middot; 2 notes &middot; 7 photos</div></div>
+      <div style="width:54px;height:54px;border-radius:18px;background:var(--ter);display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#171619" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="M12 8.5 13.6 11 16 12l-2.4 1L12 15.5 10.4 13 8 12l2.4-1Z"/></svg></div>
+    </div>
+    <div class="grid">
+      <div class="tile" style="background:#FFFFFF">
+        <div style="position:absolute;inset:0;padding:12px 12px 8px;display:flex;flex-direction:column">
+          <div style="font-size:8px;font-weight:800;color:#0B5ED7;letter-spacing:.3px">STANDARD BANK</div>
+          <div style="width:24px;height:24px;border-radius:99px;background:#E6F6EE;display:flex;align-items:center;justify-content:center;margin-top:9px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0F8A5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg></div>
+          <div style="font-size:10px;font-weight:750;color:#0F8A5F;margin-top:7px">Payment successful</div>
+          <div style="font-size:16px;font-weight:800;color:#171619;letter-spacing:-.4px;margin-top:1px">R1,450.00</div>
+          <div style="font-size:8px;font-weight:600;color:#6B6B75;margin-top:5px">To Sizwe Ndlovu &middot; 4 Nov</div>
+        </div>
+        <div class="lbl">Screenshot &middot; Banking</div>
+      </div>
+      <div class="tile" style="background:#FFF3EC">
+        <div style="position:absolute;inset:0;padding:12px 12px 8px;display:flex;flex-direction:column">
+          <div style="font-size:9px;font-weight:800;color:#0B6BCB">takealot</div>
+          <div style="height:46px;border-radius:10px;background:linear-gradient(135deg,#DCE7F5,#C9D8EE);margin-top:8px"></div>
+          <div style="font-size:10px;font-weight:750;color:#171619;margin-top:8px">Order 114-8823</div>
+          <div style="font-size:9px;font-weight:650;color:#0F8A5F;margin-top:3px">Out for delivery today</div>
+          <div style="font-size:8px;font-weight:600;color:#6B6B75;margin-top:3px">R892.00 &middot; 2 items</div>
+        </div>
+        <div class="lbl">Screenshot &middot; Order</div>
+      </div>
+      <div class="tile" style="background:#1A1D21">
+        <div style="position:absolute;inset:0;padding:11px;display:flex;flex-direction:column;gap:7px">
+          <div style="font-size:8px;font-weight:800;color:#C7CBD1">#tender-desk</div>
+          <div><div style="font-size:8px;font-weight:800;color:#E8EAED">Thabo <span style="color:#8B8F96;font-weight:500">11:02</span></div><div style="font-size:8.5px;line-height:12px;color:#C3C7CE;margin-top:2px">SAA pack needs the B-BBEE certificate before 14:00.</div></div>
+          <div><div style="font-size:8px;font-weight:800;color:#E8EAED">Ayanda <span style="color:#8B8F96;font-weight:500">11:05</span></div><div style="font-size:8.5px;line-height:12px;color:#C3C7CE;margin-top:2px">Uploading now, also the tax clearance.</div></div>
+        </div>
+        <div class="lbl">Screenshot &middot; Slack</div>
+      </div>
+      <div class="tile" style="background:var(--sclow)">
+        <div style="position:absolute;inset:0;padding:12px 12px 8px;display:flex;flex-direction:column">
+          <div style="font-size:9px;font-weight:800">Load shedding, week 45</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:64px;margin-top:10px">
+            <div style="flex:1;height:38%;background:var(--pri);opacity:.35;border-radius:5px 5px 2px 2px"></div>
+            <div style="flex:1;height:66%;background:var(--pri);opacity:.5;border-radius:5px 5px 2px 2px"></div>
+            <div style="flex:1;height:92%;background:var(--pri);border-radius:5px 5px 2px 2px"></div>
+            <div style="flex:1;height:48%;background:var(--pri);opacity:.4;border-radius:5px 5px 2px 2px"></div>
+            <div style="flex:1;height:74%;background:var(--ter);border-radius:5px 5px 2px 2px"></div>
+          </div>
+          <div style="font-size:8.5px;font-weight:650;color:var(--onv);margin-top:8px">Stage 2, 16:00 to 20:30</div>
+        </div>
+        <div class="lbl">Photo &middot; Schedule</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="navi on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 10.4 12 3.4l8.8 7"/><path d="M5.6 9.4V20h12.8V9.4"/></svg>Home</div>
+    <div class="navi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="7.5" height="7.5" rx="2.4"/><rect x="13.5" y="3.5" width="7.5" height="7.5" rx="2.4"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.4"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.4"/></svg>Collections</div>
+    <div class="fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h2.2l1.3-2.2h9l1.3 2.2H20a1.8 1.8 0 0 1 1.8 1.8v7.4A1.8 1.8 0 0 1 20 19.5H4a1.8 1.8 0 0 1-1.8-1.8v-7.4A1.8 1.8 0 0 1 4 8.5Z"/><circle cx="12" cy="13.8" r="3.2"/></svg></div>
+    <div class="navi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m7.6 12.3 3 3 5.8-6"/></svg>Tasks</div>
+    <div class="navi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8 8 0 0 1-8.3 8H7.5L3.5 22l1.4-4.6a8 8 0 1 1 15.6-5.9Z"/></svg>Ask</div>
+  </div>
+</div></div><div class="cap">01 &middot; Home, light</div></div>
+<div class="wrap"><div class="phone dk"><div class="screen">
+  <div class="sb"><span>09:41</span><span style="display:flex;gap:6px;align-items:center;opacity:.85"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".8" y=".8" width="19" height="10.4" rx="3"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="currentColor" stroke="none"/></svg></span></div>
+  <div style="position:relative;height:330px;flex:none;margin:0 0 4px;background:radial-gradient(120% 90% at 30% 10%,#2A2650 0%,#14121C 60%,#0E0D12 100%)">
+    <div style="position:absolute;left:56px;right:56px;top:38px;bottom:18px;background:#fff;border-radius:18px;box-shadow:0 22px 40px rgba(0,0,0,.55);padding:18px 18px;transform:rotate(-1.6deg)">
+      <div style="font-size:9px;font-weight:800;color:#0B5ED7;letter-spacing:.4px">STANDARD BANK</div>
+      <div style="width:28px;height:28px;border-radius:99px;background:#E6F6EE;display:flex;align-items:center;justify-content:center;margin-top:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F8A5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg></div>
+      <div style="font-size:13px;font-weight:750;color:#0F8A5F;margin-top:10px">Payment successful</div>
+      <div style="font-size:26px;font-weight:800;color:#171619;letter-spacing:-.8px;margin-top:2px">R1,450.00</div>
+      <div style="border-top:1px solid #EBEAE6;margin-top:10px;padding-top:8px;font-size:9.5px;line-height:15px;font-weight:600;color:#5D5A63">To&nbsp; Sizwe Ndlovu<br>Ref&nbsp; CREEK QUOTE 12<br>Date 4 Nov 2026, 18:12</div>
+    </div>
+    <div style="position:absolute;top:10px;left:18px;width:38px;height:38px;border-radius:99px;background:rgba(14,13,18,.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#EDEAF2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 7.5 12l7.5 7.5"/></svg></div>
+    <div style="position:absolute;top:10px;right:18px;display:flex;gap:8px">
+      <div style="width:38px;height:38px;border-radius:99px;background:rgba(14,13,18,.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#EDEAF2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M4.5 14v5.5h15V14"/></svg></div>
+      <div style="width:38px;height:38px;border-radius:99px;background:rgba(14,13,18,.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#EDEAF2" stroke-width="1.9" stroke-linecap="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></div>
+    </div>
+  </div>
+  <div class="body" style="padding-top:18px">
+    <div>
+      <div class="hd">Standard Bank payment confirmation</div>
+      <div class="bd mut" style="margin-top:6px">Screenshot &middot; 4 Nov, 18:12 &middot; Strat Edge</div>
+    </div>
+    <div class="card" style="background:var(--sc);border-color:var(--outv)">
+      <div class="lb" style="color:var(--pri)">SUMMARY</div>
+      <div class="bd" style="margin-top:7px">Payment of R1,450.00 to Sizwe Ndlovu for the Creek quote, reference CREEK QUOTE 12, made on 4 November. Nothing marked as pending.</div>
+    </div>
+    <div class="card" style="background:var(--sclow);border-color:var(--outv)">
+      <div style="display:flex;align-items:center;justify-content:space-between"><div class="lb mut">TEXT ON THE IMAGE</div><div class="lb" style="color:var(--pri)">Copy</div></div>
+      <div style="margin-top:9px;font-size:13px;line-height:20px;font-weight:550;color:var(--on)">Payment successful &middot; R1,450.00 &middot; To Sizwe Ndlovu &middot; Ref CREEK QUOTE 12 &middot; 04 Nov 2026 18:12</div>
+    </div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap">
+      <span class="tag"><span class="dot"></span>payment</span>
+      <span class="tag"><span class="dot" style="background:var(--sec)"></span>creek</span>
+      <span class="tag"><span class="dot" style="background:var(--ter)"></span>sizwe</span>
+      <span class="tag"><span class="dot" style="background:var(--out)"></span>screenshot</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:auto;padding-bottom:18px">
+      <div class="pill pf">Copy text</div>
+      <div class="pill pt">Add to task</div>
+      <div class="pill pi">Edit tags</div>
+    </div>
+  </div>
+</div></div><div class="cap">02 &middot; Memory detail, dark</div></div>
+
+<div class="wrap"><div class="phone dk"><div class="screen">
+  <div class="sb"><span>09:41</span><span style="display:flex;gap:6px;align-items:center;opacity:.85"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".8" y=".8" width="19" height="10.4" rx="3"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="currentColor" stroke="none"/></svg></span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 20px 14px;flex:none">
+    <div style="width:40px;height:40px;border-radius:99px;background:var(--sc);border:1px solid var(--outv);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
+    <div class="lb">Capture</div>
+    <div style="display:flex;gap:8px">
+      <div style="width:40px;height:40px;border-radius:99px;background:var(--sc);border:1px solid var(--outv);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5.5 13.5H11L10 21l8-10.5h-5.4L13 3Z"/></svg></div>
+      <div style="width:40px;height:40px;border-radius:99px;background:var(--sc);border:1px solid var(--outv);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 9h17M9 3.5v17" stroke-linecap="round"/></svg></div>
+    </div>
+  </div>
+  <div style="flex:1;min-height:0;margin:0 20px;border-radius:32px;overflow:hidden;position:relative;background:linear-gradient(160deg,#3A3560 0%,#241F3A 45%,#14121C 100%)">
+    <div style="position:absolute;left:-30px;top:120px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(198,242,78,.5),rgba(198,242,78,0) 68%)"></div>
+    <div style="position:absolute;right:-40px;bottom:40px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(185,174,255,.55),rgba(185,174,255,0) 70%)"></div>
+    <div style="position:absolute;left:72px;right:72px;top:104px;bottom:196px;background:rgba(251,250,247,.97);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.5);padding:14px;transform:rotate(2deg)">
+      <div style="font-size:8px;font-weight:800;color:#0B6BCB">takealot</div>
+      <div style="height:40px;border-radius:8px;background:linear-gradient(135deg,#DCE7F5,#C9D8EE);margin-top:7px"></div>
+      <div style="font-size:9px;font-weight:750;color:#171619;margin-top:7px">Order 114-8823</div>
+      <div style="font-size:8px;font-weight:650;color:#5D5A63;margin-top:3px">A4 copy paper &middot; R892.00</div>
+    </div>
+    <div style="position:absolute;left:26px;top:24px;width:34px;height:34px;border-left:3px solid rgba(237,234,242,.8);border-top:3px solid rgba(237,234,242,.8);border-radius:8px 0 0 0"></div>
+    <div style="position:absolute;right:26px;top:24px;width:34px;height:34px;border-right:3px solid rgba(237,234,242,.8);border-top:3px solid rgba(237,234,242,.8);border-radius:0 8px 0 0"></div>
+    <div style="position:absolute;left:26px;bottom:24px;width:34px;height:34px;border-left:3px solid rgba(237,234,242,.8);border-bottom:3px solid rgba(237,234,242,.8);border-radius:0 0 0 8px"></div>
+    <div style="position:absolute;right:26px;bottom:24px;width:34px;height:34px;border-right:3px solid rgba(237,234,242,.8);border-bottom:3px solid rgba(237,234,242,.8);border-radius:0 0 8px 0"></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:22px;background:rgba(14,13,18,.72);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 14px;font-size:11px;font-weight:700;color:#EDEAF2">Screenshot detected</div>
+  </div>
+  <div style="flex:none;padding:16px 20px 0">
+    <div style="display:flex;gap:10px;justify-content:space-between">
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;background:var(--pric);color:var(--onpric);font-size:12px;font-weight:750">Photo</div>
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;background:var(--ter);color:#171619;font-size:12px;font-weight:750">Screenshot</div>
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;background:var(--sc);border:1px solid var(--outv);font-size:12px;font-weight:750">Note</div>
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;background:var(--sc);border:1px solid var(--outv);font-size:12px;font-weight:750">Voice</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 10px 6px">
+      <div style="width:52px;height:52px;border-radius:16px;border:1px solid var(--outv);background:linear-gradient(135deg,#3A3560,#14121C)"></div>
+      <div style="width:76px;height:76px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(255,255,255,.14)"><div style="width:62px;height:62px;border-radius:999px;border:2px solid #14121C"></div></div>
+      <div style="width:52px;height:52px;border-radius:16px;border:1px solid var(--outv);display:flex;align-items:center;justify-content:center;color:var(--onv)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></svg></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:6px 0 20px">
+      <span class="dot" style="background:var(--ok)"></span>
+      <span style="font-size:11px;font-weight:650;color:var(--onv)">Text and tags are read on your phone. Nothing leaves it.</span>
+    </div>
+  </div>
+</div></div><div class="cap">03 &middot; Capture, dark</div></div>
+
+<div class="wrap"><div class="phone lt"><div class="screen">
+  <div class="sb"><span>09:41</span><span style="display:flex;gap:6px;align-items:center;opacity:.85"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".8" y=".8" width="19" height="10.4" rx="3"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="currentColor" stroke="none"/></svg></span></div>
+  <div class="body" style="padding-top:2px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="search" style="flex:1;border-color:var(--pri);color:var(--on);font-weight:650">load shedding<svg style="margin-left:auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
+      <div style="font-size:14px;font-weight:750;color:var(--pri)">Cancel</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="pill pf" style="padding:9px 15px;font-size:13px">Filters <span style="background:rgba(255,255,255,.28);border-radius:99px;padding:0 6px;font-size:11px">2</span></div>
+      <div class="pill pt" style="padding:9px 15px;font-size:13px">This week</div>
+      <div class="pill pi" style="padding:9px 15px;font-size:13px">Owned by me</div>
+    </div>
+    <div>
+      <div class="lb mut" style="margin-bottom:8px">IMAGES &middot; 3</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:12px;align-items:center;background:var(--scl);border:1px solid var(--outv);border-radius:16px;padding:10px">
+          <div style="width:54px;height:54px;border-radius:12px;background:var(--sclow);display:flex;align-items:flex-end;gap:3px;padding:8px">
+            <div style="flex:1;height:40%;background:var(--pri);opacity:.4;border-radius:3px"></div>
+            <div style="flex:1;height:70%;background:var(--pri);opacity:.6;border-radius:3px"></div>
+            <div style="flex:1;height:95%;background:var(--pri);border-radius:3px"></div>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:13.5px;font-weight:750">Load shedding, week 45</div>
+            <div style="font-size:12px;line-height:16px;color:var(--onv);margin-top:3px">Stage 2, 16:00 to 20:30. <span style="background:var(--ter);color:#171619;border-radius:4px;padding:0 3px;font-weight:750">load shedding</span> table for Crestholme.</div>
+            <div class="lb mut" style="margin-top:5px">4 Nov &middot; Photo</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;background:var(--scl);border:1px solid var(--outv);border-radius:16px;padding:10px">
+          <div style="width:54px;height:54px;border-radius:12px;background:var(--sclow);display:flex;flex-direction:column;gap:4px;padding:9px">
+            <div style="height:5px;width:80%;background:var(--out);opacity:.45;border-radius:3px"></div>
+            <div style="height:5px;width:62%;background:var(--out);opacity:.45;border-radius:3px"></div>
+            <div style="height:5px;width:72%;background:var(--out);opacity:.45;border-radius:3px"></div>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:13.5px;font-weight:750">Eskom notice, Stage 2</div>
+            <div style="font-size:12px;line-height:16px;color:var(--onv);margin-top:3px">Screenshot of the <span style="background:var(--ter);color:#171619;border-radius:4px;padding:0 3px;font-weight:750">load shedding</span> notice sent on WhatsApp.</div>
+            <div class="lb mut" style="margin-top:5px">2 Nov &middot; Screenshot</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="lb mut" style="margin-bottom:8px">NOTES &middot; 2</div>
+      <div style="display:flex;gap:12px;align-items:center;background:var(--scl);border:1px solid var(--outv);border-radius:16px;padding:10px">
+        <div style="width:54px;height:54px;border-radius:12px;background:var(--pric);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--onpric)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l4 4v13H6z"/><path d="M9 12h7M9 16h5"/></svg></div>
+        <div style="min-width:0">
+          <div style="font-size:13.5px;font-weight:750">Note to self: check the inverter</div>
+          <div style="font-size:12px;line-height:16px;color:var(--onv);margin-top:3px">With <span style="background:var(--ter);color:#171619;border-radius:4px;padding:0 3px;font-weight:750">load shedding</span> back at stage 2, test the battery before Friday.</div>
+          <div class="lb mut" style="margin-top:5px">3 Nov &middot; Note</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(23,22,25,.32)"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:352px;background:var(--sc);border-radius:28px 28px 0 0;border-top:1px solid var(--outv);padding:12px 20px 20px;display:flex;flex-direction:column">
+    <div style="width:44px;height:4px;border-radius:99px;background:var(--out);opacity:.5;margin:0 auto 14px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="ttl">Filters</div>
+      <div style="font-size:13px;font-weight:750;color:var(--pri)">Reset</div>
+    </div>
+    <div class="lb mut" style="margin-top:16px">TYPE</div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <div class="pill pt" style="padding:8px 14px;font-size:12.5px">Images 3</div>
+      <div class="pill pt" style="padding:8px 14px;font-size:12.5px">Notes 2</div>
+      <div class="pill pi" style="padding:8px 14px;font-size:12.5px">Tasks 0</div>
+      <div class="pill pi" style="padding:8px 14px;font-size:12.5px">Voice 1</div>
+    </div>
+    <div class="lb mut" style="margin-top:16px">WHEN</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <div class="pill pf" style="padding:8px 14px;font-size:12.5px">This week</div>
+      <div class="pill pi" style="padding:8px 14px;font-size:12.5px">This month</div>
+      <div class="pill pi" style="padding:8px 14px;font-size:12.5px">Any time</div>
+    </div>
+    <div class="lb mut" style="margin-top:16px">COLLECTION</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;background:var(--scl);border:1px solid var(--outv);border-radius:16px;padding:14px 16px">
+      <span style="font-size:14px;font-weight:650">All collections</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+    </div>
+    <div class="pill pf" style="justify-content:center;margin-top:auto;font-size:15px;padding:15px">Show 5 results</div>
+  </div>
+</div></div><div class="cap">04 &middot; Search and filters, light</div></div>
+<div class="wrap"><div class="phone lt"><div class="screen">
+  <div class="sb"><span>09:41</span><span style="display:flex;gap:6px;align-items:center;opacity:.85"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".8" y=".8" width="19" height="10.4" rx="3"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="currentColor" stroke="none"/></svg></span></div>
+  <div class="body" style="padding-top:2px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between">
+      <div><div class="lb mut">THURSDAY, 5 NOV</div><div class="disp" style="margin-top:5px">Tasks</div></div>
+      <div style="font-size:13px;font-weight:750;color:var(--err)">1 overdue</div>
+    </div>
+    <div style="display:flex;gap:6px;background:var(--sclow);border:1px solid var(--outv);border-radius:999px;padding:5px">
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;background:var(--scl);font-size:13px;font-weight:750;box-shadow:0 1px 3px rgba(20,18,30,.1)">Today</div>
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;font-size:13px;font-weight:650;color:var(--onv)">Upcoming</div>
+      <div style="flex:1;text-align:center;padding:9px 0;border-radius:999px;font-size:13px;font-weight:650;color:var(--onv)">All</div>
+    </div>
+    <div>
+      <div class="lb mut" style="margin-bottom:8px">TODAY &middot; 4</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:12px;align-items:center;background:var(--scl);border:1px solid var(--outv);border-left:4px solid var(--err);border-radius:16px;padding:13px 14px">
+          <div style="width:24px;height:24px;border-radius:99px;border:2px solid var(--out);flex:none"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14.5px;font-weight:720">Pay the FLISP deposit</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span class="tag" style="font-size:11.5px"><span class="dot" style="background:var(--sec)"></span>House build</span></div>
+          </div>
+          <div style="background:#FBE9E7;color:#8C2F1E;border-radius:10px;padding:6px 9px;font-size:11px;font-weight:750;text-align:center">17:00<br><span style="font-weight:600;opacity:.8">top</span></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;background:var(--scl);border:1px solid var(--outv);border-radius:16px;padding:13px 14px">
+          <div style="width:24px;height:24px;border-radius:99px;border:2px solid var(--out);flex:none"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14.5px;font-weight:720">Call Sizwe about the Creek quote</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span class="tag" style="font-size:11.5px"><span class="dot"></span>Creek</span></div>
+          </div>
+          <div style="background:var(--sclow);border-radius:10px;padding:6px 9px;font-size:11px;font-weight:750;color:var(--onv)">18:30</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;background:var(--scl);border:1px solid var(--outv);border-radius:16px;padding:13px 14px">
+          <div style="width:24px;height:24px;border-radius:99px;border:2px solid var(--ok);background:var(--ok);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14.5px;font-weight:720;text-decoration:line-through;color:var(--onv)">Upload B-BBEE certificate</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span class="tag" style="font-size:11.5px"><span class="dot" style="background:var(--out)"></span>Tender desk</span></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--ok)">Done</div>
+        </div>
+      </div>
+    </div>
+    <div style="position:relative;height:78px;margin-top:6px;border-radius:16px;overflow:hidden;border:1px solid var(--outv)">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-right:10px">
+        <div style="background:var(--pric);color:var(--onpric);border-radius:12px;padding:12px 11px;font-size:12px;font-weight:750">Done</div>
+        <div style="background:var(--sc);border:1px solid var(--outv);border-radius:12px;padding:12px 11px;font-size:12px;font-weight:750">Snooze</div>
+      </div>
+      <div style="position:absolute;inset:0 168px 0 0;background:var(--scl);border-radius:16px;border:1px solid var(--outv);display:flex;gap:12px;align-items:center;padding:0 14px">
+        <div style="width:24px;height:24px;border-radius:99px;border:2px solid var(--out);flex:none"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14.5px;font-weight:720">Renew the Takealot order for cables</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span class="tag" style="font-size:11.5px"><span class="dot" style="background:var(--ter)"></span>Home office</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav" style="position:relative">
+    <div class="navi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 10.4 12 3.4l8.8 7"/><path d="M5.6 9.4V20h12.8V9.4"/></svg>Home</div>
+    <div class="navi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="7.5" height="7.5" rx="2.4"/><rect x="13.5" y="3.5" width="7.5" height="7.5" rx="2.4"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.4"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.4"/></svg>Collections</div>
+    <div class="fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h2.2l1.3-2.2h9l1.3 2.2H20a1.8 1.8 0 0 1 1.8 1.8v7.4A1.8 1.8 0 0 1 20 19.5H4a1.8 1.8 0 0 1-1.8-1.8v-7.4A1.8 1.8 0 0 1 4 8.5Z"/><circle cx="12" cy="13.8" r="3.2"/></svg></div>
+    <div class="navi on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m7.6 12.3 3 3 5.8-6"/></svg>Tasks</div>
+    <div class="navi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8 8 0 0 1-8.3 8H7.5L3.5 22l1.4-4.6a8 8 0 1 1 15.6-5.9Z"/></svg>Ask</div>
+  </div>
+</div></div><div class="cap">05 &middot; Tasks, light</div></div>
+
+<div class="wrap"><div class="phone dk"><div class="screen">
+  <div class="sb"><span>09:41</span><span style="display:flex;gap:6px;align-items:center;opacity:.85"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".8" y=".8" width="19" height="10.4" rx="3"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="currentColor" stroke="none"/></svg></span></div>
+  <div class="body" style="padding-top:2px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><div class="disp">Ask</div><div class="bd mut" style="margin-top:4px">Over 412 memories, on this phone</div></div>
+      <div style="width:40px;height:40px;border-radius:99px;background:var(--sc);border:1px solid var(--outv);display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></svg></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end">
+      <div style="max-width:284px;background:var(--pric);color:var(--onpric);border-radius:22px 22px 6px 22px;padding:13px 16px;font-size:14.5px;line-height:20px;font-weight:600">When is the load shedding slot for Thursday?</div>
+    </div>
+    <div class="card" style="padding:18px">
+      <div class="lb" style="color:var(--pri)">FROM 3 MEMORIES</div>
+      <div class="bd" style="margin-top:8px">Stage 2 runs <b>16:00 to 20:30</b> on Thursday in Crestholme. Both the schedule photo and the Eskom notice agree. The inverter note says test the battery before then.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+        <div style="display:flex;gap:10px;align-items:center;background:var(--sclow);border-radius:14px;padding:8px">
+          <div style="width:38px;height:38px;border-radius:10px;background:var(--sch);display:flex;align-items:flex-end;gap:2px;padding:6px">
+            <div style="flex:1;height:40%;background:var(--pri);opacity:.55;border-radius:2px"></div>
+            <div style="flex:1;height:70%;background:var(--pri);opacity:.75;border-radius:2px"></div>
+            <div style="flex:1;height:100%;background:var(--pri);border-radius:2px"></div>
+          </div>
+          <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:720">Load shedding, week 45</div><div style="font-size:11px;color:var(--onv);margin-top:2px">4 Nov &middot; Photo</div></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;background:var(--sclow);border-radius:14px;padding:8px">
+          <div style="width:38px;height:38px;border-radius:10px;background:var(--sch);display:flex;flex-direction:column;gap:3px;padding:7px">
+            <div style="height:4px;width:80%;background:var(--out);border-radius:2px"></div>
+            <div style="height:4px;width:60%;background:var(--out);border-radius:2px"></div>
+            <div style="height:4px;width:72%;background:var(--out);border-radius:2px"></div>
+          </div>
+          <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:720">Eskom notice, Stage 2</div><div style="font-size:11px;color:var(--onv);margin-top:2px">2 Nov &middot; Screenshot</div></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="pill pt" style="padding:9px 14px;font-size:12.5px">Add to calendar</div>
+      <div class="pill pi" style="padding:9px 14px;font-size:12.5px">Make a task</div>
+    </div>
+  </div>
+  <div><div class="lb mut" style="margin-bottom:8px">RECENT</div><div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;justify-content:space-between;background:var(--sclow);border-radius:14px;padding:12px 14px"><span style="font-size:13.5px;font-weight:650">What did Sizwe quote for Creek?</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div><div style="display:flex;align-items:center;justify-content:space-between;background:var(--sclow);border-radius:14px;padding:12px 14px"><span style="font-size:13.5px;font-weight:650">Where did I save the B-BBEE certificate?</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div></div></div><div style="flex:none;padding:10px 20px 22px;display:flex;align-items:center;gap:10px">
+    <div style="flex:1;display:flex;align-items:center;gap:10px;background:var(--sc);border:1px solid var(--outv);border-radius:999px;padding:12px 16px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--onv)" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v11"/><rect x="8.5" y="3" width="7" height="11" rx="3.5"/><path d="M6 12a6 6 0 0 0 12 0M12 18v3"/></svg>
+      <span class="bd mut" style="font-size:14px">Ask anything you kept</span>
+    </div>
+    <div style="width:48px;height:48px;border-radius:99px;background:var(--pri);color:var(--onpri);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14"/><path d="m13 6.5 6 5.5-6 5.5"/></svg></div>
+  </div>
+</div></div><div class="cap">06 &middot; Ask, dark</div></div>
+</div>
+</body></html>
+
