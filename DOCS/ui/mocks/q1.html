@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>MemGallery - Material 3 Expressive</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#CFC7C1;font-family:'Manrope','Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding:40px 32px 48px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;max-width:1290px;margin:0 auto 24px;color:#1E1512}
+.head h1{font-size:30px;font-weight:800;letter-spacing:-1px}
+.head p{font-size:13px;font-weight:650;color:#6B5A52;margin-top:6px}
+.board{display:grid;grid-template-columns:repeat(3,390px);gap:28px;justify-content:center}
+.wrap{width:390px}
+.phone{width:390px;height:844px;border-radius:40px;overflow:hidden;box-shadow:0 24px 56px rgba(30,21,18,.28);position:relative}
+.cap{font-size:12px;font-weight:750;color:#5C4B44;margin:9px 4px 0}
+.lt{--surf:#FFF8F3;--s1:#FFFFFF;--s2:#F7E9DF;--s3:#F0DCD0;--on:#1E1512;--onv:#6B5A52;--out:#94837A;--outv:#E7D5C8;--pri:#E8442A;--onpri:#FFFFFF;--pric:#FFDBD1;--onpric:#3D0700;--sec:#5B3E96;--onsec:#FFFFFF;--secc:#E9DDFF;--onsecc:#21005D;--ter:#B7F1D0;--onter:#00391F;--err:#BA1A1A}
+.dk{--surf:#14100F;--s1:#0C0908;--s2:#201A18;--s3:#2B2320;--on:#F5E6DF;--onv:#C7B3A9;--out:#9C8A80;--outv:#4A3B35;--pri:#FFB4A0;--onpri:#5C1600;--pric:#8A2A0C;--onpric:#FFDAD2;--sec:#CFBCFF;--onsec:#2C1060;--secc:#432C7A;--onsecc:#E9DDFF;--ter:#8FD8B4;--onter:#00391F;--err:#FFB4AB}
+.screen{width:100%;height:100%;background:var(--surf);color:var(--on);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sb{height:42px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12px;font-weight:800}
+.body{flex:1;min-height:0;padding:0 24px;display:flex;flex-direction:column}
+.huge{font-size:46px;line-height:50px;font-weight:800;letter-spacing:-1.8px}
+.hd{font-size:32px;line-height:36px;font-weight:780;letter-spacing:-1px}
+.ttl{font-size:22px;line-height:28px;font-weight:740;letter-spacing:-.4px}
+.bd{font-size:16px;line-height:24px;font-weight:450}
+.lb{font-size:13px;line-height:18px;font-weight:750;letter-spacing:.1px}
+.sm{font-size:11.5px;line-height:16px;font-weight:700}
+.mut{color:var(--onv)}
+.search{display:flex;align-items:center;gap:12px;background:var(--s1);border:1px solid var(--outv);border-radius:999px;padding:16px 20px;font-size:15px;font-weight:600;color:var(--onv)}
+.grp{display:flex;border-radius:999px;overflow:hidden;border:1px solid var(--outv);background:var(--s2)}
+.grp>div{flex:1;text-align:center;padding:13px 0;font-size:13.5px;font-weight:750;color:var(--onv)}
+.grp>div.on{background:var(--pri);color:var(--onpri)}
+.nav{position:absolute;left:16px;right:16px;bottom:14px;height:72px;border-radius:999px;background:var(--s2);border:1px solid var(--outv);display:flex;align-items:center;justify-content:space-around;padding:0 6px;box-shadow:0 10px 24px rgba(30,21,18,.14)}
+.navi{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:800;color:var(--onv);width:56px}
+.navi.on{color:var(--pri)}
+.fab{width:58px;height:58px;border-radius:999px;background:var(--pri);color:var(--onpri);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(232,68,42,.4)}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 20px;font-size:14.5px;font-weight:750}
+.pf{background:var(--pri);color:var(--onpri)}
+.ps{background:var(--secc);color:var(--onsecc)}
+.pi{background:transparent;color:var(--pri);border:1px solid var(--outv)}
+svg{display:block}
+.tag{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--onv)}
+.dot{width:7px;height:7px;border-radius:99px;background:var(--pri)}
+</style></head>
+<body>
+<div class="head"><div><h1>MemGallery</h1><p>Material 3 Expressive &middot; big type, bold colour blocks, shape variety, springy components</p></div><div class="sm" style="color:#6B5A52">v0.3.4 &middot; 5 Nov 2026</div></div>
+<div class="board">
