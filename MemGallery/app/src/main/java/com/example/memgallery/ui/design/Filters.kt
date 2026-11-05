@@ -45,8 +45,10 @@ fun FilterButtonGroup(
     horizontalPadding: androidx.compose.ui.unit.Dp = 16.dp,
 ) {
     val scheme = MaterialTheme.colorScheme
+    // Centred under the search pill when it fits; when it is wider than the screen the row fills it and scrolls.
+    androidx.compose.foundation.layout.Box(modifier.fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
     Row(
-        modifier
+        Modifier
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
@@ -82,6 +84,7 @@ fun FilterButtonGroup(
                 }
             }
         }
+    }
     }
 }
 

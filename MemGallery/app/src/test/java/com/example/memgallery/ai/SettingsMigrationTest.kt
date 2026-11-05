@@ -29,6 +29,24 @@ class SettingsMigrationTest {
         assertEquals("GROQ", m.main); assertEquals("GROQ", m.voice); assertEquals("GROQ", m.images)
     }
 
+    private fun ds(images: String?, customKey: Boolean = false, main: String? = "DEEPSEEK") =
+        ProviderSetup("DEEPSEEK", main, "GROQ", images, true, true, true, customKey, false)
+
+    @Test fun deepSeekMainWithImagesOffMovesToDeepSeekOnce() {
+        assertEquals("DEEPSEEK", SettingsMigration.imagesUpgradeForDeepSeek(ds("NONE"), alreadyDone = false))
+        assertNull(SettingsMigration.imagesUpgradeForDeepSeek(ds("NONE"), alreadyDone = true))
+    }
+
+    @Test fun customWithoutKeyMovesButConfiguredCustomOrGeminiStay() {
+        assertEquals("DEEPSEEK", SettingsMigration.imagesUpgradeForDeepSeek(ds("OPENAI_COMPATIBLE", customKey = false), false))
+        assertNull(SettingsMigration.imagesUpgradeForDeepSeek(ds("OPENAI_COMPATIBLE", customKey = true), false))
+        assertNull(SettingsMigration.imagesUpgradeForDeepSeek(ds("GEMINI"), false))
+    }
+
+    @Test fun nonDeepSeekMainIsLeftAlone() {
+        assertNull(SettingsMigration.imagesUpgradeForDeepSeek(ds("NONE", main = "GEMINI"), false))
+    }
+
     @Test fun themeResetRunsOnceForOldInstalls() {
         assertTrue(SettingsMigration.shouldResetTheme(themeVersion = 0, dynamicStored = true, colorStored = -1))
         assertTrue(SettingsMigration.shouldResetTheme(themeVersion = 0, dynamicStored = false, colorStored = 0xFF800000.toInt()))

@@ -32,7 +32,7 @@ object DeepSeekConfig {
     val KNOWN_MODELS = listOf("deepseek-flash", "deepseek-v4-pro")
     /**
      * The model that takes pictures. deepseek-flash accepts text and image input (GET /models, api-docs vision guide);
-     * deepseek-v4-pro is text only, and the older deepseek-v4-flash-vision-exp is served by Flash now.
+     * deepseek-v4-pro is text only; the older v4-flash and vision-exp ids are served by Flash now.
      */
     const val VISION_MODEL = "deepseek-flash"
 

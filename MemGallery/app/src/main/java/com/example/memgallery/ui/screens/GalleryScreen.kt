@@ -359,9 +359,12 @@ fun GalleryContent(
                             Spacer(Modifier.height(12.dp))
                             SectionHeader(label) {
                                 Text(
-                                    stringResource(R.string.home_n_memories, list.size).uppercase(),
+                                    androidx.compose.ui.res.pluralStringResource(R.plurals.home_n_memories, list.size, list.size),
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = scheme.onSurfaceVariant
+                                    color = scheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(start = 12.dp)
                                 )
                             }
                             Spacer(Modifier.height(8.dp))
@@ -518,7 +521,7 @@ fun CollectionTile(
 ) {
     val (bg, fg) = collectionTones[index % collectionTones.size].colors()
     val covers = info.covers
-    val countLabel = stringResource(R.string.collections_n_memories, info.count)
+    val countLabel = androidx.compose.ui.res.pluralStringResource(R.plurals.collections_n_memories, info.count, info.count)
     Column(
         modifier
             .fillMaxWidth()

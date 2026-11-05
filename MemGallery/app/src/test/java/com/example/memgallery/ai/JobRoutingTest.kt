@@ -32,13 +32,13 @@ class JobRoutingTest {
         val both = setup(legacy = "DEEPSEEK", deepseek = true, gemini = true, groq = true)
         assertEquals("DEEPSEEK", JobRouting.main(both))
         assertEquals("GEMINI", JobRouting.voice(both))
-        assertEquals("GEMINI", JobRouting.images(both))
+        assertEquals("DEEPSEEK", JobRouting.images(both))
         val groqOnly = setup(legacy = "DEEPSEEK", deepseek = true, groq = true)
         assertEquals("GROQ", JobRouting.voice(groqOnly))
-        assertEquals("GROQ", JobRouting.images(groqOnly))
+        assertEquals("DEEPSEEK", JobRouting.images(groqOnly))
         val none = setup(legacy = "DEEPSEEK", deepseek = true)
         assertEquals("NONE", JobRouting.voice(none))
-        assertEquals("NONE", JobRouting.images(none))
+        assertEquals("DEEPSEEK", JobRouting.images(none))
     }
 
     @Test fun explicitChoicesWinOverTheLegacySingleProvider() {
@@ -48,10 +48,24 @@ class JobRoutingTest {
         assertEquals("GEMINI", JobRouting.images(s))
     }
 
-    @Test fun deepSeekCanNeverBeTheVoiceOrImageProvider() {
+    @Test fun deepSeekCanNeverBeTheVoiceProviderButCanBeTheImageProvider() {
         val s = setup(legacy = "DEEPSEEK", voice = "DEEPSEEK", images = "DEEPSEEK", deepseek = true, groq = true)
         assertEquals("GROQ", JobRouting.voice(s))
-        assertEquals("GROQ", JobRouting.images(s))
+        assertEquals("DEEPSEEK", JobRouting.images(s))
+    }
+
+    @Test fun deepSeekMainWithDeepSeekImagesSendsPicturesStraightAndStillNeedsVoiceProvider() {
+        val plan = JobRouting.plan("DEEPSEEK", "GROQ", "DEEPSEEK", hasAudio = true, hasImages = true)
+        assertTrue(plan.passImagesToMain)
+        assertNull(plan.describeVia)
+        assertEquals("GROQ", plan.transcribeVia)
+        assertFalse(plan.passAudioToMain)
+    }
+
+    @Test fun geminiMainWithDeepSeekImagesDescribesViaDeepSeek() {
+        val plan = JobRouting.plan("GEMINI", "GEMINI", "DEEPSEEK", hasAudio = false, hasImages = true)
+        assertEquals("DEEPSEEK", plan.describeVia)
+        assertFalse(plan.passImagesToMain)
     }
 
     @Test fun unknownProviderStringsFallBackToGemini() {

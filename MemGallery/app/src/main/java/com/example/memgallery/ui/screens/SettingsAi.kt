@@ -76,7 +76,7 @@ data class AiSettingsState(
     val images: String = "GEMINI",
     val savedKeys: Set<String> = emptySet(),
     val gemini: KeyUi = KeyUi(),
-    val geminiModelId: String = "gemini-3.1-flash-lite",
+    val geminiModelId: String = com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT,
     val geminiModels: List<String> = emptyList(),
     val geminiModelsLoading: Boolean = false,
     val groq: KeyUi = KeyUi(),
@@ -216,7 +216,6 @@ fun AiSettingsContent(state: AiSettingsState, actions: AiSettingsActions, expand
                 hint = stringResource(R.string.ai_images_hint),
                 shape = groupedShape(2, 3),
                 warn = if (images == JobRouting.NONE) stringResource(R.string.ai_images_missing) else null,
-                note = if (images == JobRouting.DEEPSEEK) stringResource(R.string.ai_deepseek_vision_exp) else null,
             ) {
                 SegmentedChoice(
                     options = listOf(JobRouting.GEMINI to gemini, JobRouting.GROQ to groq, JobRouting.DEEPSEEK to deepseek, JobRouting.CUSTOM to custom, JobRouting.NONE to off),

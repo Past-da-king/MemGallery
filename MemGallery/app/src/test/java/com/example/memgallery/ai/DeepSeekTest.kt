@@ -136,4 +136,25 @@ class DeepSeekTest {
         assertEquals("/models", req.path)
         assertEquals("Bearer sk-test", req.getHeader("Authorization"))
     }
+
+    @Test fun imageRequestSendsBase64ImageUrlPartInUserMessage() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"role":"assistant","content":"A cat"}}]}"""))
+        val img = com.example.memgallery.data.remote.ai.ImageData(byteArrayOf(1, 2, 3), "image/png")
+        val msgs = JSONArray().put(JSONObject().put("role", "system").put("content", "sys"))
+            .put(JSONObject().put("role", "user").put("content", DeepSeekConfig.userContent("what is this", listOf(img))))
+        val cfg = DeepSeekConfig.chat(baseUrl = server.url("/").toString().removeSuffix("/"), apiKey = "sk-test", model = DeepSeekConfig.VISION_MODEL, thinking = false, maxToolCalls = 1)
+        assertEquals("A cat", OpenAiChatLoop(OkHttpClient()).run(cfg, msgs, null).getOrThrow())
+        val body = JSONObject(server.takeRequest().body.readUtf8())
+        assertEquals("deepseek-flash", body.getString("model"))
+        val msg = body.getJSONArray("messages")
+        assertEquals("sys", msg.getJSONObject(0).getString("content"))
+        val parts = msg.getJSONObject(1).getJSONArray("content")
+        assertEquals("text", parts.getJSONObject(0).getString("type"))
+        assertEquals("image_url", parts.getJSONObject(1).getString("type"))
+        assertEquals("data:image/png;base64,AQID", parts.getJSONObject(1).getJSONObject("image_url").getString("url"))
+    }
+
+    @Test fun noImagesKeepsContentAPlainString() {
+        assertEquals("hi", DeepSeekConfig.userContent("hi", emptyList()))
+    }
 }

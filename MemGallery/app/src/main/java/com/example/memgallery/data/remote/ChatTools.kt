@@ -306,7 +306,7 @@ object ChatTools {
                         .googleSearch(com.google.genai.types.GoogleSearch.builder().build())
                         .build()
                     val config = com.google.genai.types.GenerateContentConfig.builder().tools(tool).build()
-                    val model = settingsRepository?.geminiModelIdFlow?.first() ?: "gemini-3.1-flash-lite"
+                    val model = settingsRepository?.geminiModelIdFlow?.first() ?: com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT
                     val response = client.models.generateContent(model, query, config)
                     val result = response.text() ?: "No results found."
                     runCatching {

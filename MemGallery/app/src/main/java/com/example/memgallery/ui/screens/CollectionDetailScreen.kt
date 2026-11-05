@@ -84,7 +84,7 @@ fun CollectionDetailScreen(
                         }
                         HeaderTitleRow(
                             eyebrow = if (selectionModeActive) stringResource(R.string.gallery_selection_count, selectedMemoryIds.size)
-                            else stringResource(R.string.collections_n_memories, memories.size),
+                            else androidx.compose.ui.res.pluralStringResource(R.plurals.collections_n_memories, memories.size, memories.size),
                             title = collectionName
                         ) {
                             if (selectionModeActive) {

@@ -44,6 +44,10 @@ android {
         resources {
             excludes += "META-INF/INDEX.LIST"
             excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/NOTICE.md"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/LICENSE"
         }
     }
 

@@ -101,7 +101,7 @@ fun SelectCollectionSheet(
                 Column(Modifier.weight(1f)) {
                     Text(c.name, style = MaterialTheme.typography.titleMedium, color = if (selected) scheme.onPrimaryContainer else scheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        stringResource(R.string.collections_n_memories, info.count),
+                        androidx.compose.ui.res.pluralStringResource(R.plurals.collections_n_memories, info.count, info.count),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (selected) scheme.onPrimaryContainer.copy(alpha = 0.8f) else scheme.onSurfaceVariant
                     )

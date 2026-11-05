@@ -96,7 +96,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "gemini-3.1-flash-lite"
+            initialValue = com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT
         )
 
     private val _availableGeminiModels = MutableStateFlow<List<String>>(emptyList())

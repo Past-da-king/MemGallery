@@ -527,7 +527,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     // Gemini Model Selection
     val geminiModelIdFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.GEMINI_MODEL_ID] ?: "gemini-3.1-flash-lite"
+            preferences[PreferencesKeys.GEMINI_MODEL_ID] ?: com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT
         }
 
     suspend fun setGeminiModelId(modelId: String) {
