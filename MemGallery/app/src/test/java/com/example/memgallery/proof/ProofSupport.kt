@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.example.memgallery.data.local.entity.CollectionEntity
 import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.local.entity.TaskEntity
+import com.example.memgallery.ui.design.ArtPainter
 import com.example.memgallery.ui.design.FixedInsets
 import com.example.memgallery.ui.design.LocalFixedInsets
 import com.example.memgallery.ui.design.LocalMemoryPainter
@@ -62,16 +63,16 @@ fun memory(
 )
 
 fun sampleMemories(): List<MemoryEntity> = listOf(
-    memory(1, "Cedar Guest Wi-Fi", 0, 9, image = "wifi", tags = listOf("wifi", "password", "guest"), analysis = "Network Wi-Fi password: tide-lamp-4821 WPA2"),
+    memory(3, "Evening sky", 0, 9, image = "sunset"),
+    memory(9, "Alpine trail", 0, 9, image = "mountains"),
+    memory(10, "Flat white", 0, 9, image = "latte"),
+    memory(1, "Cedar Guest Wi-Fi", 0, 8, image = "wifi", tags = listOf("wifi", "password", "guest"), analysis = "Network Wi-Fi password: tide-lamp-4821 WPA2"),
     memory(2, "Gift ideas", 0, 8, text = "Ceramic mug set, linen napkins, a good pepper grinder", summary = "Ceramic mug set, linen napkins", tags = listOf("gift")),
-    memory(3, "Evening sky", 0, 8, image = "sunset"),
     memory(4, "Voice: guest network", 0, 7, audio = true, transcript = "the wifi passcode for the guest room is on the fridge", tags = listOf("wifi", "guest")),
     memory(5, "Night train to Porto", 1, 18, image = "ticket", tags = listOf("travel")),
     memory(6, "Lemon ricotta soup", 1, 13, image = "soup", tags = listOf("recipe")),
     memory(7, "How to share your Wi-Fi with a QR code", 1, 10, bookmark = "https://support.example.com/wifi-qr", summary = "Create a wifi QR and pass it to guests", tags = listOf("wifi", "router")),
     memory(8, "Router reset steps", 3, 9, text = "Hold reset 10 s, then the wifi light turns white. Default password is on the sticker", tags = listOf("router", "wifi")),
-    memory(9, "Alpine trail", 4, 15, image = "mountains"),
-    memory(10, "Flat white", 4, 11, image = "latte"),
 )
 
 fun sampleHeat(): Map<LocalDate, Int> {
