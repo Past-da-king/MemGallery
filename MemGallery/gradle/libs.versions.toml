@@ -1,21 +1,21 @@
 [versions]
 agp = "8.12.3"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.27"
+kotlin = "2.2.21"
+ksp = "2.2.21-2.0.5"
 coreKtx = "1.17.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
-composeBom = "2024.09.00"
+composeBom = "2026.05.01"
 materialIconsExtended = "1.6.8"
 hilt = "2.57.2"
 hiltNavigationCompose = "1.2.0"
-room = "2.6.1"
+room = "2.8.1"
 navigationCompose = "2.8.0-beta06"
 securityCrypto = "1.1.0-alpha06"
-googleGenai = "1.27.0"
+googleGenai = "1.80.0"
 gson = "2.10.1"
 coil = "2.6.0"
 accompanistFlowlayout = "0.32.0"
@@ -27,6 +27,10 @@ retrofit = "2.11.0"
 okhttp = "4.12.0"
 mediapipeGenai = "0.10.27"
 glance = "1.1.0"
+ktor = "2.3.12"
+zxing = "3.5.3"
+robolectric = "4.17"
+roborazzi = "1.77.0"
 
 
 
@@ -45,8 +49,8 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.5.0-alpha18" }
+androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose"}
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
@@ -75,6 +79,15 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor",
 okhttp-sse = { group = "com.squareup.okhttp3", name = "okhttp-sse", version.ref = "okhttp" }
 mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeGenai" }
 
+# Agent Bridge — embedded HTTP server. CIO only: no ContentNegotiation plugin, the
+# bridge owns its own Gson so the wire envelope stays exactly as the OpenAPI spec says.
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-cio = { group = "io.ktor", name = "ktor-server-cio", version.ref = "ktor" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+roborazzi-core = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { group = "io.github.takahirom.roborazzi", name = "roborazzi-compose", version.ref = "roborazzi" }
+
 
 
 [plugins]
@@ -83,3 +96,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

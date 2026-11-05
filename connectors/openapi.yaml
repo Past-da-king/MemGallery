@@ -1,0 +1,1317 @@
+openapi: 3.1.0
+
+info:
+  title: MemGallery Agent Bridge
+  version: "1.0"
+  summary: Read, write and interrupt — MemGallery, from any agent.
+  description: |
+    The HTTP face of MemGallery's `AgentApi`. The server runs **inside the Android app**
+    on port 8790, so the phone is always the source of truth and there is no cloud
+    account anywhere in this picture.
+
+    Nothing in this spec is specific to any agent framework. `connectors/mcp` turns it
+    into MCP tools for Claude Code, Codex, Cursor, Cline or A.O.S; anything else can use
+    this document directly.
+
+    ## Reaching it
+
+    | Tier | Address | Latency |
+    |---|---|---|
+    | Tailscale / LAN direct | `http://<device>:8790` | < 100 ms |
+    | Hub mirror + outbox | the hub's Tailscale Funnel URL | seconds – 1 min |
+    | Poll floor | — | 15 min |
+
+    Reads may be answered by the hub's mirror when the phone is unreachable. **Always
+    check `source` and `as_of`** before acting: a mirror read can be minutes stale, and
+    completing a task the operator already deleted is exactly how that goes wrong.
+    Writes are never served by the mirror — they queue and apply on the device.
+
+    ## Auth
+
+    `Authorization: Bearer <token>`. Tokens are created in the app under
+    Settings → Agent Access and shown exactly once. Each carries a scope set:
+
+    - `read` — tasks, projects, chats, and memory metadata *including* AI summaries and transcriptions
+    - `write` — create and mutate tasks, projects, memories
+    - `notify` — post notifications, ask questions
+    - `media:read` — pull raw photo/audio bytes. **Not granted by default.**
+    - `admin` — manage clients and webhooks; implies all of the above
+
+    The server refuses to bind until at least one token exists, and by default accepts
+    connections only from loopback and the Tailscale CGNAT range `100.64.0.0/10`.
+  license:
+    name: MIT
+  contact:
+    name: MemGallery
+    url: https://github.com/Past-da-king/MemGallery
+
+servers:
+  - url: http://memgallery.local:8790/v1
+    description: Device, over Tailscale or LAN
+  - url: https://hub.example.ts.net/v1
+    description: Hub, over Tailscale Funnel — mirror reads and queued writes
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: meta
+    description: Orientation — version, capabilities, and the one-call digest.
+  - name: tasks
+  - name: memories
+  - name: projects
+    description: Collections wearing a project hat. `/collections` is an alias.
+  - name: chats
+  - name: attention
+    description: Notifications and questions — getting the operator's attention while he's out.
+  - name: events
+    description: SSE stream and outbound webhooks.
+  - name: admin
+
+paths:
+  /meta:
+    get:
+      tags: [meta]
+      operationId: getMeta
+      summary: Version, device identity and capability flags
+      description: Read this first. Capabilities let a client degrade instead of guessing.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Meta" }
+
+  /health:
+    get:
+      tags: [meta]
+      operationId: getHealth
+      summary: Liveness probe
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  uptime_ms: { type: integer, format: int64 }
+
+  /openapi.json:
+    get:
+      tags: [meta]
+      operationId: getOpenApi
+      summary: This document, served by the app itself
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: object }
+
+  /digest:
+    get:
+      tags: [meta]
+      operationId: getDigest
+      summary: What the operator is up to, in one round trip
+      description: |
+        Overdue, due today, due this week, today's events, what is awaiting his approval,
+        what he captured recently, and how active he's been.
+
+        **Read this before deciding whether to interrupt him.** It is cheap, it is
+        mirrored to the hub, and it saves five separate queries.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/Digest" }
+
+  /search:
+    get:
+      tags: [meta]
+      operationId: search
+      summary: Free-text search across memories, tasks, projects and chats
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: scope
+          in: query
+          description: Comma-separated. Defaults to `memories,tasks`.
+          schema: { type: string, examples: ["memories,tasks"] }
+        - name: limit_per_entity
+          in: query
+          schema: { type: integer, default: 10, maximum: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/SearchResult" }
+
+  /tasks:
+    get:
+      tags: [tasks]
+      operationId: listTasks
+      summary: List tasks
+      description: |
+        Defaults to **open, approved** tasks. Unapproved tasks — things AI or an agent
+        proposed but the operator hasn't accepted — are never mixed into a default
+        listing; ask for them with `approved=false` or use `/tasks/pending-approval`.
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, completed, any], default: open }
+        - name: approved
+          in: query
+          description: Omit for approved-only. `false` inspects the approval inbox.
+          schema: { type: boolean }
+        - name: type
+          in: query
+          schema: { $ref: "#/components/schemas/TaskType" }
+        - name: priority
+          in: query
+          schema: { $ref: "#/components/schemas/TaskPriority" }
+        - name: project_id
+          in: query
+          schema: { type: integer }
+        - name: due_before
+          in: query
+          schema: { type: string, format: date }
+        - name: due_after
+          in: query
+          schema: { type: string, format: date }
+        - name: q
+          in: query
+          description: Matches title and description, accent- and case-insensitively.
+          schema: { type: string }
+        - name: external_id
+          in: query
+          schema: { type: string }
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [due_asc, due_desc, created_asc, created_desc, priority_desc]
+            default: due_asc
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Task" }
+                      next_cursor: { type: [string, "null"] }
+    post:
+      tags: [tasks]
+      operationId: createTask
+      summary: Create a task
+      description: |
+        Set `requires_approval: true` to *propose* rather than assert — the task lands in
+        the operator's approval inbox, he accepts or bins it on his phone, and you get
+        `task.approved` or `task.rejected` back. That is the polite way for an agent to
+        add work to someone else's day.
+
+        Supplying `external_id` makes this idempotent: creating twice with the same value
+        updates the existing task instead of duplicating it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateTask" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /tasks/pending-approval:
+    get:
+      tags: [tasks]
+      operationId: listPendingApproval
+      summary: The operator's approval inbox
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Task" }
+
+  /tasks/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IntId"
+    get:
+      tags: [tasks]
+      operationId: getTask
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [tasks]
+      operationId: updateTask
+      description: |
+        Omitted fields are left alone. Because JSON can't distinguish "absent" from
+        "null" once parsed, clearing a value needs an explicit flag: `clear_due_date`,
+        `clear_due_time`, `clear_project`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskPatch" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [tasks]
+      operationId: deleteTask
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tasks/{id}/complete:
+    post:
+      tags: [tasks]
+      operationId: completeTask
+      parameters:
+        - $ref: "#/components/parameters/IntId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+
+  /tasks/{id}/approve:
+    post:
+      tags: [tasks]
+      operationId: approveTask
+      parameters:
+        - $ref: "#/components/parameters/IntId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+
+  /tasks/{id}/reject:
+    post:
+      tags: [tasks]
+      operationId: rejectTask
+      parameters:
+        - $ref: "#/components/parameters/IntId"
+      responses:
+        "204": { description: Rejected and discarded }
+
+  /memories:
+    get:
+      tags: [memories]
+      operationId: listMemories
+      summary: List memories (metadata, never bytes)
+      parameters:
+        - name: q
+          in: query
+          description: Searches title, summary, user text, tags, image analysis and transcription.
+          schema: { type: string }
+        - name: kind
+          in: query
+          schema: { $ref: "#/components/schemas/MemoryKind" }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ProcessingStatus" }
+        - name: project_id
+          in: query
+          schema: { type: integer }
+        - name: tag
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          description: Epoch millis, inclusive.
+          schema: { type: integer, format: int64 }
+        - name: to
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: include_hidden
+          in: query
+          schema: { type: boolean, default: false }
+        - name: order
+          in: query
+          schema: { type: string, enum: [created_desc, created_asc, title_asc], default: created_desc }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Memory" }
+                      next_cursor: { type: [string, "null"] }
+    post:
+      tags: [memories]
+      operationId: createMemory
+      summary: Capture something on the operator's behalf
+      description: |
+        Exactly one of `text`, `url`, `image` or `audio`.
+
+        `process: true` runs the AI pipeline immediately, which spends the operator's own
+        API quota — so it is subject to a per-client daily cap and a Settings kill switch.
+        `process: false` stores it raw and lets the normal pipeline pick it up later; use
+        that when you're capturing in bulk.
+
+        Returns as soon as it's stored. Completion arrives as a `memory.processed` event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateMemory" }
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Memory" }
+        "429": { $ref: "#/components/responses/QuotaExceeded" }
+
+  /memories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IntId"
+    get:
+      tags: [memories]
+      operationId: getMemory
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Memory" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [memories]
+      operationId: updateMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemoryPatch" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Memory" }
+    delete:
+      tags: [memories]
+      operationId: deleteMemory
+      responses:
+        "204": { description: Deleted }
+
+  /memories/{id}/media/{index}:
+    get:
+      tags: [memories]
+      operationId: getMemoryMedia
+      summary: Raw photo or audio bytes
+      description: |
+        Requires the `media:read` scope, which is **not** granted by default — the
+        operator ticks it per client. Served only by the device; the hub mirror never
+        carries bytes, so this 503s if you're talking to the mirror.
+      parameters:
+        - $ref: "#/components/parameters/IntId"
+        - name: index
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: The bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+  /projects:
+    get:
+      tags: [projects]
+      operationId: listProjects
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ProjectStatus" }
+        - name: include_archived
+          in: query
+          schema: { type: boolean, default: false }
+        - name: with_counts
+          in: query
+          description: Costs extra queries; off unless asked.
+          schema: { type: boolean, default: false }
+        - name: q
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Project" }
+    post:
+      tags: [projects]
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProject" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+
+  /projects/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IntId"
+    get:
+      tags: [projects]
+      operationId: getProject
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [projects]
+      operationId: updateProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectPatch" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+    delete:
+      tags: [projects]
+      operationId: deleteProject
+      description: Deletes the project only. Tasks and memories survive, unassigned.
+      responses:
+        "204": { description: Deleted }
+
+  /projects/{id}/memories/{memory_id}:
+    parameters:
+      - $ref: "#/components/parameters/IntId"
+      - name: memory_id
+        in: path
+        required: true
+        schema: { type: integer }
+    put:
+      tags: [projects]
+      operationId: addMemoryToProject
+      responses:
+        "204": { description: Linked }
+    delete:
+      tags: [projects]
+      operationId: removeMemoryFromProject
+      responses:
+        "204": { description: Unlinked }
+
+  /chats:
+    get:
+      tags: [chats]
+      operationId: listChats
+      summary: The in-app assistant's conversation history (read-only)
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Chat" }
+
+  /chats/{id}/messages:
+    get:
+      tags: [chats]
+      operationId: getChatMessages
+      parameters:
+        - $ref: "#/components/parameters/IntId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ChatMessage" }
+
+  /notify:
+    post:
+      tags: [attention]
+      operationId: notify
+      summary: Post a notification to the operator's phone
+      description: |
+        Fire-and-forget, on a dedicated `agent_alerts` channel — so he can mute agents
+        without muting MemGallery's own reminders. Up to three action buttons; taps come
+        back as `notification.action` events.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotifyRequest" }
+      responses:
+        "202":
+          description: Posted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationRef" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /ask:
+    post:
+      tags: [attention]
+      operationId: ask
+      summary: Ask the operator something and wait for his answer
+      description: |
+        The modal-in-his-pocket. Returns immediately with a pending ask; the answer
+        arrives via `GET /ask/{id}?wait=30`, the `ask.answered` event, or a webhook.
+
+        - `confirm` — Yes/No buttons, answerable from the notification shade
+        - `choice` — first three `options` become buttons, the rest live in the app
+        - `text` — RemoteInput, so he can type a reply without unlocking
+
+        Unanswered asks collect in the in-app Agent Inbox. If `timeout_sec` passes with
+        no answer the ask goes `expired` — treat that as "he didn't see it", not as "no".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AskRequest" }
+      responses:
+        "202":
+          description: Asked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ask" }
+
+  /ask/{ask_id}:
+    get:
+      tags: [attention]
+      operationId: pollAsk
+      summary: Long-poll for the answer
+      parameters:
+        - name: ask_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: wait
+          in: query
+          description: Seconds to hold the connection open. 0 is a plain read.
+          schema: { type: integer, default: 0, maximum: 60 }
+      responses:
+        "200":
+          description: OK — check `status`; it may still be `pending`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ask" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /asks:
+    get:
+      tags: [attention]
+      operationId: listPendingAsks
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Ask" }
+
+  /events:
+    get:
+      tags: [events]
+      operationId: streamEvents
+      summary: Server-sent event stream
+      description: |
+        `text/event-stream`. Pass `after_id` to replay what you missed while
+        disconnected — which is what makes a dropped connection recoverable rather than
+        a silent gap. A `heartbeat` event every 20 s keeps proxies from timing out.
+      parameters:
+        - name: types
+          in: query
+          description: Comma-separated. Supports `*` and prefix globs like `task.*`.
+          schema: { type: string, examples: ["task.*,ask.answered"] }
+        - name: after_id
+          in: query
+          schema: { type: integer, format: int64, default: 0 }
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+
+  /webhooks:
+    get:
+      tags: [events]
+      operationId: listWebhooks
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Webhook" }
+    post:
+      tags: [events]
+      operationId: registerWebhook
+      description: |
+        Deliveries are signed: `X-MemGallery-Signature: sha256=<hmac>` over the raw body
+        using the webhook secret. Verify it — the URL is the only thing standing between
+        your endpoint and anyone who can reach it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterWebhook" }
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Webhook" }
+
+  /webhooks/{webhook_id}:
+    delete:
+      tags: [events]
+      operationId: deleteWebhook
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Deleted }
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: A token from Settings → Agent Access. Shown once, stored hashed, revocable.
+
+  parameters:
+    IntId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, default: 50, minimum: 1, maximum: 200 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque, forward-only. Bound to the filter set it was issued for.
+      schema: { type: string }
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Token lacks the required scope
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: No such object
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RateLimited:
+      description: Too many requests from this client
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    QuotaExceeded:
+      description: Daily AI-processing quota spent for this client
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unavailable:
+      description: Device unreachable; only the mirror answered, and it can't serve this
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+
+    Envelope:
+      type: object
+      description: |
+        Wraps every list and digest response. `source` and `as_of` are not decoration —
+        they tell you whether you're reading the phone or a possibly-stale mirror.
+      required: [source, as_of, api_version]
+      properties:
+        source:
+          type: string
+          enum: [device, mirror]
+        as_of:
+          type: integer
+          format: int64
+          description: Epoch millis the data was true at.
+        api_version: { type: string }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [unauthorized, forbidden_scope, not_found, invalid_request, conflict, rate_limited, quota_exceeded, unavailable, internal]
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: { type: string }
+
+    Meta:
+      type: object
+      properties:
+        api_version: { type: string }
+        app_version: { type: string }
+        device_name: { type: string }
+        device_id: { type: string }
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum: [media, events, webhooks, ask, notify, memory.create, memory.ai_processing, mirror]
+        scopes:
+          type: array
+          items: { type: string }
+        server_time: { type: integer, format: int64 }
+        time_zone: { type: string }
+
+    TaskPriority:
+      type: string
+      enum: [low, medium, high]
+
+    TaskType:
+      type: string
+      enum: [todo, event]
+
+    Task:
+      type: object
+      required: [id, title, description, priority, type, completed, approved, source]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        due_date: { type: [string, "null"], format: date }
+        due_time: { type: [string, "null"], examples: ["14:30"] }
+        priority: { $ref: "#/components/schemas/TaskPriority" }
+        type: { $ref: "#/components/schemas/TaskType" }
+        completed: { type: boolean }
+        approved:
+          type: boolean
+          description: False means it's sitting in the operator's approval inbox, invisible in his main list.
+        recurring: { type: boolean }
+        recurrence_rule: { type: [string, "null"] }
+        project_id: { type: [integer, "null"] }
+        memory_id:
+          type: [integer, "null"]
+          description: The memory this was extracted from, if any.
+        source:
+          type: string
+          description: '"USER", "AI", or "AGENT:<client name>".'
+        external_id: { type: [string, "null"] }
+        created_at: { type: integer, format: int64 }
+        updated_at: { type: integer, format: int64 }
+
+    CreateTask:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string, default: "" }
+        due_date: { type: string, format: date }
+        due_time: { type: string }
+        priority: { $ref: "#/components/schemas/TaskPriority" }
+        type: { $ref: "#/components/schemas/TaskType" }
+        recurring: { type: boolean, default: false }
+        recurrence_rule: { type: string }
+        project_id: { type: integer }
+        memory_id: { type: integer }
+        requires_approval:
+          type: boolean
+          default: false
+          description: Propose rather than assert — lands in the approval inbox.
+        external_id:
+          type: string
+          description: Caller-owned id; makes creation idempotent.
+
+    TaskPatch:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        due_date: { type: string, format: date }
+        clear_due_date: { type: boolean, default: false }
+        due_time: { type: string }
+        clear_due_time: { type: boolean, default: false }
+        priority: { $ref: "#/components/schemas/TaskPriority" }
+        type: { $ref: "#/components/schemas/TaskType" }
+        completed: { type: boolean }
+        recurring: { type: boolean }
+        recurrence_rule: { type: string }
+        project_id: { type: integer }
+        clear_project: { type: boolean, default: false }
+
+    MemoryKind:
+      type: string
+      enum: [text, image, audio, bookmark, chat, mixed]
+
+    ProcessingStatus:
+      type: string
+      enum: [pending, processing, completed, failed]
+
+    MediaRef:
+      type: object
+      properties:
+        index: { type: integer }
+        type: { type: string, enum: [image, audio] }
+        url:
+          type: string
+          description: Relative to the server root; requires `media:read`.
+        mime_type: { type: [string, "null"] }
+
+    Bookmark:
+      type: object
+      properties:
+        url: { type: string }
+        title: { type: [string, "null"] }
+        description: { type: [string, "null"] }
+        image_url: { type: [string, "null"] }
+        favicon_url: { type: [string, "null"] }
+
+    DetectedAction:
+      type: object
+      description: Something the AI spotted inside a memory — the raw material tasks are made from.
+      properties:
+        type: { type: string, examples: ["EVENT", "TODO", "REMINDER"] }
+        description: { type: string }
+        date: { type: [string, "null"], format: date }
+        time: { type: [string, "null"] }
+
+    Memory:
+      type: object
+      required: [id, kind, status]
+      properties:
+        id: { type: integer }
+        kind: { $ref: "#/components/schemas/MemoryKind" }
+        title: { type: [string, "null"] }
+        summary: { type: [string, "null"] }
+        tags:
+          type: array
+          items: { type: string }
+        user_text: { type: [string, "null"] }
+        image_analysis: { type: [string, "null"] }
+        transcription: { type: [string, "null"] }
+        bookmark:
+          oneOf:
+            - $ref: "#/components/schemas/Bookmark"
+            - type: "null"
+        media:
+          type: array
+          items: { $ref: "#/components/schemas/MediaRef" }
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/DetectedAction" }
+        status: { $ref: "#/components/schemas/ProcessingStatus" }
+        hidden: { type: boolean }
+        project_ids:
+          type: array
+          items: { type: integer }
+        created_at: { type: integer, format: int64 }
+
+    CreateMemory:
+      type: object
+      description: Exactly one of `text`, `url`, `image` or `audio`.
+      properties:
+        text: { type: string }
+        url: { type: string, format: uri }
+        image:
+          type: object
+          properties:
+            data_base64: { type: string }
+            mime_type: { type: string }
+            filename: { type: string }
+        audio:
+          type: object
+          properties:
+            data_base64: { type: string }
+            mime_type: { type: string }
+            filename: { type: string }
+        process:
+          type: boolean
+          default: true
+          description: Run AI processing now. Spends the operator's API quota.
+        project_ids:
+          type: array
+          items: { type: integer }
+        hidden: { type: boolean, default: false }
+
+    MemoryPatch:
+      type: object
+      properties:
+        title: { type: string }
+        summary: { type: string }
+        user_text: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        hidden: { type: boolean }
+
+    ProjectStatus:
+      type: string
+      enum: [active, paused, done]
+
+    TaskCounts:
+      type: object
+      properties:
+        total: { type: integer }
+        open: { type: integer }
+        overdue: { type: integer }
+
+    Project:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        status: { $ref: "#/components/schemas/ProjectStatus" }
+        color:
+          type: [integer, "null"]
+          description: ARGB, or null to follow the app accent.
+        target_date: { type: [string, "null"], format: date }
+        archived: { type: boolean }
+        sort_order: { type: integer }
+        created_at: { type: integer, format: int64 }
+        memory_count:
+          type: [integer, "null"]
+          description: Null unless `with_counts` was requested.
+        task_counts:
+          oneOf:
+            - $ref: "#/components/schemas/TaskCounts"
+            - type: "null"
+
+    CreateProject:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string, default: "" }
+        status: { $ref: "#/components/schemas/ProjectStatus" }
+        color: { type: integer }
+        target_date: { type: string, format: date }
+
+    ProjectPatch:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        status: { $ref: "#/components/schemas/ProjectStatus" }
+        color: { type: integer }
+        clear_color: { type: boolean, default: false }
+        target_date: { type: string, format: date }
+        clear_target_date: { type: boolean, default: false }
+        archived: { type: boolean }
+        sort_order: { type: integer }
+
+    Chat:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        summary: { type: [string, "null"] }
+        message_count: { type: [integer, "null"] }
+        saved_as_memory: { type: boolean }
+        created_at: { type: integer, format: int64 }
+
+    ChatMessage:
+      type: object
+      properties:
+        id: { type: integer }
+        chat_id: { type: integer }
+        role: { type: string, enum: [user, model] }
+        content: { type: string }
+        has_audio: { type: boolean }
+        has_image: { type: boolean }
+        created_at: { type: integer, format: int64 }
+
+    SearchResult:
+      type: object
+      properties:
+        query: { type: string }
+        memories:
+          type: array
+          items: { $ref: "#/components/schemas/Memory" }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        projects:
+          type: array
+          items: { $ref: "#/components/schemas/Project" }
+        chats:
+          type: array
+          items: { $ref: "#/components/schemas/Chat" }
+        truncated: { type: boolean }
+
+    Digest:
+      type: object
+      properties:
+        generated_at: { type: integer, format: int64 }
+        today: { type: string, format: date }
+        time_zone: { type: string }
+        overdue:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        due_today:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        due_this_week:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        events_today:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        awaiting_approval:
+          type: object
+          properties:
+            tasks: { type: integer }
+            asks: { type: integer }
+        recent_memories:
+          type: array
+          items: { $ref: "#/components/schemas/Memory" }
+        active_projects:
+          type: array
+          items: { $ref: "#/components/schemas/Project" }
+        processing:
+          type: object
+          properties:
+            pending: { type: integer }
+            processing: { type: integer }
+            failed: { type: integer }
+        activity:
+          type: object
+          properties:
+            memories_today: { type: integer }
+            tasks_completed_today: { type: integer }
+            streak_days: { type: integer }
+
+    NotifyPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+
+    NotifyAction:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+
+    NotifyRequest:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string }
+        body: { type: string }
+        priority: { $ref: "#/components/schemas/NotifyPriority" }
+        deep_link:
+          type: string
+          examples: ["memgallery://detail/412"]
+        actions:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/NotifyAction" }
+        tag:
+          type: string
+          description: Reusing a tag replaces the previous notification instead of stacking.
+
+    NotificationRef:
+      type: object
+      properties:
+        id: { type: integer }
+        tag: { type: [string, "null"] }
+        posted_at: { type: integer, format: int64 }
+
+    AskRequest:
+      type: object
+      required: [kind, question]
+      properties:
+        kind: { type: string, enum: [confirm, choice, text] }
+        question: { type: string }
+        context:
+          type: string
+          description: Background he needs to answer sensibly. Shown under the question.
+        options:
+          type: array
+          items: { type: string }
+          description: Required for `choice`; the first three become notification buttons.
+        timeout_sec: { type: integer, default: 3600 }
+        priority: { $ref: "#/components/schemas/NotifyPriority" }
+        deep_link: { type: string }
+
+    Ask:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [confirm, choice, text] }
+        question: { type: string }
+        context: { type: [string, "null"] }
+        options:
+          type: array
+          items: { type: string }
+        answer: { type: [string, "null"] }
+        status: { type: string, enum: [pending, answered, expired, dismissed] }
+        asked_by: { type: string }
+        created_at: { type: integer, format: int64 }
+        expires_at: { type: [integer, "null"], format: int64 }
+        answered_at: { type: [integer, "null"], format: int64 }
+
+    Event:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        type:
+          type: string
+          enum:
+            - task.created
+            - task.updated
+            - task.completed
+            - task.approved
+            - task.rejected
+            - task.deleted
+            - memory.created
+            - memory.processed
+            - memory.failed
+            - memory.updated
+            - memory.deleted
+            - project.created
+            - project.updated
+            - project.deleted
+            - ask.created
+            - ask.answered
+            - ask.expired
+            - ask.dismissed
+            - notification.action
+            - heartbeat
+        at: { type: integer, format: int64 }
+        entity_id: { type: [string, "null"] }
+        payload:
+          type: object
+          description: The affected object in the same wire shape the REST endpoints use.
+
+    RegisterWebhook:
+      type: object
+      required: [url, event_types]
+      properties:
+        url: { type: string, format: uri }
+        event_types:
+          type: array
+          items: { type: string }
+          description: Event names, prefix globs like `task.*`, or a single `*`.
+        secret:
+          type: string
+          description: Generated if omitted. Used for the HMAC-SHA256 signature.
+
+    Webhook:
+      type: object
+      properties:
+        id: { type: string }
+        url: { type: string }
+        event_types:
+          type: array
+          items: { type: string }
+        active: { type: boolean }
+        created_at: { type: integer, format: int64 }
+        last_status: { type: [string, "null"] }
+        last_attempt_at: { type: [integer, "null"], format: int64 }

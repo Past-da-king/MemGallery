@@ -27,3 +27,7 @@ Thumbs.db
 error.txt
 Screenshot_*.jpg
 Screenshot_*.png
+
+node_modules/
+connectors/hub/dist/
+connectors/mcp/dist/

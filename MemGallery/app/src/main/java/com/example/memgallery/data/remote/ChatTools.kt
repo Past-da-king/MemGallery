@@ -16,11 +16,22 @@ import java.util.Locale
 
 private const val TAG = "ChatTools"
 
+private fun String.foldForSearch(): String =
+    java.text.Normalizer.normalize(this, java.text.Normalizer.Form.NFD)
+        .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+        .lowercase()
+
 object ChatTools {
     lateinit var memoryDao: MemoryDao
     lateinit var collectionDao: CollectionDao
     lateinit var taskDao: TaskDao
     var searchClient: com.google.genai.Client? = null
+    var webSearchService: com.example.memgallery.data.remote.search.WebSearchFactory? = null
+
+    // Web pages the model used for the current answer; shown under it as Sources.
+    private val webSources = java.util.Collections.synchronizedList(mutableListOf<com.example.memgallery.data.remote.search.SearchResult>())
+    val lastWebSources: List<com.example.memgallery.data.remote.search.SearchResult>
+        get() = synchronized(webSources) { webSources.toList() }
     var settingsRepository: com.example.memgallery.data.repository.SettingsRepository? = null
     
     // State holder for memory IDs to display in chat UI after AI response
@@ -55,8 +66,15 @@ object ChatTools {
         return runBlocking {
             try {
                 val filterMap = parseFilters(filters)
+                if (filterMap == null) {
+                    val errorMsg = "Error: filters JSON invalid. Re-emit with valid JSON, e.g. {\"search\": \"blue\", \"limit\": 10}"
+                    Log.w(TAG, "📤 RESULT: $errorMsg")
+                    Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    _toolEvents.tryEmit(ToolEvent.Finished("Querying Database", "Invalid filters JSON"))
+                    return@runBlocking errorMsg
+                }
                 val limit = (filterMap["limit"] as? Number)?.toInt() ?: 20
-                
+
                 val result = when (table.lowercase()) {
                     "memories" -> queryMemories(filterMap, fields, limit)
                     "tasks" -> queryTasks(filterMap, fields, limit)
@@ -99,14 +117,14 @@ object ChatTools {
         
         // Text search
         filters["search"]?.let { query ->
-            val q = query.toString().lowercase()
+            val q = query.toString().foldForSearch()
             memories = memories.filter { m ->
-                m.aiTitle?.lowercase()?.contains(q) == true ||
-                m.aiSummary?.lowercase()?.contains(q) == true ||
-                m.userText?.lowercase()?.contains(q) == true ||
-                m.aiTags?.any { tag -> tag.lowercase().contains(q) } == true ||
-                m.aiImageAnalysis?.lowercase()?.contains(q) == true ||
-                m.aiAudioTranscription?.lowercase()?.contains(q) == true
+                m.aiTitle?.foldForSearch()?.contains(q) == true ||
+                m.aiSummary?.foldForSearch()?.contains(q) == true ||
+                m.userText?.foldForSearch()?.contains(q) == true ||
+                m.aiTags?.any { tag -> tag.foldForSearch().contains(q) } == true ||
+                m.aiImageAnalysis?.foldForSearch()?.contains(q) == true ||
+                m.aiAudioTranscription?.foldForSearch()?.contains(q) == true
             }
         }
         
@@ -279,33 +297,42 @@ object ChatTools {
         
         return runBlocking {
             try {
-                val tool = com.google.genai.types.Tool.builder()
-                    .googleSearch(com.google.genai.types.GoogleSearch.builder().build())
-                    .build()
-                
-                val config = com.google.genai.types.GenerateContentConfig.builder()
-                    .tools(tool)
-                    .build()
-
-                val client = searchClient ?: return@runBlocking "Web search is currently unavailable. This feature requires the Gemini provider."
-
-                val model = settingsRepository?.geminiModelIdFlow?.first() ?: "gemini-3.1-flash-lite"
-                val response = client.models.generateContent(model, query, config)
-                val result = response.text() ?: "No results found."
-                Log.i(TAG, "📤 RESULT (${result.length} chars):")
-                result.chunked(1000).forEachIndexed { index, chunk ->
-                    Log.i(TAG, "    [Part $index]: $chunk")
+                val mode = settingsRepository?.searchProviderFlow?.first() ?: "AUTO"
+                val client = searchClient
+                val geminiMain = settingsRepository?.resolvedMainProvider() == "GEMINI"
+                // Gemini as main brain keeps Google grounding unless the user picked another search provider.
+                if (mode == "AUTO" && client != null && geminiMain) {
+                    val tool = com.google.genai.types.Tool.builder()
+                        .googleSearch(com.google.genai.types.GoogleSearch.builder().build())
+                        .build()
+                    val config = com.google.genai.types.GenerateContentConfig.builder().tools(tool).build()
+                    val model = settingsRepository?.geminiModelIdFlow?.first() ?: com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT
+                    val response = client.models.generateContent(model, query, config)
+                    val result = response.text() ?: "No results found."
+                    runCatching {
+                        response.candidates().orElse(null)?.firstOrNull()?.groundingMetadata()?.orElse(null)
+                            ?.groundingChunks()?.orElse(null)?.forEach { chunk ->
+                                chunk.web().orElse(null)?.let { w ->
+                                    val uri = w.uri().orElse("")
+                                    if (uri.isNotBlank()) webSources.add(com.example.memgallery.data.remote.search.SearchResult(w.title().orElse(uri), uri, ""))
+                                }
+                            }
+                    }
+                    Log.i(TAG, "📤 RESULT (${result.length} chars) via Gemini grounding")
+                    _toolEvents.tryEmit(ToolEvent.Finished("Searching Web", "Completed"))
+                    return@runBlocking result
                 }
-                Log.i(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                
-                _toolEvents.tryEmit(ToolEvent.Finished("Searching Web", "Completed"))
-                
-                result
+
+                val service = webSearchService ?: return@runBlocking "Web search is currently unavailable."
+                val (text, results) = service.run(query, startAt = webSources.size + 1)
+                webSources.addAll(results)
+                Log.i(TAG, "📤 RESULT: ${results.size} web results")
+                _toolEvents.tryEmit(ToolEvent.Finished("Searching Web", if (results.isEmpty()) "Failed" else "Completed"))
+                text
             } catch (e: Exception) {
                 Log.e(TAG, "❌ TOOL ERROR: webSearch failed", e)
-                val errorMsg = "Error searching web: ${e.message}"
                 _toolEvents.tryEmit(ToolEvent.Finished("Searching Web", "Failed"))
-                errorMsg
+                "Error searching web: ${e.message}"
             }
         }
     }
@@ -371,6 +398,7 @@ object ChatTools {
      */
     fun clearDisplayedMemoryIds() {
         lastDisplayedMemoryIds = emptyList()
+        webSources.clear()
     }
     
     private fun parseMemoryIds(json: String): List<Int> {
@@ -419,18 +447,36 @@ object ChatTools {
         return schema
     }
 
+    // Recognised top-level filter keys across all tables. Anything else triggers a
+    // parse-error response so the model can re-emit valid filters instead of silently
+    // getting back "all rows".
+    private val validFilterKeys = setOf(
+        // memories
+        "id", "search", "dateFrom", "dateTo", "collectionName",
+        "orderBy", "offset", "limit",
+        // tasks
+        "completed", "dueDate", "priority", "type"
+    )
+
     // Helper functions
-    private fun parseFilters(json: String): Map<String, Any?> {
+    // Returns null if the input looks like a JSON object but fails to parse, OR if it
+    // contains unrecognised top-level keys. Returns an empty map for blank/`{}`/`""`
+    // (these mean "no filter, all rows" and are allowed).
+    private fun parseFilters(json: String): Map<String, Any?>? {
+        if (json.isBlank() || json == "{}") return emptyMap()
         return try {
-            if (json.isBlank() || json == "{}") {
-                emptyMap()
-            } else {
-                @Suppress("UNCHECKED_CAST")
-                gson.fromJson(json, Map::class.java) as? Map<String, Any?> ?: emptyMap()
+            @Suppress("UNCHECKED_CAST")
+            val parsed = gson.fromJson(json, Map::class.java) as? Map<String, Any?>
+                ?: return null
+            val unknown = parsed.keys.filter { it !in validFilterKeys }
+            if (unknown.isNotEmpty()) {
+                Log.w(TAG, "Unrecognised filter keys: $unknown")
+                return null
             }
+            parsed
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse filters: $json", e)
-            emptyMap()
+            null
         }
     }
     

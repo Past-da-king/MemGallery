@@ -13,10 +13,8 @@ import com.google.genai.types.HttpOptions
 import com.google.genai.types.HttpRetryOptions
 import com.google.genai.types.Part
 import com.google.genai.types.Schema
-import com.google.genai.types.ThinkingConfig
 import com.google.genai.types.Tool
 import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -25,13 +23,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "GeminiProvider"
-private const val FALLBACK_MODEL_NAME = "gemini-3.1-flash-lite"
 
 /**
  * Google Gemini AI provider implementation.
@@ -48,13 +43,35 @@ class GeminiProvider @Inject constructor(
 
     private var client: Client? = null
 
-    private suspend fun currentModel(): String =
-        settingsRepository.geminiModelIdFlow.first().ifBlank { FALLBACK_MODEL_NAME }
+    private var apiKeyInUse: String? = null
+    private var liveModels: List<String>? = null
+
+    /**
+     * The model to call. The saved id is used while the live list for this key still has it; if Google has retired
+     * or renamed it, the best default from the live list is used and saved, so a stale id never breaks every job.
+     */
+    private suspend fun currentModel(): String {
+        val saved = settingsRepository.geminiModelIdFlow.first()
+        val key = apiKeyInUse
+        var live = liveModels
+        if (live == null && !key.isNullOrBlank()) {
+            live = withContext(Dispatchers.IO) { GeminiModels.fetch(OkHttpClient(), key).getOrNull() }
+            if (live != null) liveModels = live
+        }
+        val model = GeminiModels.resolve(saved, live.orEmpty())
+        if (model != saved && live?.isNotEmpty() == true) {
+            Log.w(TAG, "Saved model $saved is not in the live list, using $model")
+            settingsRepository.setGeminiModelId(model)
+        }
+        return model
+    }
 
     private suspend fun currentMaxToolCalls(): Int =
         settingsRepository.maxToolCallsFlow.first()
 
     override fun initialize(apiKey: String) {
+        apiKeyInUse = apiKey
+        liveModels = null
         val httpOptions = HttpOptions.builder()
             .retryOptions(
                 HttpRetryOptions.builder()
@@ -76,60 +93,20 @@ class GeminiProvider @Inject constructor(
     
     override fun disable() {
         client = null
+        apiKeyInUse = null
+        liveModels = null
     }
     
+    /** The key check is the live model list: no model id has to exist for a key to be valid. */
     override suspend fun validateApiKey(apiKey: String): Result<Boolean> = withContext(Dispatchers.IO) {
-        try {
-            val tempClient = Client.builder().apiKey(apiKey).build()
-            tempClient.models.generateContent(currentModel(), "test", GenerateContentConfig.builder().build())
-            Result.success(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "API key validation failed", e)
-            Result.failure(e)
-        }
+        listAvailableModels(apiKey).map { true }
     }
 
-    /**
-     * Fetch the list of Gemini models available to the given API key, filtered to those
-     * that support generateContent. Strips the `models/` prefix from each name.
-     */
+    /** Models this key can use for text and pictures (every page of models.list, generateContent only). */
     suspend fun listAvailableModels(apiKey: String): Result<List<String>> = withContext(Dispatchers.IO) {
-        try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey"
-            val request = Request.Builder().url(url).build()
-            OkHttpClient().newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext Result.failure(
-                        IOException("HTTP ${response.code}: ${response.message}")
-                    )
-                }
-                val body = response.body?.string()
-                    ?: return@withContext Result.failure(IOException("Empty response body"))
-                val parsed = gson.fromJson(body, ModelsListResponse::class.java)
-                val names = parsed.models
-                    .orEmpty()
-                    .filter { it.supportedGenerationMethods.orEmpty().contains("generateContent") }
-                    .mapNotNull { it.name?.removePrefix("models/") }
-                    .filter { it.startsWith("gemini-") }
-                    .sorted()
-                Result.success(names)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to list Gemini models", e)
-            Result.failure(e)
-        }
+        GeminiModels.fetch(OkHttpClient(), apiKey).onFailure { Log.e(TAG, "Failed to list Gemini models", it) }
     }
 
-    private data class ModelsListResponse(
-        val models: List<ModelInfo>?
-    )
-
-    private data class ModelInfo(
-        val name: String?,
-        @SerializedName("supportedGenerationMethods")
-        val supportedGenerationMethods: List<String>?
-    )
-    
     override suspend fun processMemory(
         imageDataList: List<ImageData>,
         audioData: AudioData?,
@@ -334,13 +311,9 @@ class GeminiProvider @Inject constructor(
                 .maximumRemoteCalls(currentMaxToolCalls())
                 .build()
             
-            val thinkingConfig = ThinkingConfig.builder()
-                .thinkingBudget(21888)
-                .build()
-            
+            // No thinkingBudget or maxOutputTokens: Gemini 3.x and newer take thinking levels, not budgets, and each
+            // model has its own output cap. The model's own defaults work on every generation.
             val configBuilder = GenerateContentConfig.builder()
-                .thinkingConfig(thinkingConfig)
-                .maxOutputTokens(65536)
                 .systemInstruction(Content.fromParts(Part.fromText(systemPrompt)))
             
             if (tools != null) {
@@ -404,13 +377,9 @@ class GeminiProvider @Inject constructor(
                 .maximumRemoteCalls(currentMaxToolCalls())
                 .build()
             
-            val thinkingConfig = ThinkingConfig.builder()
-                .thinkingBudget(21888)
-                .build()
-            
+            // No thinkingBudget or maxOutputTokens: Gemini 3.x and newer take thinking levels, not budgets, and each
+            // model has its own output cap. The model's own defaults work on every generation.
             val configBuilder = GenerateContentConfig.builder()
-                .thinkingConfig(thinkingConfig)
-                .maxOutputTokens(65536)
                 .systemInstruction(Content.fromParts(Part.fromText(systemPrompt)))
             
             if (tools != null) {
@@ -513,10 +482,15 @@ class GeminiProvider @Inject constructor(
     }
     
     private fun parseJsonResponse(responseText: String): Result<AiAnalysisDto> {
-        val cleanedResponseText = responseText
-            .removePrefix("```json")
-            .removeSuffix("```")
-            .trim()
+        // Robustly extract JSON by taking the substring between the first '{' and the
+        // last '}'. Falls back to the raw text if no braces are found.
+        val first = responseText.indexOf('{')
+        val last = responseText.lastIndexOf('}')
+        val cleanedResponseText = if (first != -1 && last != -1 && last > first) {
+            responseText.substring(first, last + 1)
+        } else {
+            responseText
+        }
         return try {
             Result.success(gson.fromJson(cleanedResponseText, AiAnalysisDto::class.java))
         } catch (e: Exception) {

@@ -13,7 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.memgallery.R
 import com.example.memgallery.data.local.entity.MemoryEntity
-import com.example.memgallery.ui.components.MemoryCard
 
 @Composable
 fun AddMemoriesToCollectionSheet(
@@ -58,9 +57,10 @@ fun AddMemoriesToCollectionSheet(
             ) {
                 items(memories) { memory ->
                     val isSelected = selectedIds.contains(memory.id)
-                    MemoryCard(
+                    com.example.memgallery.ui.design.MemoryTile(
                         memory = memory,
-                        isSelected = isSelected,
+                        selected = isSelected,
+                        untitledLabel = stringResource(R.string.memory_card_untitled),
                         onClick = {
                             selectedIds = if (isSelected) {
                                 selectedIds - memory.id
@@ -68,7 +68,7 @@ fun AddMemoriesToCollectionSheet(
                                 selectedIds + memory.id
                             }
                         },
-                        onLongClick = {} // No long click action needed here
+                        onLongClick = {}
                     )
                 }
             }

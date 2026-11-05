@@ -89,6 +89,16 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val CUSTOM_BASE_URL = stringPreferencesKey("custom_base_url")
         val CUSTOM_MODEL_NAME = stringPreferencesKey("custom_model_name")
         
+        // Per-job providers, DeepSeek and web search
+        val MAIN_PROVIDER = stringPreferencesKey("main_provider")
+        val VOICE_PROVIDER = stringPreferencesKey("voice_provider")
+        val IMAGE_PROVIDER = stringPreferencesKey("image_provider")
+        val DEEPSEEK_MODEL_ID = stringPreferencesKey("deepseek_model_id")
+        val DEEPSEEK_THINKING = booleanPreferencesKey("deepseek_thinking")
+        val SEARCH_PROVIDER = stringPreferencesKey("search_provider")
+        val THEME_VERSION = intPreferencesKey("theme_version")
+        val IMAGES_DEEPSEEK_UPGRADED = androidx.datastore.preferences.core.booleanPreferencesKey("images_deepseek_upgraded")
+
         // Deletion Sync
         val SYNC_DELETION_ENABLED = booleanPreferencesKey("sync_deletion_enabled")
     }
@@ -98,6 +108,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         // and needs to complete before the repository is used.
         runBlocking {
             migrateApiKeyIfNeeded()
+            migratePerJobProviders()
+            migrateThemeOnce()
         }
     }
 
@@ -111,6 +123,60 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         }
     }
     
+    /** Snapshot of everything routing needs, read straight from the stores. */
+    private suspend fun providerSetup(): com.example.memgallery.data.remote.ai.ProviderSetup {
+        val prefs = context.dataStore.data.first()
+        return com.example.memgallery.data.remote.ai.ProviderSetup(
+            legacyProvider = prefs[PreferencesKeys.AI_PROVIDER] ?: "GEMINI",
+            mainProvider = prefs[PreferencesKeys.MAIN_PROVIDER],
+            voiceProvider = prefs[PreferencesKeys.VOICE_PROVIDER],
+            imageProvider = prefs[PreferencesKeys.IMAGE_PROVIDER],
+            hasGeminiKey = !encryptedPrefs.getString("api_key_secure", null).isNullOrBlank(),
+            hasGroqKey = !encryptedPrefs.getString("groq_api_key_secure", null).isNullOrBlank(),
+            hasDeepSeekKey = !encryptedPrefs.getString("deepseek_api_key_secure", null).isNullOrBlank(),
+            hasCustomKey = !encryptedPrefs.getString("custom_api_key_secure", null).isNullOrBlank(),
+            hasLocalModel = !prefs[PreferencesKeys.LOCAL_MODEL_PATH].isNullOrBlank(),
+        )
+    }
+
+    /** Older installs only had one global provider. Write the per-job choices once, from what that implied. */
+    private suspend fun migratePerJobProviders() {
+        val writes = com.example.memgallery.data.remote.ai.SettingsMigration.perJobWrites(providerSetup())
+        if (writes.main != null || writes.voice != null || writes.images != null) {
+            context.dataStore.edit { e ->
+                writes.main?.let { e[PreferencesKeys.MAIN_PROVIDER] = it }
+                writes.voice?.let { e[PreferencesKeys.VOICE_PROVIDER] = it }
+                writes.images?.let { e[PreferencesKeys.IMAGE_PROVIDER] = it }
+            }
+        }
+        // One time: DeepSeek reads pictures now, so a DeepSeek Main brain with Images Off moves to DeepSeek.
+        val done = context.dataStore.data.first()[PreferencesKeys.IMAGES_DEEPSEEK_UPGRADED] ?: false
+        if (!done) {
+            val up = com.example.memgallery.data.remote.ai.SettingsMigration.imagesUpgradeForDeepSeek(providerSetup(), false)
+            context.dataStore.edit { e ->
+                up?.let { e[PreferencesKeys.IMAGE_PROVIDER] = it }
+                e[PreferencesKeys.IMAGES_DEEPSEEK_UPGRADED] = true
+            }
+        }
+    }
+
+    /** Old installs had wallpaper colours on by default (a maroon palette on some phones). Back to the designed palette, once. */
+    private suspend fun migrateThemeOnce() {
+        val prefs = context.dataStore.data.first()
+        val version = prefs[PreferencesKeys.THEME_VERSION] ?: 0
+        if (version >= 1) return
+        val reset = com.example.memgallery.data.remote.ai.SettingsMigration.shouldResetTheme(
+            version, prefs[PreferencesKeys.DYNAMIC_THEMING_ENABLED] ?: false, prefs[PreferencesKeys.SELECTED_COLOR] ?: -1
+        )
+        context.dataStore.edit { e ->
+            if (reset) {
+                e[PreferencesKeys.DYNAMIC_THEMING_ENABLED] = false
+                e[PreferencesKeys.SELECTED_COLOR] = -1
+            }
+            e[PreferencesKeys.THEME_VERSION] = 1
+        }
+    }
+
     val apiKeyFlow: Flow<String?> = flow {
         emit(encryptedPrefs.getString("api_key_secure", null))
     }
@@ -138,6 +204,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setAiProvider(provider: String) {
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.AI_PROVIDER] = provider
+            settings[PreferencesKeys.MAIN_PROVIDER] = provider
         }
     }
 
@@ -245,7 +312,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     // Theme Preferences
     val dynamicThemingEnabledFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.DYNAMIC_THEMING_ENABLED] ?: true
+            preferences[PreferencesKeys.DYNAMIC_THEMING_ENABLED] ?: false
         }
 
     suspend fun setDynamicThemingEnabled(enabled: Boolean) {
@@ -460,7 +527,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     // Gemini Model Selection
     val geminiModelIdFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.GEMINI_MODEL_ID] ?: "gemini-3.1-flash-lite"
+            preferences[PreferencesKeys.GEMINI_MODEL_ID] ?: com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT
         }
 
     suspend fun setGeminiModelId(modelId: String) {
@@ -599,4 +666,37 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             settings[PreferencesKeys.SYNC_DELETION_ENABLED] = enabled
         }
     }
+    // Per-job providers. "Main brain" is the same value the app always called ai_provider.
+    val mainProviderFlow: Flow<String> = aiProviderFlow
+    suspend fun setMainProvider(provider: String) = setAiProvider(provider)
+
+    val voiceProviderFlow: Flow<String> = context.dataStore.data.map { _ -> com.example.memgallery.data.remote.ai.JobRouting.voice(providerSetup()) }
+    val imageProviderFlow: Flow<String> = context.dataStore.data.map { _ -> com.example.memgallery.data.remote.ai.JobRouting.images(providerSetup()) }
+
+    suspend fun setVoiceProvider(provider: String) { context.dataStore.edit { it[PreferencesKeys.VOICE_PROVIDER] = provider } }
+    suspend fun setImageProvider(provider: String) { context.dataStore.edit { it[PreferencesKeys.IMAGE_PROVIDER] = provider } }
+
+    suspend fun resolvedVoiceProvider(): String = com.example.memgallery.data.remote.ai.JobRouting.voice(providerSetup())
+    suspend fun resolvedImageProvider(): String = com.example.memgallery.data.remote.ai.JobRouting.images(providerSetup())
+    suspend fun resolvedMainProvider(): String = com.example.memgallery.data.remote.ai.JobRouting.main(providerSetup())
+
+    // DeepSeek (official API, own key kept next to the others)
+    val deepSeekApiKeyFlow: Flow<String?> = flow { emit(encryptedPrefs.getString("deepseek_api_key_secure", null)) }
+    suspend fun saveDeepSeekApiKey(apiKey: String) { with(encryptedPrefs.edit()) { putString("deepseek_api_key_secure", apiKey); apply() } }
+    suspend fun clearDeepSeekApiKey() { with(encryptedPrefs.edit()) { remove("deepseek_api_key_secure"); apply() } }
+
+    val deepSeekModelIdFlow: Flow<String> = context.dataStore.data.map { it[PreferencesKeys.DEEPSEEK_MODEL_ID] ?: com.example.memgallery.data.remote.ai.DeepSeekConfig.DEFAULT_MODEL }
+    suspend fun setDeepSeekModelId(id: String) { context.dataStore.edit { it[PreferencesKeys.DEEPSEEK_MODEL_ID] = id } }
+    val deepSeekThinkingFlow: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.DEEPSEEK_THINKING] ?: false }
+    suspend fun setDeepSeekThinking(on: Boolean) { context.dataStore.edit { it[PreferencesKeys.DEEPSEEK_THINKING] = on } }
+
+    // Web search: "AUTO" (keyless chain, then Gemini grounding when Gemini is the main brain), "BRAVE", "TAVILY"
+    val searchProviderFlow: Flow<String> = context.dataStore.data.map { it[PreferencesKeys.SEARCH_PROVIDER] ?: "AUTO" }
+    suspend fun setSearchProvider(p: String) { context.dataStore.edit { it[PreferencesKeys.SEARCH_PROVIDER] = p } }
+    val braveApiKeyFlow: Flow<String?> = flow { emit(encryptedPrefs.getString("brave_api_key_secure", null)) }
+    suspend fun saveBraveApiKey(k: String) { with(encryptedPrefs.edit()) { putString("brave_api_key_secure", k); apply() } }
+    suspend fun clearBraveApiKey() { with(encryptedPrefs.edit()) { remove("brave_api_key_secure"); apply() } }
+    val tavilyApiKeyFlow: Flow<String?> = flow { emit(encryptedPrefs.getString("tavily_api_key_secure", null)) }
+    suspend fun saveTavilyApiKey(k: String) { with(encryptedPrefs.edit()) { putString("tavily_api_key_secure", k); apply() } }
+    suspend fun clearTavilyApiKey() { with(encryptedPrefs.edit()) { remove("tavily_api_key_secure"); apply() } }
 }

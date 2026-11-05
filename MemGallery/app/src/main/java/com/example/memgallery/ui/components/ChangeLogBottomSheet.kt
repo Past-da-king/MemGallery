@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.components
 
+import com.example.memgallery.ui.design.MemSheet
 import android.widget.TextView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,9 +22,8 @@ fun ChangeLogBottomSheet(
     changeLog: String,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(
+    MemSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(

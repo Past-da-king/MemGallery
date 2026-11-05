@@ -1,5 +1,10 @@
 package com.example.memgallery
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -58,27 +63,30 @@ class ShareActivity : ComponentActivity() {
         }
     }
 
+    /** The share choice slides up from the bottom, like every other choice in the app. */
     @Composable
     fun ShareDialog(
         onQuickSave: () -> Unit,
         onEdit: () -> Unit,
         onDismiss: () -> Unit
     ) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(stringResource(R.string.process_text_label)) },
-            text = { Text(stringResource(R.string.share_dialog_body)) },
-            confirmButton = {
-                Button(onClick = onQuickSave) {
-                    Text(stringResource(R.string.share_quick_save))
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = onEdit) {
+        com.example.memgallery.ui.design.MemSheet(onDismiss = onDismiss) {
+            com.example.memgallery.ui.design.SheetTitle(
+                stringResource(R.string.process_text_label),
+                stringResource(R.string.share_dialog_body)
+            )
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f).height(56.dp)) {
                     Text(stringResource(R.string.common_edit))
                 }
+                Button(onClick = onQuickSave, modifier = Modifier.weight(1f).height(56.dp)) {
+                    Text(stringResource(R.string.share_quick_save))
+                }
             }
-        )
+        }
     }
 
     private fun handleShare(quickSave: Boolean) {

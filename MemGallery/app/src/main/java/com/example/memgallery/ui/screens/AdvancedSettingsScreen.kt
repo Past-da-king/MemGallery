@@ -1,5 +1,7 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.SubScreenHeader
+import com.example.memgallery.ui.design.MemTextField
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -81,17 +83,7 @@ fun AdvancedSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.advanced_settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            SubScreenHeader(title = stringResource(R.string.advanced_settings_title), onBack = { navController.navigateUp() })
         }
     ) { padding ->
         Column(
@@ -550,13 +542,14 @@ fun ActionDropdown(
         onExpandedChange = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth()
     ) {
-        OutlinedTextField(
+        TextField(
             value = actions[selectedAction] ?: noneLabel,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            shape = com.example.memgallery.ui.design.FieldShape,
+            colors = com.example.memgallery.ui.design.memFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor()
@@ -599,13 +592,14 @@ fun ExternalTaskManagerDropdown(
         onExpandedChange = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth()
     ) {
-        OutlinedTextField(
+        TextField(
             value = managers[selectedManager] ?: noneLabel,
             onValueChange = {},
             readOnly = true,
             label = { Text(stringResource(R.string.advanced_target_app_label)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            shape = com.example.memgallery.ui.design.FieldShape,
+            colors = com.example.memgallery.ui.design.memFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor()
@@ -671,29 +665,16 @@ fun FullScreenTextEditor(
                     .padding(padding)
                     .padding(16.dp)
             ) {
-                TextField(
+                MemTextField(
                     value = text,
                     onValueChange = { text = it },
                     modifier = Modifier.fillMaxSize(),
-                    placeholder = {
-                        Text(
-                            placeholder,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                    },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.5
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+                    fieldModifier = Modifier.fillMaxSize(),
+                    placeholder = placeholder,
+                    singleLine = false,
+                    maxLines = Int.MAX_VALUE,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
                 )
             }
         }

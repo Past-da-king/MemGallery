@@ -44,7 +44,9 @@ class SettingsViewModel @Inject constructor(
     private val backupRepository: com.example.memgallery.data.repository.BackupRepository,
     private val githubService: com.example.memgallery.data.remote.github.GitHubService,
     private val openAICompatibleProvider: com.example.memgallery.data.remote.ai.OpenAICompatibleProvider,
-    private val geminiProvider: com.example.memgallery.data.remote.ai.GeminiProvider
+    private val geminiProvider: com.example.memgallery.data.remote.ai.GeminiProvider,
+    private val groqProvider: com.example.memgallery.data.remote.ai.GroqProvider,
+    private val deepSeekProvider: com.example.memgallery.data.remote.ai.DeepSeekProvider
 ) : ViewModel() {
 
     // Backup State
@@ -94,7 +96,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "gemini-3.1-flash-lite"
+            initialValue = com.example.memgallery.data.remote.ai.GeminiModels.FALLBACK_DEFAULT
         )
 
     private val _availableGeminiModels = MutableStateFlow<List<String>>(emptyList())
@@ -351,11 +353,12 @@ class SettingsViewModel @Inject constructor(
                 return@launch
             }
 
-            val result = geminiService.validateApiKey(key)
+            // Check the key against Gemini itself, whatever the Main brain is.
+            val result = geminiProvider.validateApiKey(key)
 
             result.onSuccess {
                 settingsRepository.saveApiKey(key)
-                geminiService.initialize(key)
+                geminiProvider.initialize(key)
                 chatGeminiService.initialize(key)
                 _apiKeyUiState.value = ApiKeyUiState.Success(context.getString(R.string.vm_api_key_valid))
             }.onFailure {
@@ -380,6 +383,118 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // Per-job providers: Main brain, Voice transcription, Images
+    val voiceProvider: StateFlow<String> = settingsRepository.voiceProviderFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "GEMINI")
+    val imageProvider: StateFlow<String> = settingsRepository.imageProviderFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "GEMINI")
+
+    fun setVoiceProvider(provider: String) { viewModelScope.launch { settingsRepository.setVoiceProvider(provider) } }
+    fun setImageProvider(provider: String) { viewModelScope.launch { settingsRepository.setImageProvider(provider) } }
+
+    // Which providers have a saved key (shown as "Key saved" on each provider row)
+    private val _savedKeys = MutableStateFlow<Set<String>>(emptySet())
+    val savedKeys: StateFlow<Set<String>> = _savedKeys.asStateFlow()
+    fun refreshSavedKeys() {
+        viewModelScope.launch {
+            val out = mutableSetOf<String>()
+            if (!settingsRepository.apiKeyFlow.first().isNullOrBlank()) out += "GEMINI"
+            if (!settingsRepository.groqApiKeyFlow.first().isNullOrBlank()) out += "GROQ"
+            if (!settingsRepository.deepSeekApiKeyFlow.first().isNullOrBlank()) out += "DEEPSEEK"
+            if (!settingsRepository.customApiKeyFlow.first().isNullOrBlank()) out += "OPENAI_COMPATIBLE"
+            if (!settingsRepository.braveApiKeyFlow.first().isNullOrBlank()) out += "BRAVE"
+            if (!settingsRepository.tavilyApiKeyFlow.first().isNullOrBlank()) out += "TAVILY"
+            _savedKeys.value = out
+        }
+    }
+
+    // DeepSeek
+    private val _deepSeekApiKey = MutableStateFlow("")
+    val deepSeekApiKey: StateFlow<String> = _deepSeekApiKey.asStateFlow()
+    private val _deepSeekUiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val deepSeekUiState: StateFlow<ApiKeyUiState> = _deepSeekUiState.asStateFlow()
+    val deepSeekModelId: StateFlow<String> = settingsRepository.deepSeekModelIdFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.memgallery.data.remote.ai.DeepSeekConfig.DEFAULT_MODEL)
+    val deepSeekThinking: StateFlow<Boolean> = settingsRepository.deepSeekThinkingFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    private val _deepSeekModels = MutableStateFlow(com.example.memgallery.data.remote.ai.DeepSeekConfig.KNOWN_MODELS)
+    val deepSeekModels: StateFlow<List<String>> = _deepSeekModels.asStateFlow()
+
+    fun onDeepSeekApiKeyChange(k: String) { _deepSeekApiKey.value = k }
+    fun setDeepSeekModelId(id: String) { viewModelScope.launch { settingsRepository.setDeepSeekModelId(id) } }
+    fun setDeepSeekThinking(on: Boolean) { viewModelScope.launch { settingsRepository.setDeepSeekThinking(on) } }
+
+    /** Key check and model list in one call (GET /models). Saves the key only when DeepSeek accepts it. */
+    fun validateAndSaveDeepSeekKey() {
+        viewModelScope.launch {
+            val key = _deepSeekApiKey.value.trim()
+            if (key.isBlank()) { _deepSeekUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_api_key_empty)); return@launch }
+            _deepSeekUiState.value = ApiKeyUiState.Loading
+            deepSeekProvider.fetchModels(key)
+                .onSuccess { ids ->
+                    settingsRepository.saveDeepSeekApiKey(key)
+                    deepSeekProvider.initialize(key)
+                    if (ids.isNotEmpty()) _deepSeekModels.value = ids
+                    _deepSeekUiState.value = ApiKeyUiState.Success(context.getString(R.string.vm_deepseek_saved))
+                    refreshSavedKeys()
+                }
+                .onFailure { _deepSeekUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_deepseek_invalid, it.message ?: "")) }
+        }
+    }
+
+    fun clearDeepSeekKey() {
+        viewModelScope.launch {
+            settingsRepository.clearDeepSeekApiKey()
+            deepSeekProvider.disable()
+            _deepSeekApiKey.value = ""
+            _deepSeekUiState.value = ApiKeyUiState.Idle
+            refreshSavedKeys()
+        }
+    }
+
+    // Web search
+    val searchProvider: StateFlow<String> = settingsRepository.searchProviderFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "AUTO")
+    private val _searchKey = MutableStateFlow("")
+    val searchKey: StateFlow<String> = _searchKey.asStateFlow()
+    private val _searchUiState = MutableStateFlow<ApiKeyUiState>(ApiKeyUiState.Idle)
+    val searchUiState: StateFlow<ApiKeyUiState> = _searchUiState.asStateFlow()
+
+    fun setSearchProvider(p: String) {
+        viewModelScope.launch {
+            settingsRepository.setSearchProvider(p)
+            _searchKey.value = when (p) {
+                "BRAVE" -> settingsRepository.braveApiKeyFlow.first().orEmpty()
+                "TAVILY" -> settingsRepository.tavilyApiKeyFlow.first().orEmpty()
+                else -> ""
+            }
+            _searchUiState.value = ApiKeyUiState.Idle
+        }
+    }
+    fun onSearchKeyChange(k: String) { _searchKey.value = k }
+
+    fun saveSearchKey() {
+        viewModelScope.launch {
+            val key = _searchKey.value.trim()
+            when (settingsRepository.searchProviderFlow.first()) {
+                "BRAVE" -> if (key.isBlank()) settingsRepository.clearBraveApiKey() else settingsRepository.saveBraveApiKey(key)
+                "TAVILY" -> if (key.isBlank()) settingsRepository.clearTavilyApiKey() else settingsRepository.saveTavilyApiKey(key)
+            }
+            refreshSavedKeys()
+            testSearch()
+        }
+    }
+
+    /** One real search with the current setup, so the user sees which engine answers. */
+    fun testSearch() {
+        viewModelScope.launch {
+            _searchUiState.value = ApiKeyUiState.Loading
+            val outcome = com.example.memgallery.data.remote.search.WebSearchFactory(settingsRepository).searchOnce("memgallery test")
+            _searchUiState.value = if (outcome.results.isEmpty()) ApiKeyUiState.Error(context.getString(R.string.vm_search_failed))
+            else ApiKeyUiState.Success(context.getString(R.string.vm_search_ok, outcome.engine ?: ""))
+        }
+    }
+
     // Groq API Key Actions
     fun onGroqApiKeyChange(newKey: String) {
         _groqApiKey.value = newKey
@@ -397,6 +512,7 @@ class SettingsViewModel @Inject constructor(
             try {
                 // Simple validation - try to create a client and make a test request
                 settingsRepository.saveGroqApiKey(key)
+                groqProvider.initialize(key)
                 _groqApiKeyUiState.value = ApiKeyUiState.Success(context.getString(R.string.vm_groq_saved))
             } catch (e: Exception) {
                 _groqApiKeyUiState.value = ApiKeyUiState.Error(context.getString(R.string.vm_error_with_msg, e.message ?: ""))
@@ -718,6 +834,14 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _apiKey.value = settingsRepository.apiKeyFlow.first() ?: ""
             _groqApiKey.value = settingsRepository.groqApiKeyFlow.first() ?: ""
+            _deepSeekApiKey.value = settingsRepository.deepSeekApiKeyFlow.first() ?: ""
+            refreshSavedKeys()
+            val sp = settingsRepository.searchProviderFlow.first()
+            _searchKey.value = when (sp) {
+                "BRAVE" -> settingsRepository.braveApiKeyFlow.first().orEmpty()
+                "TAVILY" -> settingsRepository.tavilyApiKeyFlow.first().orEmpty()
+                else -> ""
+            }
             _userSystemPrompt.value = settingsRepository.userSystemPromptFlow.first()
             _userContextSummary.value = settingsRepository.userContextSummaryFlow.first()
         }

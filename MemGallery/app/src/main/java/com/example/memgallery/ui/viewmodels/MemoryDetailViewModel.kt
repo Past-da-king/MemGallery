@@ -12,12 +12,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MemoryDetailViewModel @Inject constructor(
-    private val memoryRepository: MemoryRepository
+    private val memoryRepository: MemoryRepository,
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository
 ) : ViewModel() {
 
     private val _memory = MutableStateFlow<MemoryEntity?>(null)
@@ -44,6 +47,25 @@ class MemoryDetailViewModel @Inject constructor(
 
     private val _audioTotalTime = MutableStateFlow("00:00")
     val audioTotalTime = _audioTotalTime.asStateFlow()
+
+    /** True when the on-device model is the active AI provider: the summary card says so. */
+    val isLocalAi: kotlinx.coroutines.flow.StateFlow<Boolean> = settingsRepository.aiProviderFlow
+        .map { it == "LOCAL" }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
+
+    val collections = memoryRepository.getAllCollections()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addToCollection(memoryId: Int, collectionId: Int) {
+        viewModelScope.launch { memoryRepository.addMemoryToCollection(memoryId, collectionId) }
+    }
+
+    fun createCollectionAndAdd(memoryId: Int, name: String, description: String) {
+        viewModelScope.launch {
+            val id = memoryRepository.createCollection(name, description)
+            memoryRepository.addMemoryToCollection(memoryId, id.toInt())
+        }
+    }
 
     fun loadMemory(id: Int) {
         viewModelScope.launch {

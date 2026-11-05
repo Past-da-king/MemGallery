@@ -49,7 +49,8 @@ class ChatGeminiService @Inject constructor(
     private val memoryDao: MemoryDao,
     private val collectionDao: CollectionDao,
     private val chatDao: ChatDao,
-    private val taskDao: TaskDao
+    private val taskDao: TaskDao,
+    private val mediaPreprocessor: MediaPreprocessor
 ) {
     private val toolExecutor = ChatToolsExecutor()
 
@@ -59,7 +60,12 @@ class ChatGeminiService @Inject constructor(
         ChatTools.collectionDao = collectionDao
         ChatTools.taskDao = taskDao
         ChatTools.settingsRepository = settingsRepository
+        ChatTools.webSearchService = com.example.memgallery.data.remote.search.WebSearchFactory(settingsRepository)
     }
+
+    /** Answer text with the web sources the model used, as a markdown block (empty when it did not search). */
+    private fun withSources(text: String): String =
+        text + com.example.memgallery.data.remote.search.SourcesBlock.render(ChatTools.lastWebSources)
 
     /**
      * Initialize the current provider.
@@ -158,7 +164,7 @@ class ChatGeminiService @Inject constructor(
                 message = message,
                 systemPrompt = systemPrompt,
                 toolExecutor = toolExecutor
-            )
+            ).map { withSources(it) }
             
             result.onSuccess { responseText ->
                 Log.d(TAG, "Received response: $responseText")
@@ -248,15 +254,18 @@ class ChatGeminiService @Inject constructor(
             
             Log.i(TAG, "Sending message with media using ${provider.providerName}")
             
+            val prepared = mediaPreprocessor.prepare(audioData, listOfNotNull(imageData))
+            val textForModel = listOfNotNull(message?.takeIf { it.isNotBlank() }, prepared.extraText, prepared.error?.let { "[$it]" }).joinToString("\n\n").ifBlank { null }
+
             val result = provider.sendMessageWithMedia(
                 conversationHistory = historyText,
-                message = message,
-                audioData = audioData,
-                imageData = imageData,
+                message = textForModel,
+                audioData = prepared.audio,
+                imageData = prepared.images.firstOrNull(),
                 systemPrompt = systemPrompt,
                 toolExecutor = toolExecutor
-            )
-            
+            ).map { withSources(it) }
+
             result.onSuccess { responseText ->
                 Log.d(TAG, "Received response: $responseText")
                 chatDao.insertMessage(ChatMessageEntity(
@@ -316,7 +325,7 @@ class ChatGeminiService @Inject constructor(
                 message = message,
                 systemPrompt = systemPrompt,
                 toolExecutor = toolExecutor
-            )
+            ).map { withSources(it) }
 
             result.onSuccess { responseText ->
                 if (responseText.isNotBlank()) {
@@ -399,14 +408,17 @@ class ChatGeminiService @Inject constructor(
                 }
             }
 
+            val prepared = mediaPreprocessor.prepare(audioData, listOfNotNull(imageData))
+            val textForModel = listOfNotNull(message?.takeIf { it.isNotBlank() }, prepared.extraText, prepared.error?.let { "[$it]" }).joinToString("\n\n").ifBlank { null }
+
             val result = provider.sendMessageWithMedia(
                 conversationHistory = historyText,
-                message = message,
-                audioData = audioData,
-                imageData = imageData,
+                message = textForModel,
+                audioData = prepared.audio,
+                imageData = prepared.images.firstOrNull(),
                 systemPrompt = systemPrompt,
                 toolExecutor = toolExecutor
-            )
+            ).map { withSources(it) }
 
             result.onSuccess { responseText ->
                 if (responseText.isNotBlank()) {
@@ -458,13 +470,17 @@ class ChatGeminiService @Inject constructor(
     private suspend fun buildSystemPrompt(): String {
         val userContext = settingsRepository.userContextSummaryFlow.first()
         val provider = providerFactory.getProvider()
+        val providerType = providerFactory.getProviderType()
         val maxToolCalls = settingsRepository.maxToolCallsFlow.first()
 
-        // Use compact prompt if the provider is currently using a model with tight limits (like Maverick)
-        val baseInstruction = if (provider.providerName == "Groq") {
-            ChatSystemPrompt.generateCompact(maxToolCalls)
-        } else {
-            ChatSystemPrompt.generate(maxToolCalls)
+        // The Local provider can't actually execute tools, so don't advertise them.
+        val baseInstruction = when {
+            providerType == AIProviderType.LOCAL ->
+                ChatSystemPrompt.generate(maxToolCalls, includeTools = false)
+            // Use compact prompt if the provider is currently using a model with tight
+            // limits (like Maverick).
+            provider.providerName == "Groq" -> ChatSystemPrompt.generateCompact(maxToolCalls)
+            else -> ChatSystemPrompt.generate(maxToolCalls)
         }
 
         return if (userContext.isNotBlank()) {

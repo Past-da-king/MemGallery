@@ -1,741 +1,566 @@
 package com.example.memgallery.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
+import com.example.memgallery.ui.design.appStatusBarsPadding
+import com.example.memgallery.ui.design.appNavigationBarsPadding
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memgallery.R
+import com.example.memgallery.data.local.dao.TaskSourceMemory
 import com.example.memgallery.data.local.entity.TaskEntity
-import com.example.memgallery.ui.components.sheets.AddTaskSheet
 import com.example.memgallery.ui.components.FullMonthCalendar
+import com.example.memgallery.ui.components.sheets.AddTaskSheet
+import com.example.memgallery.ui.components.sheets.UnapprovedTasksSheet
+import com.example.memgallery.ui.design.BlobHeader
+import com.example.memgallery.ui.design.CookieIconButton
+import com.example.memgallery.ui.design.EmptyState
+import com.example.memgallery.ui.design.HeaderTitleRow
+import com.example.memgallery.ui.design.MemShape
+import com.example.memgallery.ui.design.MemSheet
+import com.example.memgallery.ui.design.Overline
+import com.example.memgallery.ui.design.RoundIconButton
+import com.example.memgallery.ui.design.StatTileRow
+import com.example.memgallery.ui.design.Tone
+import com.example.memgallery.ui.design.colors
+import com.example.memgallery.ui.design.memoryPainter
+import com.example.memgallery.ui.design.overlapUp
 import com.example.memgallery.ui.viewmodels.TaskViewModel
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
 
-import com.example.memgallery.ui.components.sheets.UnapprovedTasksSheet
+/** Everything the Tasks page draws. Real data in the app, sample data in screenshot tests. */
+data class TaskUiState(
+    val tasks: List<TaskEntity> = emptyList(),
+    val selectedDate: LocalDate? = null,
+    val now: LocalDateTime = LocalDateTime.now(),
+    val unapprovedCount: Int = 0,
+    val sources: Map<Int, TaskSourceMemory> = emptyMap(),
+)
 
-@OptIn(ExperimentalMaterial3Api::class)
+class TaskActions(
+    val onSelectDate: (LocalDate?) -> Unit = {},
+    val onOpenCalendar: () -> Unit = {},
+    val onAdd: () -> Unit = {},
+    val onReview: () -> Unit = {},
+    val onOpenTask: (TaskEntity) -> Unit = {},
+    val onToggle: (TaskEntity) -> Unit = {},
+    val onCapture: () -> Unit = {},
+)
+
 @Composable
 fun TaskScreen(
     viewModel: TaskViewModel = hiltViewModel(),
     openAddSheet: Boolean = false,
+    addTaskTrigger: Int = 0,
+    bottomPadding: Dp = 112.dp,
+    onCapture: () -> Unit = {},
     onNavigateToMemory: (Int) -> Unit = {}
 ) {
     val tasks by viewModel.tasksForDisplay.collectAsState()
     val activeTasks by viewModel.activeTasks.collectAsState()
     val unapprovedTasks by viewModel.unapprovedTasks.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
-    
-    // Filter by type
-    val events = tasks.filter { it.type == "EVENT" }
-    val todos = tasks.filter { it.type == "TODO" || it.type == "REMINDER" }
+    val sources by viewModel.taskSources.collectAsState()
 
     var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
-    var isAddSheetOpen by remember { mutableStateOf(false) }
-    var isCalendarExpanded by remember { mutableStateOf(false) }
-    
-    // Unapproved Tasks Sheet State
-    var showUnapprovedSheet by remember { mutableStateOf(false) }
-    val unapprovedSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    LaunchedEffect(unapprovedTasks) {
-        if (unapprovedTasks.isNotEmpty()) {
-            showUnapprovedSheet = true
-        }
-    }
-
-    LaunchedEffect(openAddSheet) {
-        if (openAddSheet) {
-            isAddSheetOpen = true
-        }
-    }
-    
-    // Expansion states for lists
-    var isEventsExpanded by remember { mutableStateOf(false) }
-    var isTodosExpanded by remember { mutableStateOf(false) }
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDetailSheet by remember { mutableStateOf(false) }
+    var isAddSheetOpen by remember { mutableStateOf(false) }
+    var showCalendar by remember { mutableStateOf(false) }
+    var showUnapprovedSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(selectedTask) {
-        if (selectedTask != null) {
-            showDetailSheet = true
+    LaunchedEffect(openAddSheet) { if (openAddSheet) isAddSheetOpen = true }
+    LaunchedEffect(addTaskTrigger) { if (addTaskTrigger > 0) { selectedTask = null; isAddSheetOpen = true } }
+    LaunchedEffect(selectedTask) { if (selectedTask != null && !isAddSheetOpen) showDetailSheet = true }
+
+    val state = TaskUiState(tasks, selectedDate, LocalDateTime.now(), unapprovedTasks.size, sources)
+    val actions = TaskActions(
+        onSelectDate = viewModel::selectDate,
+        onOpenCalendar = { showCalendar = true },
+        onAdd = { selectedTask = null; isAddSheetOpen = true },
+        onReview = { showUnapprovedSheet = true },
+        onOpenTask = { selectedTask = it },
+        onToggle = viewModel::toggleTaskCompletion,
+        onCapture = onCapture,
+    )
+
+    TasksContent(state, actions, bottomPadding)
+
+    if (showCalendar) {
+        MemSheet(onDismiss = { showCalendar = false }) {
+            FullMonthCalendar(
+                selectedDate = selectedDate ?: LocalDate.now(),
+                activeDates = activeTasks.mapNotNull { t ->
+                    t.dueDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                }.distinct(),
+                onDateSelected = {
+                    viewModel.selectDate(it)
+                    showCalendar = false
+                },
+                onDismiss = { showCalendar = false }
+            )
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.surfaceContainerLowest
+    if (showDetailSheet && selectedTask != null) {
+        MemSheet(onDismiss = { showDetailSheet = false; selectedTask = null }) {
+            TaskDetailContent(
+                task = selectedTask!!,
+                onEdit = {
+                    showDetailSheet = false
+                    isAddSheetOpen = true
+                },
+                onViewMemory = { selectedTask?.memoryId?.let { onNavigateToMemory(it) } }
+            )
+        }
+    }
+
+    if (isAddSheetOpen) {
+        MemSheet(onDismiss = { isAddSheetOpen = false; selectedTask = null }) {
+            AddTaskSheet(
+                taskToEdit = selectedTask,
+                onDismiss = { isAddSheetOpen = false; selectedTask = null },
+                onSave = { title, description, date, time, type, isRecurring, rule ->
+                    val editing = selectedTask
+                    if (editing != null) {
+                        viewModel.updateTask(
+                            editing.copy(
+                                title = title, description = description, dueDate = date.toString(), dueTime = time,
+                                type = type, isRecurring = isRecurring, recurrenceRule = rule
+                            )
+                        )
+                    } else {
+                        viewModel.addTask(title, description, date, time, type, isRecurring, rule)
+                    }
+                    isAddSheetOpen = false
+                    selectedTask = null
+                }
+            )
+        }
+    }
+
+    if (showUnapprovedSheet && unapprovedTasks.isNotEmpty()) {
+        MemSheet(onDismiss = { showUnapprovedSheet = false }) {
+            UnapprovedTasksSheet(
+                tasks = unapprovedTasks,
+                onApprove = { toApprove ->
+                    viewModel.approveTasks(toApprove)
+                    if (unapprovedTasks.size == toApprove.size) showUnapprovedSheet = false
+                },
+                onDelete = { toDelete ->
+                    viewModel.deleteTasks(toDelete)
+                    if (unapprovedTasks.size == toDelete.size) showUnapprovedSheet = false
+                },
+                onDismiss = { showUnapprovedSheet = false }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun TasksContent(
+    state: TaskUiState,
+    actions: TaskActions,
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier
+) {
+    val scheme = MaterialTheme.colorScheme
+    val today = state.now.toLocalDate()
+    val events = state.tasks.filter { it.type == "EVENT" }
+    val todos = state.tasks.filter { it.type == "TODO" || it.type == "REMINDER" }
+    val done = todos.count { it.isCompleted }
+    val open = todos.size - done
+    val empty = events.isEmpty() && todos.isEmpty()
+
+    val title = when (state.selectedDate) {
+        today -> stringResource(R.string.tasks_header_my_day)
+        today.plusDays(1) -> stringResource(R.string.tasks_header_tomorrow)
+        null -> stringResource(R.string.tasks_header_upcoming)
+        else -> state.selectedDate.format(DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault()))
+    }
+    val eyebrow = state.selectedDate?.format(DateTimeFormatter.ofPattern("EEEE, d MMM", Locale.getDefault()))
+        ?: stringResource(R.string.tasks_all_upcoming_eyebrow)
+
+    LazyColumn(
+        modifier.fillMaxSize().background(scheme.surface),
+        contentPadding = PaddingValues(bottom = bottomPadding)
+    ) {
+        item {
+            BlobHeader {
+                HeaderTitleRow(eyebrow = eyebrow, title = title) {
+                    RoundIconButton(Icons.Rounded.CalendarMonth, stringResource(R.string.tasks_cd_open_calendar), actions.onOpenCalendar)
+                    CookieIconButton(Icons.Rounded.Add, stringResource(R.string.tasks_cd_add_task), actions.onAdd)
+                }
+                Spacer(Modifier.height(12.dp))
+                StatTileRow(
+                    listOf(
+                        events.size.toString() to stringResource(R.string.tasks_stat_events),
+                        open.toString() to stringResource(R.string.tasks_stat_todo),
+                        done.toString() to stringResource(R.string.tasks_stat_done),
                     )
                 )
-            )
+                Spacer(Modifier.height(if (empty) 24.dp else 28.dp))
+            }
+            if (!empty || state.selectedDate != null) {
+                DaySegments(state.selectedDate, today, actions.onSelectDate, Modifier.overlapUp(20.dp))
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (state.unapprovedCount > 0) {
+            item {
+                ReviewBanner(state.unapprovedCount, actions.onReview)
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+
+        if (empty) {
+            item {
+                EmptyState(
+                    icon = Icons.Rounded.TaskAlt,
+                    title = stringResource(R.string.tasks_empty_title),
+                    body = stringResource(R.string.tasks_empty_body),
+                    modifier = Modifier.padding(top = 24.dp),
+                    primaryLabel = stringResource(R.string.tasks_capture_memory),
+                    primaryIcon = Icons.Rounded.PhotoCamera,
+                    onPrimary = actions.onCapture,
+                    secondaryLabel = stringResource(R.string.tasks_add_yourself),
+                    onSecondary = actions.onAdd
+                )
+            }
+        } else {
+            if (events.isNotEmpty()) {
+                item { Overline(stringResource(R.string.tasks_section_events)); Spacer(Modifier.height(8.dp)) }
+                items(events.size) { i ->
+                    EventRow(events[i], i, state, actions.onOpenTask)
+                }
+                item { Spacer(Modifier.height(20.dp)) }
+            }
+            if (todos.isNotEmpty()) {
+                item { Overline(stringResource(R.string.tasks_section_todos)); Spacer(Modifier.height(8.dp)) }
+                items(todos.size) { i ->
+                    TodoRow(
+                        task = todos[i], state = state,
+                        shape = RoundedCornerShape(
+                            topStart = if (i == 0) 28.dp else 6.dp, topEnd = if (i == 0) 28.dp else 6.dp,
+                            bottomStart = if (i == todos.lastIndex) 28.dp else 6.dp, bottomEnd = if (i == todos.lastIndex) 28.dp else 6.dp
+                        ),
+                        onClick = { actions.onOpenTask(todos[i]) },
+                        onToggle = { actions.onToggle(todos[i]) },
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** My Day, Tomorrow, Upcoming: a connected single-select button group. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DaySegments(selected: LocalDate?, today: LocalDate, onSelect: (LocalDate?) -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val options = listOf(
+        today to stringResource(R.string.tasks_header_my_day),
+        today.plusDays(1) to stringResource(R.string.tasks_header_tomorrow),
+        null to stringResource(R.string.tasks_header_upcoming),
+    )
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            // Premium Header with Calendar Dropdown
-            TaskHeader(
-                selectedDate = selectedDate,
-                isCalendarExpanded = isCalendarExpanded,
-                onToggleCalendar = { isCalendarExpanded = !isCalendarExpanded }
-            )
-
-            // Expandable Month Calendar
-            AnimatedVisibility(
-                visible = isCalendarExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                FullMonthCalendar(
-                    selectedDate = selectedDate ?: LocalDate.now(),
-                    activeDates = activeTasks.mapNotNull { task ->
-                        task.dueDate?.let { dateString ->
-                            try { LocalDate.parse(dateString) } catch (e: Exception) { null }
-                        }
-                    }.distinct(),
-                    onDateSelected = { 
-                        viewModel.selectDate(it)
-                        isCalendarExpanded = false
-                    },
-                    onDismiss = { isCalendarExpanded = false }
-                )
-            }
-
-            // Calendar Strip (Horizontal)
-            if (!isCalendarExpanded) {
-                CalendarStrip(
-                    selectedDate = selectedDate ?: LocalDate.now(),
-                    onDateSelected = { viewModel.selectDate(it) }
-                )
-            }
-
-            // "Back to upcoming" — only when a specific date is selected.
-            // Lets the user clear the date filter and see the all-upcoming list again
-            // without having to expand the calendar.
-            AnimatedVisibility(
-                visible = selectedDate != null,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 12.dp),
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    Surface(
-                        onClick = { viewModel.selectDate(null) },
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowUp,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.tasks_chip_show_upcoming),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            LazyColumn(
-                contentPadding = PaddingValues(bottom = 100.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Events Section
-                if (events.isNotEmpty()) {
-                    item {
-                        SectionHeader(
-                            title = stringResource(R.string.tasks_section_events),
-                            icon = Icons.Default.Event,
-                            isExpanded = isEventsExpanded,
-                            canExpand = events.size > 3,
-                            onToggleExpand = { isEventsExpanded = !isEventsExpanded }
-                        )
-                    }
-                    val visibleEvents = if (isEventsExpanded) events else events.take(3)
-                    items(visibleEvents) { event ->
-                        EventCard(
-                            event = event,
-                            onClick = { selectedTask = event }
-                        )
-                    }
-                }
-
-                // Tasks Section
-                if (todos.isNotEmpty()) {
-                    item {
-                        SectionHeader(
-                            title = stringResource(R.string.tasks_section_todos),
-                            icon = Icons.Default.Check,
-                            isExpanded = isTodosExpanded,
-                            canExpand = todos.size > 3,
-                            onToggleExpand = { isTodosExpanded = !isTodosExpanded }
-                        )
-                    }
-                    val visibleTodos = if (isTodosExpanded) todos else todos.take(3)
-                    items(visibleTodos) { task ->
-                        TodoCard(
-                            task = task,
-                            onClick = { selectedTask = task },
-                            onToggle = { viewModel.toggleTaskCompletion(task) }
-                        )
-                    }
-                }
-                
-                if (events.isEmpty() && todos.isEmpty()) {
-                    item {
-                        EmptyState()
-                    }
-                }
-            }
-        }
-
-        // FAB for Adding
-        FloatingActionButton(
-            onClick = { isAddSheetOpen = true },
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-                .navigationBarsPadding()
-        ) {
-            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_cd_add_task))
-        }
-
-        // Detail Bottom Sheet
-        if (showDetailSheet && selectedTask != null) {
-            ModalBottomSheet(
-                onDismissRequest = { 
-                    showDetailSheet = false 
-                    selectedTask = null
+        options.forEachIndexed { i, (date, label) ->
+            val checked = selected == date
+            ToggleButton(
+                checked = checked,
+                onCheckedChange = { onSelect(date) },
+                modifier = Modifier.weight(1f),
+                shapes = when (i) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                 },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ) {
-                TaskDetailContent(
-                    task = selectedTask!!,
-                    onEdit = { 
-                        showDetailSheet = false
-                        // Slight delay to allow sheet to close
-                        isAddSheetOpen = true 
-                    },
-                    onViewMemory = {
-                        selectedTask?.memoryId?.let { onNavigateToMemory(it) }
-                    }
+                colors = ToggleButtonDefaults.toggleButtonColors(
+                    containerColor = scheme.secondaryContainer,
+                    contentColor = scheme.onSecondaryContainer,
+                    checkedContainerColor = scheme.secondary,
+                    checkedContentColor = scheme.onSecondary,
                 )
-            }
-        }
-
-        // Add/Edit Bottom Sheet
-        if (isAddSheetOpen) {
-            ModalBottomSheet(
-                onDismissRequest = { 
-                    isAddSheetOpen = false 
-                    selectedTask = null
-                },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                containerColor = MaterialTheme.colorScheme.surface,
-                dragHandle = { BottomSheetDefaults.DragHandle() }
             ) {
-                AddTaskSheet(
-                    taskToEdit = selectedTask,
-                    onDismiss = { 
-                        isAddSheetOpen = false 
-                        selectedTask = null
-                    },
-                    onSave = { title, description, date, time, type, isRecurring, rule ->
-                        if (selectedTask != null) {
-                            viewModel.updateTask(
-                                selectedTask!!.copy(
-                                    title = title,
-                                    description = description,
-                                    dueDate = date.toString(),
-                                    dueTime = time,
-                                    type = type,
-                                    isRecurring = isRecurring,
-                                    recurrenceRule = rule
-                                )
-                            )
-                        } else {
-                            viewModel.addTask(title, description, date, time, type, isRecurring, rule)
-                        }
-                        isAddSheetOpen = false
-                        selectedTask = null
-                    }
-                )
-            }
-        }
-        
-        // Unapproved Tasks Sheet
-        if (showUnapprovedSheet && unapprovedTasks.isNotEmpty()) {
-            ModalBottomSheet(
-                onDismissRequest = { showUnapprovedSheet = false },
-                sheetState = unapprovedSheetState,
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                dragHandle = { BottomSheetDefaults.DragHandle() }
-            ) {
-                UnapprovedTasksSheet(
-                    tasks = unapprovedTasks,
-                    onApprove = { tasksToApprove ->
-                        viewModel.approveTasks(tasksToApprove)
-                        if (unapprovedTasks.size == tasksToApprove.size) {
-                            showUnapprovedSheet = false
-                        }
-                    },
-                    onDelete = { tasksToDelete ->
-                        viewModel.deleteTasks(tasksToDelete)
-                        if (unapprovedTasks.size == tasksToDelete.size) {
-                            showUnapprovedSheet = false
-                        }
-                    },
-                    onDismiss = { showUnapprovedSheet = false }
-                )
+                if (checked) {
+                    Icon(Icons.Filled.Check, null, Modifier.size(ToggleButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ToggleButtonDefaults.IconSpacing))
+                }
+                Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1)
             }
         }
     }
 }
 
 @Composable
-fun TaskHeader(
-    selectedDate: LocalDate?,
-    isCalendarExpanded: Boolean,
-    onToggleCalendar: () -> Unit
-) {
-    val title = when (selectedDate) {
-        LocalDate.now() -> stringResource(R.string.tasks_header_my_day)
-        LocalDate.now().plusDays(1) -> stringResource(R.string.tasks_header_tomorrow)
-        null -> stringResource(R.string.tasks_header_upcoming)
-        else -> selectedDate.format(DateTimeFormatter.ofPattern("MMMM d"))
-    }
-
-    val subtitle = selectedDate?.format(DateTimeFormatter.ofPattern("EEEE, yyyy")) ?: stringResource(R.string.tasks_subtitle_all_upcoming)
-
+private fun ReviewBanner(count: Int, onReview: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Row(
-        modifier = Modifier
+        Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .clickable { onToggleCalendar() }
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .clip(RoundedCornerShape(28.dp))
+            .background(scheme.tertiaryContainer)
+            .clickable(onClick = onReview)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary // Dynamic Theme Color
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Box(Modifier.size(48.dp).clip(MemShape.softBurst).background(scheme.onTertiaryContainer.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.AutoAwesome, null, tint = scheme.onTertiaryContainer)
         }
-        Icon(
-            imageVector = if (isCalendarExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = stringResource(R.string.tasks_cd_toggle_calendar),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                if (count == 1) stringResource(R.string.tasks_review_title_one) else stringResource(R.string.tasks_review_title, count),
+                style = MaterialTheme.typography.titleMedium, color = scheme.onTertiaryContainer
+            )
+            Text(stringResource(R.string.tasks_review_sub), style = MaterialTheme.typography.bodyMedium, color = scheme.onTertiaryContainer.copy(alpha = 0.8f))
+        }
+        Text(stringResource(R.string.tasks_review_action), style = MaterialTheme.typography.titleMedium, color = scheme.onTertiaryContainer)
     }
 }
 
-@Composable
-fun CalendarStrip(
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit
-) {
-    val today = LocalDate.now()
-    val days = (0..6).map { today.plusDays(it.toLong()) }
-
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(days) { date ->
-            val isSelected = date == selectedDate
-            val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
-            val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .width(60.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(backgroundColor)
-                    .clickable { onDateSelected(date) }
-                    .padding(vertical = 16.dp)
-            ) {
-                Text(
-                    text = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = date.dayOfMonth.toString(),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
-            }
-        }
-    }
+private fun durationUntil(task: TaskEntity, now: LocalDateTime): String? {
+    val date = task.dueDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
+    val time = task.dueTime?.let { runCatching { LocalTime.parse(it) }.getOrNull() } ?: return null
+    val d = Duration.between(now, LocalDateTime.of(date, time))
+    if (d.isNegative || d.isZero || d.toDays() > 0) return null
+    val h = d.toHours()
+    val m = d.toMinutes() % 60
+    return if (h > 0 && m > 0) "${h}h ${m}m" else if (h > 0) "${h}h" else "${m}m"
 }
 
 @Composable
-fun SectionHeader(
-    title: String, 
-    icon: ImageVector,
-    isExpanded: Boolean,
-    canExpand: Boolean,
-    onToggleExpand: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = canExpand) { onToggleExpand() }
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        if (canExpand) {
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = if (isExpanded) stringResource(R.string.tasks_show_less) else stringResource(R.string.tasks_see_all),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+private fun EventRow(event: TaskEntity, index: Int, state: TaskUiState, onClick: (TaskEntity) -> Unit) {
+    val (bg, fg) = (if (index % 2 == 0) Tone.Primary else Tone.Success).colors()
+    val source = event.memoryId?.let { state.sources[it] }
+    val until = durationUntil(event, state.now)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.width(52.dp), horizontalAlignment = Alignment.End) {
+            Text(event.dueTime.orEmpty(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            if (until != null) Text(until, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-    }
-}
-
-@Composable
-fun EventCard(event: TaskEntity, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .clickable { onClick() }
-    ) {
-        // Time Column
-        Column(
-            horizontalAlignment = Alignment.End,
-            modifier = Modifier
-                .width(60.dp)
-                .padding(top = 8.dp)
+        Spacer(Modifier.width(12.dp))
+        Row(
+            Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(28.dp))
+                .background(bg)
+                .clickable { onClick(event) }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = event.dueTime ?: "",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Event Content
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-            ),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = event.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            Column(Modifier.weight(1f)) {
+                Text(event.title, style = MaterialTheme.typography.titleMedium, color = fg, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (event.description.isNotBlank() && event.description != event.title) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = event.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                        maxLines = 2
-                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Place, null, tint = fg, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(event.description, style = MaterialTheme.typography.bodyMedium, color = fg.copy(alpha = 0.85f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
+            }
+            val image = source?.imageUri
+            if (image != null) {
+                Spacer(Modifier.width(12.dp))
+                Image(memoryPainter(image), null, contentScale = ContentScale.Crop, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)))
             }
         }
     }
 }
 
 @Composable
-fun TodoCard(task: TaskEntity, onClick: () -> Unit, onToggle: () -> Unit) {
-    val isCompleted = task.isCompleted
-    val alpha by animateFloatAsState(targetValue = if (isCompleted) 0.5f else 1f)
-
+private fun TodoRow(
+    task: TaskEntity,
+    state: TaskUiState,
+    shape: androidx.compose.ui.graphics.Shape,
+    onClick: () -> Unit,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scheme = MaterialTheme.colorScheme
+    val checked = task.isCompleted
+    val today = state.now.toLocalDate()
+    val source = task.memoryId?.let { state.sources[it]?.aiTitle }
+    val trailing = when {
+        checked -> stringResource(R.string.tasks_done_at, java.time.Instant.ofEpochMilli(task.updatedAt).atZone(java.time.ZoneId.systemDefault()).toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")))
+        task.isRecurring -> stringResource(R.string.tasks_repeats_x, task.recurrenceRule ?: stringResource(R.string.tasks_repeats_custom))
+        task.dueDate == today.toString() -> stringResource(R.string.tasks_due_today)
+        task.dueDate != null -> stringResource(R.string.tasks_due_on, task.dueDate)
+        else -> null
+    }
+    val subtitle = listOfNotNull(source?.let { stringResource(R.string.tasks_from_memory, it) }, trailing).joinToString(" · ")
+    val boxShape by animateFloatAsState(if (checked) 50f else 28f, label = "check-morph")
+    val fill by animateColorAsState(if (checked) scheme.primary else androidx.compose.ui.graphics.Color.Transparent, label = "check-fill")
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .alpha(alpha)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f))
-            .clickable { onClick() } // Open details on card click
-            .padding(16.dp)
+            .clip(shape)
+            .background(scheme.surfaceContainerLow)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Checkbox Area
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
+            Modifier
                 .size(28.dp)
-                .clip(CircleShape)
-                .background(if (isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent)
-                .border(2.dp, if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, CircleShape)
-                .clickable { onToggle() } // Toggle only on checkbox click
+                .clip(RoundedCornerShape(boxShape.toInt()))
+                .background(fill)
+                .border(2.dp, if (checked) scheme.primary else scheme.outline, RoundedCornerShape(boxShape.toInt()))
+                .clickable(onClick = onToggle),
+            contentAlignment = Alignment.Center
         ) {
-            if (isCompleted) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
+            if (checked) Icon(Icons.Filled.Check, null, tint = scheme.onPrimary, modifier = Modifier.size(18.dp))
         }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f).alpha(if (checked) 0.7f else 1f)) {
             Text(
-                text = task.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                color = MaterialTheme.colorScheme.onSurface
+                task.title,
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (checked) TextDecoration.LineThrough else null,
+                color = scheme.onSurface,
+                maxLines = 2, overflow = TextOverflow.Ellipsis
             )
-            task.dueTime?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+            if (subtitle.isNotBlank()) {
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
 }
 
+/** Content of the task detail sheet. */
 @Composable
 fun TaskDetailContent(task: TaskEntity, onEdit: () -> Unit, onViewMemory: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp)
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 24.dp)
             .navigationBarsPadding()
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = if (task.type == "EVENT") Icons.Default.Event else Icons.Default.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(if (task.type == "EVENT") Icons.Filled.Event else Icons.Filled.Check, null, tint = scheme.primary)
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (task.type == "EVENT") stringResource(R.string.tasks_detail_event) else stringResource(R.string.tasks_detail_task),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    if (task.type == "EVENT") stringResource(R.string.tasks_detail_event) else stringResource(R.string.tasks_detail_task),
+                    style = MaterialTheme.typography.labelLarge, color = scheme.primary
                 )
             }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.common_edit), tint = MaterialTheme.colorScheme.primary)
-            }
+            RoundIconButtonOnSurface(onEdit)
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = task.title,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        
+        Spacer(Modifier.height(12.dp))
+        Text(task.title, style = MaterialTheme.typography.headlineSmall, color = scheme.onSurface)
         if (task.memoryId != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onViewMemory,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Description,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(onClick = onViewMemory, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                Icon(Icons.Filled.Description, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.tasks_view_source_memory))
             }
         }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
+        Spacer(Modifier.height(12.dp))
         if (task.dueTime != null || task.dueDate != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.AccessTime,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = listOfNotNull(task.dueDate, task.dueTime).joinToString(" ").trim(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Icon(Icons.Filled.AccessTime, null, modifier = Modifier.size(16.dp), tint = scheme.onSurfaceVariant)
+                Spacer(Modifier.width(8.dp))
+                Text(listOfNotNull(task.dueDate, task.dueTime).joinToString(" ").trim(), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
         }
-
         if (task.isRecurring) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Repeat,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Filled.Repeat, null, modifier = Modifier.size(16.dp), tint = scheme.onSurfaceVariant)
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = stringResource(R.string.tasks_repeats_label, task.recurrenceRule ?: stringResource(R.string.tasks_repeats_custom)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    stringResource(R.string.tasks_repeats_label, task.recurrenceRule ?: stringResource(R.string.tasks_repeats_custom)),
+                    style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
         }
-
-        Text(
-            text = task.description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
+        Text(task.description, style = MaterialTheme.typography.bodyLarge, color = scheme.onSurface)
     }
 }
 
 @Composable
-fun EmptyState() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 64.dp)
+private fun RoundIconButtonOnSurface(onEdit: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onEdit),
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.DateRange,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.surfaceVariant
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.tasks_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = stringResource(R.string.tasks_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-        )
+        Box(Modifier.size(40.dp).clip(CircleShape).background(scheme.secondaryContainer))
+        Icon(Icons.Filled.Edit, stringResource(R.string.common_edit), tint = scheme.onSecondaryContainer)
     }
 }

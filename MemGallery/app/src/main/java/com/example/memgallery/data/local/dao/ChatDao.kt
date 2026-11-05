@@ -44,4 +44,15 @@ interface ChatDao {
 
     @Query("DELETE FROM chats WHERE id IN (:ids)")
     suspend fun deleteChatsByIds(ids: List<Int>)
+
+    // --- Agent Bridge (read-only; the in-app assistant owns writes) ---
+
+    @Query("SELECT * FROM chats ORDER BY timestamp DESC")
+    suspend fun getAllChatsOnce(): List<ChatEntity>
+
+    @Query("SELECT * FROM chat_messages WHERE chatId = :chatId ORDER BY timestamp ASC")
+    suspend fun getMessagesForChatOnce(chatId: Int): List<ChatMessageEntity>
+
+    @Query("SELECT COUNT(*) FROM chat_messages WHERE chatId = :chatId")
+    suspend fun countMessages(chatId: Int): Int
 }

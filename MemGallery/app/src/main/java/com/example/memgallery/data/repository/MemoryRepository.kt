@@ -54,6 +54,10 @@ class MemoryRepository @Inject constructor(
         return collectionDao.getAllCollections()
     }
 
+    fun observeCollectionCounts() = collectionDao.observeCounts()
+
+    fun observeCollectionCovers() = collectionDao.observeCovers()
+
     fun getMemoriesForCollection(collectionId: Int): Flow<List<MemoryEntity>> {
         return collectionDao.getMemoriesForCollection(collectionId)
     }

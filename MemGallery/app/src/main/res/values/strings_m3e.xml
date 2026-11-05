@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home (Memories) -->
+    <string name="home_eyebrow">%1$s · %2$d kept</string>
+    <string name="home_title">Memories</string>
+    <string name="home_stat_this_week">This week</string>
+    <string name="home_stat_to_review">To review</string>
+    <string name="home_stat_streak">Day streak</string>
+    <string name="home_recent">Recent</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_today">Today</string>
+    <string name="home_yesterday">Yesterday</string>
+    <plurals name="home_n_memories">
+        <item quantity="one">%1$d memory</item>
+        <item quantity="other">%1$d memories</item>
+    </plurals>
+    <string name="home_empty_title">No memories yet</string>
+    <string name="home_empty_body">Capture something and it will show up here.</string>
+    <string name="home_empty_search">Nothing matches that search</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_memories">Memories</string>
+    <string name="nav_tasks">Tasks</string>
+
+    <!-- Add menu -->
+    <string name="add_menu_text_note">Text note</string>
+    <string name="add_menu_upload_image">Upload image</string>
+    <string name="add_menu_take_photo">Take photo</string>
+    <string name="add_menu_record_audio">Record audio</string>
+    <string name="add_menu_save_bookmark">Save bookmark</string>
+
+    <!-- Search view -->
+    <string name="search_ask_about">Ask about “%1$s”</string>
+    <string name="search_ask_sub">Let the chat read your memories</string>
+    <string name="search_results">%1$d results</string>
+    <string name="search_result_one">1 result</string>
+    <string name="search_best_match">Best match</string>
+    <string name="search_newest">Newest</string>
+    <string name="search_related_tags">Related tags</string>
+    <string name="search_text_found_in_image">Text found in image</string>
+    <string name="search_kind_image">Image</string>
+    <string name="search_kind_note">Note</string>
+    <string name="search_kind_voice">Voice</string>
+    <string name="search_kind_bookmark">Bookmark</string>
+    <string name="search_hint">Search memories…</string>
+
+    <!-- Collections -->
+    <string name="collections_auto_sorted">Auto-sorted</string>
+    <plurals name="collections_n_memories">
+        <item quantity="one">%1$d memory</item>
+        <item quantity="other">%1$d memories</item>
+    </plurals>
+    <string name="collections_create_new">Create New Collection</string>
+    <string name="collections_add_to_title">Add to Collection</string>
+    <string name="collections_add_to_supporting">%1$d memories will join the collection you pick</string>
+    <string name="collections_add_n_to">Add %1$d to %2$s</string>
+    <string name="collections_empty_title">No collections yet</string>
+    <string name="collections_empty_body">Group memories into a collection, or let the description sort them for you.</string>
+
+    <!-- Selection -->
+    <string name="selection_delete_title">Delete memories?</string>
+
+    <!-- Tasks -->
+    <string name="tasks_stat_events">Events</string>
+    <string name="tasks_stat_todo">To-do</string>
+    <string name="tasks_stat_done">Done</string>
+    <string name="tasks_review_title">%1$d new tasks to review</string>
+    <string name="tasks_review_title_one">1 new task to review</string>
+    <string name="tasks_review_sub">Found in your memories</string>
+    <string name="tasks_review_action">Review</string>
+    <string name="tasks_capture_memory">Capture a memory</string>
+    <string name="tasks_add_yourself">Add a task yourself</string>
+    <string name="tasks_from_memory">From %1$s</string>
+    <string name="tasks_due_today">due today</string>
+    <string name="tasks_due_on">due %1$s</string>
+    <string name="tasks_repeats_x">repeats %1$s</string>
+    <string name="tasks_done_at">done %1$s</string>
+    <string name="tasks_in_duration">in %1$s</string>
+    <string name="tasks_cd_open_calendar">Open calendar</string>
+    <string name="tasks_all_upcoming_eyebrow">All upcoming</string>
+
+    <!-- Memory detail -->
+    <string name="detail_action_copy">Copy text</string>
+    <string name="detail_action_collect">Collect</string>
+    <string name="detail_on_device">On-device</string>
+    <string name="detail_add_event">Add event</string>
+    <string name="detail_add_reminder">Add reminder</string>
+    <string name="detail_add_task">Add task</string>
+    <string name="detail_edit_first">Edit before adding</string>
+    <string name="detail_cd_more">More</string>
+    <string name="detail_image_counter">%1$d of %2$d</string>
+    <string name="detail_source_image">Image</string>
+    <string name="detail_source_note">Note</string>
+    <string name="detail_source_voice">Voice note</string>
+    <string name="detail_source_bookmark">Bookmark</string>
+    <string name="detail_full_text">Full text</string>
+    <string name="detail_delete_title">Delete this memory?</string>
+    <string name="detail_when_today">Today, %1$s</string>
+    <string name="detail_when_yesterday">Yesterday, %1$s</string>
+    <string name="detail_copied">Copied</string>
+    <string name="detail_more_title">This memory</string>
+
+    <!-- Processing -->
+    <string name="processing_title_image">Reading your image</string>
+    <string name="processing_title_audio">Listening to your recording</string>
+    <string name="processing_title_note">Reading your note</string>
+    <string name="processing_title_link">Reading the page</string>
+    <string name="processing_title_done">All done</string>
+    <string name="processing_title_failed">That did not work</string>
+    <string name="processing_sub_local">Everything stays on this phone</string>
+    <string name="processing_sub_cloud">Analysing with %1$s</string>
+    <string name="processing_step_of">Step %1$d of %2$d</string>
+    <string name="processing_step_read">Text read</string>
+    <string name="processing_step_describe">Describing the image</string>
+    <string name="processing_step_listen">Transcribing the audio</string>
+    <string name="processing_step_understand">Understanding it</string>
+    <string name="processing_step_tags">Adding tags</string>
+    <string name="processing_step_summary">Writing a summary</string>
+    <string name="processing_step_tasks">Looking for tasks and events</string>
+    <string name="processing_keep_background">Keep in background</string>
+    <string name="processing_open_memory">Open memory</string>
+    <string name="processing_provider_local">Local · Gemma 3</string>
+    <string name="processing_n_tags">%1$d tags</string>
+    <string name="processing_retry_hint">You can retry from the memory later.</string>
+    <string name="capture_draft_add_label">Add to this memory</string>
+    <string name="capture_draft_ready">Ready when you are</string>
+    <string name="capture_draft_audio_attached">Audio recording attached</string>
+
+    <!-- Ask (chat) -->
+    <string name="chat_searched_memories">Searched %1$d memories</string>
+    <string name="chat_searched_one">Searched 1 memory</string>
+    <string name="chat_cd_new_chat">New chat</string>
+    <string name="chat_suggest_today">What did I save today?</string>
+    <string name="chat_suggest_week">Summarise my week</string>
+    <string name="chat_suggest_tasks">What is on my to-do list?</string>
+
+    <!-- Settings -->
+    <string name="settings_header_eyebrow">MemGallery %1$s</string>
+    <string name="settings_hero_local_overline">Running on this phone</string>
+    <string name="settings_hero_cloud_overline">Using your own key</string>
+    <string name="settings_hero_local_loaded">Model loaded. Nothing is sent anywhere while it is on.</string>
+    <string name="settings_hero_local_missing">No model imported yet. Add one below to keep everything on this phone.</string>
+    <string name="settings_hero_cloud_body">Memories are sent to this provider with the key you add below.</string>
+
+    <!-- AI: one provider per job, DeepSeek, web search -->
+    <string name="ai_jobs_title">AI jobs</string>
+    <string name="ai_main_title">Main brain</string>
+    <string name="ai_main_hint">Chat, summaries, tags and tasks.</string>
+    <string name="ai_voice_title">Voice transcription</string>
+    <string name="ai_voice_hint">Turns voice notes into text before the main brain reads them.</string>
+    <string name="ai_images_title">Images</string>
+    <string name="ai_images_hint">Reads pictures and the text in them.</string>
+    <string name="ai_option_off">Off</string>
+    <string name="ai_provider_deepseek">DeepSeek</string>
+    <string name="ai_deepseek_reads">DeepSeek reads text and pictures. Voice notes go to your voice provider first.</string>
+    <string name="ai_voice_missing">Voice notes will not be transcribed until you pick Gemini or Groq and save its key.</string>
+    <string name="ai_images_missing">Pictures will not be read until you pick Gemini, Groq or DeepSeek and save its key.</string>
+    <string name="ai_keys_title">Keys and models</string>
+    <string name="ai_keys_hint">Every key stays saved at the same time. Each job uses its own.</string>
+    <string name="ai_key_saved">Key saved</string>
+    <string name="ai_key_missing">No key yet</string>
+    <string name="ai_on_device_title">On this phone</string>
+    <string name="ai_deepseek_key_label">DeepSeek API key</string>
+    <string name="ai_deepseek_key_placeholder">sk-...</string>
+    <string name="ai_deepseek_model">Model</string>
+    <string name="ai_deepseek_thinking">Thinking mode</string>
+    <string name="ai_deepseek_thinking_hint">Slower and costs more tokens. Off is best for tags and summaries.</string>
+    <string name="ai_deepseek_get_key">Keys come from platform.deepseek.com. Requests go straight from this phone to api.deepseek.com.</string>
+    <string name="vm_deepseek_saved">DeepSeek key works and is saved.</string>
+    <string name="vm_deepseek_invalid">DeepSeek refused the key: %1$s</string>
+    <string name="websearch_title">Web search</string>
+    <string name="websearch_hint">Lets the AI look things up online after it has checked your memories. Sources show under the answer.</string>
+    <string name="search_free">Free</string>
+    <string name="search_free_hint">No key. Tries DuckDuckGo, then Bing, then Wikipedia. Some networks block the first two.</string>
+    <string name="search_brave_hint">Brave Search API. Add your key from api.search.brave.com.</string>
+    <string name="search_tavily_hint">Tavily, built for AI answers. The free plan has 1,000 searches a month: tavily.com.</string>
+    <string name="search_key_label">%1$s API key</string>
+    <string name="search_test">Try it</string>
+    <string name="search_save_test">Save and try</string>
+    <string name="vm_search_ok">Search works (%1$s).</string>
+    <string name="vm_search_failed">No search engine answered. Check the connection or add a key.</string>
+
+    <string name="onboarding_provider_deepseek_title">DeepSeek</string>
+    <string name="onboarding_provider_deepseek_desc">Strong, low-cost text AI with your own key. Voice and pictures use Gemini or Groq.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_tagline_capture">Capture.</string>
+    <string name="onboarding_tagline_process">Process.</string>
+    <string name="onboarding_tagline_recall">Recall.</string>
+</resources>

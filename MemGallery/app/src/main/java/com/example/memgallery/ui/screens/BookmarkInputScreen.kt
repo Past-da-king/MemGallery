@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -117,21 +118,13 @@ fun BookmarkInputScreen(
                 Spacer(modifier = Modifier.height(48.dp))
 
                 // URL Input
-                OutlinedTextField(
+                MemTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text(stringResource(R.string.bookmark_url_label)) },
-                    placeholder = { Text(stringResource(R.string.common_url_placeholder)) },
-                    leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
+                    label = stringResource(R.string.bookmark_url_label),
+                    placeholder = stringResource(R.string.common_url_placeholder),
+                    leadingIcon = Icons.Default.Link,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri),
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -144,31 +137,15 @@ fun BookmarkInputScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 
-                TextField(
+                MemTextField(
                     value = userNote,
                     onValueChange = { userNote = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .heightIn(min = 150.dp),
-                    placeholder = {
-                        Text(
-                            stringResource(R.string.common_whats_on_your_mind),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                    },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+                    modifier = Modifier.padding(top = 8.dp),
+                    placeholder = stringResource(R.string.common_whats_on_your_mind),
+                    singleLine = false,
+                    minLines = 6,
+                    maxLines = 14,
+                    textStyle = MaterialTheme.typography.bodyLarge,
                 )
             }
         }

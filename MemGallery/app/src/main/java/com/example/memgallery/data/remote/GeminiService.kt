@@ -29,7 +29,8 @@ private const val TAG = "GeminiService"
 class GeminiService @Inject constructor(
     @ApplicationContext private val context: Context,
     private val providerFactory: AIProviderFactory,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val mediaPreprocessor: MediaPreprocessor
 ) {
     private val responseSchemaJson = """
         {
@@ -195,10 +196,15 @@ class GeminiService @Inject constructor(
 
             Log.d(TAG, "Sending request to ${provider.providerName} with ${imageDataList.size} images")
             
+            // Voice and Images are separate jobs: a text-only Main brain gets them as text.
+            val prepared = mediaPreprocessor.prepare(audioData, imageDataList)
+            if (prepared.error != null) return@withContext Result.failure(IOException(prepared.error))
+            val combinedText = listOfNotNull(userText?.takeIf { it.isNotBlank() }, prepared.extraText).joinToString("\n\n").ifBlank { null }
+
             provider.processMemory(
-                imageDataList = imageDataList,
-                audioData = audioData,
-                userText = userText,
+                imageDataList = prepared.images,
+                audioData = prepared.audio,
+                userText = combinedText,
                 bookmarkUrl = bookmarkUrl,
                 bookmarkTitle = bookmarkTitle,
                 bookmarkDescription = bookmarkDescription,
@@ -206,7 +212,9 @@ class GeminiService @Inject constructor(
                 existingCollections = existingCollections,
                 systemPrompt = finalSystemInstruction,
                 responseSchemaJson = responseSchemaJson
-            )
+            ).map { dto ->
+                if (prepared.transcript != null && dto.audioTranscription.isNullOrBlank()) dto.copy(audioTranscription = prepared.transcript) else dto
+            }
 
         } catch (e: Exception) {
             Log.e(TAG, "Error processing memory", e)

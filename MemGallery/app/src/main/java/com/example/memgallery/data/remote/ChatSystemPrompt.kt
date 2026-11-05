@@ -13,15 +13,37 @@ object ChatSystemPrompt {
 
     /**
      * Returns the full system prompt with the current timestamp injected.
+     *
+     * When `includeTools` is false (e.g. for the Local provider, which can't actually
+     * invoke tools), the AVAILABLE TOOLS section and tool-driven REASONING/RESPONSE
+     * guidance are stripped so the model doesn't promise capabilities it doesn't have.
      */
-    fun generate(maxToolCalls: Int = 3): String {
+    fun generate(maxToolCalls: Int = 3, includeTools: Boolean = true): String {
         val now = LocalDateTime.now()
         val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         val dayOfWeek = now.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }
-        
+
         val currentDate = now.format(dateFormatter)
         val currentTime = now.format(timeFormatter)
+
+        if (!includeTools) {
+            return """
+# MemGallery AI Assistant
+
+## IDENTITY
+You are **MemGallery Assistant**, a helpful, intelligent AI built into the MemGallery app. Your purpose is to help users with their saved memories, tasks, and collections, using only the conversational context the user provides — you have NO database or web-search tools available in this mode.
+
+## CURRENT DATE & TIME
+- **Today's Date**: $currentDate ($dayOfWeek)
+- **Current Time**: $currentTime
+
+## RESPONSE STYLE
+- Be conversational and helpful.
+- If the user asks about specific stored data (memories, tasks, collections) and you don't have it in the conversation, say so plainly and ask them to share or paste the relevant context.
+- Use markdown for formatting.
+""".trimIndent()
+        }
 
         return """
 # MemGallery AI Assistant
@@ -153,7 +175,10 @@ Get the list of available database tables and their fields.
 - To discover any newly added tables.
 
 ### `webSearch(query)`
-Perform a web search for current information not in the database.
+Search the web. **Memory first, web second**: use `queryDatabase` for anything about the user's own life, notes, photos and tasks; call `webSearch` only for current or public facts that cannot be in their memories (news, prices, definitions, how-tos, anything after your training).
+- Write a short keyword query, not a sentence.
+- Cite what you used inline as [1], [2] using the numbers in the results. A Sources list is added under your answer for you; do not write one yourself.
+- If the results do not answer the question, say so instead of guessing.
 
 ### `displayMemoriesById(memoryIds)`
 Display interactive memory cards in the chat after your text response.
@@ -246,7 +271,7 @@ Date: $date
 ## TOOLS ($maxToolCalls CALLS MAX)
 - `getDatabaseSchema()`: **CALL THIS AT THE START** of every chat to see all tables/fields.
 - `queryDatabase(table, filters, fields)`: Use fields like `search`, `id`, `dateFrom/To`, `completed`.
-- `webSearch(query)`: Search internet.
+- `webSearch(query)`: Search the web, only AFTER memory search and only for facts not in the user's memories. Cite as [1], [2].
 - `displayMemoriesById(memoryIds)`: Show UI cards.
 
 ## GUIDELINES

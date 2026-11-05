@@ -10,6 +10,8 @@ import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.local.model.PulseMemory
 import kotlinx.coroutines.flow.Flow
 
+data class TaskSourceMemory(val id: Int, val aiTitle: String?, val imageUri: String?)
+
 @Dao
 interface MemoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -30,6 +32,9 @@ interface MemoryDao {
 
     @Query("SELECT * FROM memories ORDER BY creationTimestamp DESC")
     fun getAllMemoriesIncludingHidden(): Flow<List<MemoryEntity>>
+
+    @Query("SELECT id, aiTitle, imageUri FROM memories WHERE id IN (SELECT DISTINCT memoryId FROM tasks WHERE memoryId IS NOT NULL)")
+    fun observeTaskSources(): Flow<List<TaskSourceMemory>>
 
     @Query("SELECT * FROM memories WHERE id = :id")
     fun getMemoryById(id: Int): Flow<MemoryEntity?>
@@ -56,4 +61,18 @@ interface MemoryDao {
 
     @Query("SELECT creationTimestamp FROM memories WHERE isHidden = 0")
     fun getAllCreationTimestamps(): Flow<List<Long>>
+
+    // --- Agent Bridge ---
+
+    @Query("SELECT * FROM memories WHERE id = :id LIMIT 1")
+    suspend fun getMemoryByIdOnce(id: Int): MemoryEntity?
+
+    @Query("SELECT * FROM memories ORDER BY creationTimestamp DESC")
+    suspend fun getAllMemoriesOnce(): List<MemoryEntity>
+
+    @Query("SELECT COUNT(*) FROM memories WHERE status = :status")
+    suspend fun countByStatus(status: String): Int
+
+    @Query("SELECT COUNT(*) FROM memories WHERE creationTimestamp >= :since AND isHidden = 0")
+    suspend fun countCreatedSince(since: Long): Int
 }

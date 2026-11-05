@@ -7,17 +7,24 @@ import com.example.memgallery.data.repository.MemoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MemoryUpdateViewModel @Inject constructor(
-    private val memoryRepository: MemoryRepository
+    private val memoryRepository: MemoryRepository,
+    settingsRepository: com.example.memgallery.data.repository.SettingsRepository
 ) : ViewModel() {
 
     private val _memory = MutableStateFlow<MemoryEntity?>(null)
     val memory: StateFlow<MemoryEntity?> = _memory.asStateFlow()
+
+    /** Name of the active AI provider (GEMINI, GROQ, LOCAL, CUSTOM). */
+    val providerKey: StateFlow<String> = settingsRepository.aiProviderFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "GEMINI")
 
     fun loadMemory(memoryId: Int) {
         viewModelScope.launch {

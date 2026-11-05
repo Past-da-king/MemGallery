@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.components.sheets
 
+import com.example.memgallery.ui.design.MemTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -102,47 +103,21 @@ fun AddTaskSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 2. Title Input (Minimalist)
-            TextField(
+            MemTextField(
                 value = title,
                 onValueChange = { title = it },
-                placeholder = {
-                    Text(
-                        stringResource(R.string.sheet_task_what_to_do),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                },
-                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier.fillMaxWidth()
+                placeholder = stringResource(R.string.sheet_task_what_to_do),
+                textStyle = MaterialTheme.typography.titleLarge,
             )
 
             // 3. Description Input (Minimalist)
-            TextField(
+            MemTextField(
                 value = description,
                 onValueChange = { description = it },
-                placeholder = {
-                    Text(
-                        stringResource(R.string.sheet_task_add_details),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier.fillMaxWidth(),
+                placeholder = stringResource(R.string.sheet_task_add_details),
+                singleLine = false,
                 minLines = 2,
-                maxLines = 5
+                maxLines = 5,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.components.sheets
 
+import com.example.memgallery.ui.design.MemTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,31 +65,15 @@ fun QuickTextSheet(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextField(
+        MemTextField(
             value = text,
             onValueChange = { text = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 150.dp, max = 300.dp)
-                .focusRequester(focusRequester),
-            placeholder = {
-                Text(
-                    stringResource(R.string.common_whats_on_your_mind),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
-            },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent
-            )
+            placeholder = stringResource(R.string.common_whats_on_your_mind),
+            singleLine = false,
+            minLines = 5,
+            maxLines = 12,
+            textStyle = MaterialTheme.typography.bodyLarge,
+            fieldModifier = Modifier.focusRequester(focusRequester),
         )
     }
 }

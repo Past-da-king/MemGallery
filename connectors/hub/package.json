@@ -1,0 +1,35 @@
+{
+  "name": "memgallery-hub",
+  "version": "0.1.0",
+  "description": "Dumb relay for MemGallery: mirrors the phone's tasks so agents can read them while it's asleep, and queues writes until it dials out.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "memgallery-hub": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "memgallery",
+    "relay",
+    "tailscale",
+    "ntfy",
+    "agents"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}

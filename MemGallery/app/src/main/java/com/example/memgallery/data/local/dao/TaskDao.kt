@@ -53,4 +53,28 @@ interface TaskDao {
 
     @Query("DELETE FROM tasks WHERE memoryId = :memoryId")
     suspend fun deleteTasksByMemoryId(memoryId: Int)
+
+    // --- Agent Bridge ---
+
+    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
+    suspend fun getTaskById(id: Int): TaskEntity?
+
+    /**
+     * Scoped to the creating client, so two agents can both use "invoice-42" as their own
+     * external id without colliding.
+     */
+    @Query("SELECT * FROM tasks WHERE externalId = :externalId AND source = :source LIMIT 1")
+    suspend fun findByExternalId(externalId: String, source: String): TaskEntity?
+
+    @Query("SELECT * FROM tasks WHERE projectId = :projectId")
+    suspend fun getTasksForProject(projectId: Int): List<TaskEntity>
+
+    @Query("UPDATE tasks SET projectId = NULL WHERE projectId = :projectId")
+    suspend fun detachFromProject(projectId: Int)
+
+    @Query("SELECT COUNT(*) FROM tasks WHERE isApproved = 0")
+    suspend fun countUnapproved(): Int
+
+    @Query("SELECT COUNT(*) FROM tasks WHERE isCompleted = 1 AND isApproved = 1 AND updatedAt >= :since")
+    suspend fun countCompletedSince(since: Long): Int
 }

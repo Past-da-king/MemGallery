@@ -20,6 +20,9 @@ class BootReceiver : BroadcastReceiver() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
+    @Inject
+    lateinit var agentSettings: com.example.memgallery.agent.AgentBridgeSettings
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -28,6 +31,11 @@ class BootReceiver : BroadcastReceiver() {
                 val edgeGestureEnabled = settingsRepository.edgeGestureEnabledFlow.first()
                 if (edgeGestureEnabled) {
                     startEdgeGestureService(context)
+                }
+                // Without this the bridge is unreachable after every reboot until the
+                // operator happens to open the app — which is exactly when he isn't near it.
+                if (agentSettings.enabled.first()) {
+                    com.example.memgallery.service.AgentBridgeService.start(context)
                 }
             }
         }

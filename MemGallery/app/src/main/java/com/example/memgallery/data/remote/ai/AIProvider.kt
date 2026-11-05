@@ -100,6 +100,38 @@ interface AIProvider {
      * Generate a summary of user memories for context
      */
     suspend fun generateUserContext(memoryText: String): Result<String>
+
+    /**
+     * Turn a voice recording into text (the "Voice transcription" job). The default asks a multimodal model;
+     * providers with a real speech endpoint override it.
+     */
+    suspend fun transcribeAudio(audio: AudioData): Result<String> =
+        sendMessageWithMedia(
+            conversationHistory = "",
+            message = "Transcribe this audio recording verbatim. Output only the transcript, nothing else.",
+            audioData = audio,
+            imageData = null,
+            systemPrompt = "You are a precise speech transcription engine.",
+            toolExecutor = null
+        )
+
+    /** Describe pictures and read any text in them (the "Images" job), so a text-only main brain can use them. */
+    suspend fun describeImages(images: List<ImageData>): Result<String> {
+        val parts = mutableListOf<String>()
+        for ((i, img) in images.withIndex()) {
+            val r = sendMessageWithMedia(
+                conversationHistory = "",
+                message = "Describe this image in detail for someone who cannot see it. Then write out, exactly, any text visible in it (OCR). Plain text only.",
+                audioData = null,
+                imageData = img,
+                systemPrompt = "You describe images accurately and read text in them.",
+                toolExecutor = null
+            )
+            r.onSuccess { parts += if (images.size > 1) "Image ${i + 1}: $it" else it }
+            if (r.isFailure && parts.isEmpty()) return Result.failure(r.exceptionOrNull() ?: Exception("Image description failed"))
+        }
+        return Result.success(parts.joinToString("\n\n"))
+    }
 }
 
 /**
@@ -186,5 +218,6 @@ enum class AIProviderType {
     GEMINI,
     GROQ,
     LOCAL,
-    OPENAI_COMPATIBLE
+    OPENAI_COMPATIBLE,
+    DEEPSEEK
 }

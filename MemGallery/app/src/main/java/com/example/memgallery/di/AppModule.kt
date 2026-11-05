@@ -40,9 +40,34 @@ object AppModule {
             AppDatabase.MIGRATION_13_14,
             AppDatabase.MIGRATION_14_15,
             AppDatabase.MIGRATION_15_16,
-            AppDatabase.MIGRATION_16_17
+            AppDatabase.MIGRATION_16_17,
+            AppDatabase.MIGRATION_17_18
         )
         .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAgentClientDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.AgentClientDao {
+        return appDatabase.agentClientDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAgentAskDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.AgentAskDao {
+        return appDatabase.agentAskDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAgentOutboxDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.AgentOutboxDao {
+        return appDatabase.agentOutboxDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAgentAuditDao(appDatabase: AppDatabase): com.example.memgallery.data.local.dao.AgentAuditDao {
+        return appDatabase.agentAuditDao()
     }
 
     @Provides
