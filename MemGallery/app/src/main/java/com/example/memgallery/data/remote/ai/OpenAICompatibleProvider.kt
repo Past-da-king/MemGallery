@@ -470,7 +470,7 @@ class OpenAICompatibleProvider @Inject constructor(
         val tools = JSONArray()
         // webSearch is a Gemini-only capability (it relies on the GoogleSearch tool
         // wired to a Gemini client); don't advertise it on OpenAI-compatible providers.
-        toolExecutor.getToolDefinitions().filter { it.name != "webSearch" }.forEach { def ->
+        toolExecutor.getToolDefinitions().forEach { def ->
             tools.put(JSONObject().apply {
                 put("type", "function")
                 put("function", JSONObject().apply {

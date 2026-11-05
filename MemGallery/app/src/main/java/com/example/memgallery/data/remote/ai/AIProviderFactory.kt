@@ -18,6 +18,7 @@ class AIProviderFactory @Inject constructor(
     private val groqProvider: GroqProvider,
     private val localAIProvider: LocalAIProvider,
     private val openAICompatibleProvider: OpenAICompatibleProvider,
+    private val deepSeekProvider: DeepSeekProvider,
     private val settingsRepository: SettingsRepository
 ) {
     
@@ -25,37 +26,50 @@ class AIProviderFactory @Inject constructor(
      * Get the currently selected AI provider.
      * Initializes the provider with the stored API key if not already initialized.
      */
-    suspend fun getProvider(): AIProvider {
-        val providerType = getProviderType()
+    suspend fun getProvider(): AIProvider = providerFor(getProviderType())
+
+    /**
+     * Get any provider, initialised with its OWN saved key (every provider keeps its key at the same time).
+     * Used for the Main brain, and for the Voice and Images jobs.
+     */
+    suspend fun providerFor(providerType: AIProviderType): AIProvider {
         val provider = when (providerType) {
             AIProviderType.GROQ -> groqProvider
             AIProviderType.LOCAL -> localAIProvider
             AIProviderType.OPENAI_COMPATIBLE -> openAICompatibleProvider
+            AIProviderType.DEEPSEEK -> deepSeekProvider
             else -> geminiProvider
         }
-        
-        // Initialize if not already
         if (!provider.isEnabled()) {
             val apiKey = getApiKey(providerType)
-            // Local provider might not need a key, or uses path as key
             if (!apiKey.isNullOrBlank() || providerType == AIProviderType.LOCAL || providerType == AIProviderType.OPENAI_COMPATIBLE) {
-                // OpenAI compatible might rely on internal config fetching, but initialize expects a key.
-                // We pass the key if available, or empty string if it relies on repo internal fetch. 
-                // Provider implementation handles this.
                 provider.initialize(apiKey ?: "")
                 Log.i(TAG, "Initialized ${provider.providerName} provider")
             }
         }
-        
         return provider
     }
-    
+
+    suspend fun voiceProviderType(): AIProviderType? = when (settingsRepository.resolvedVoiceProvider()) {
+        JobRouting.GEMINI -> AIProviderType.GEMINI
+        JobRouting.GROQ -> AIProviderType.GROQ
+        else -> null
+    }
+
+    suspend fun imageProviderType(): AIProviderType? = when (settingsRepository.resolvedImageProvider()) {
+        JobRouting.GEMINI -> AIProviderType.GEMINI
+        JobRouting.GROQ -> AIProviderType.GROQ
+        JobRouting.CUSTOM -> AIProviderType.OPENAI_COMPATIBLE
+        else -> null
+    }
+
     /**
      * Get the currently selected provider type from settings.
      */
     suspend fun getProviderType(): AIProviderType {
-        val providerString = settingsRepository.aiProviderFlow.first()
+        val providerString = settingsRepository.resolvedMainProvider()
         return when (providerString.uppercase()) {
+            "DEEPSEEK" -> AIProviderType.DEEPSEEK
             "GROQ" -> AIProviderType.GROQ
             "LOCAL" -> AIProviderType.LOCAL
             "OPENAI_COMPATIBLE" -> AIProviderType.OPENAI_COMPATIBLE
@@ -79,6 +93,7 @@ class AIProviderFactory @Inject constructor(
             AIProviderType.GEMINI -> settingsRepository.apiKeyFlow.first()
             AIProviderType.LOCAL -> settingsRepository.localModelPathFlow.first()
             AIProviderType.OPENAI_COMPATIBLE -> settingsRepository.customApiKeyFlow.first()
+            AIProviderType.DEEPSEEK -> settingsRepository.deepSeekApiKeyFlow.first()
         }
     }
     
@@ -118,6 +133,7 @@ class AIProviderFactory @Inject constructor(
             AIProviderType.GEMINI -> geminiProvider
             AIProviderType.LOCAL -> localAIProvider
             AIProviderType.OPENAI_COMPATIBLE -> openAICompatibleProvider
+            AIProviderType.DEEPSEEK -> deepSeekProvider
         }
         
         provider.initialize(apiKey ?: "")
@@ -133,6 +149,7 @@ class AIProviderFactory @Inject constructor(
         groqProvider.disable()
         localAIProvider.disable()
         openAICompatibleProvider.disable()
+        deepSeekProvider.disable()
         Log.i(TAG, "All providers disabled")
     }
 }

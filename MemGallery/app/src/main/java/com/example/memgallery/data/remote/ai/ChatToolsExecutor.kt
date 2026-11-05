@@ -38,7 +38,7 @@ class ChatToolsExecutor : ToolExecutor {
             ),
             ToolDefinition(
                 name = "webSearch",
-                description = "Perform a web search for current information not in the database.",
+                description = "Search the web for current or public information that is NOT in the user's own memories. Use queryDatabase first for anything about the user; use this second. Cite results as [1], [2].",
                 parameters = mapOf(
                     "query" to ParameterDef(
                         type = "string",

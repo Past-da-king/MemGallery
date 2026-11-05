@@ -175,7 +175,10 @@ Get the list of available database tables and their fields.
 - To discover any newly added tables.
 
 ### `webSearch(query)`
-Perform a web search for current information not in the database.
+Search the web. **Memory first, web second**: use `queryDatabase` for anything about the user's own life, notes, photos and tasks; call `webSearch` only for current or public facts that cannot be in their memories (news, prices, definitions, how-tos, anything after your training).
+- Write a short keyword query, not a sentence.
+- Cite what you used inline as [1], [2] using the numbers in the results. A Sources list is added under your answer for you; do not write one yourself.
+- If the results do not answer the question, say so instead of guessing.
 
 ### `displayMemoriesById(memoryIds)`
 Display interactive memory cards in the chat after your text response.
@@ -268,7 +271,7 @@ Date: $date
 ## TOOLS ($maxToolCalls CALLS MAX)
 - `getDatabaseSchema()`: **CALL THIS AT THE START** of every chat to see all tables/fields.
 - `queryDatabase(table, filters, fields)`: Use fields like `search`, `id`, `dateFrom/To`, `completed`.
-- `webSearch(query)`: Search internet.
+- `webSearch(query)`: Search the web, only AFTER memory search and only for facts not in the user's memories. Cite as [1], [2].
 - `displayMemoriesById(memoryIds)`: Show UI cards.
 
 ## GUIDELINES

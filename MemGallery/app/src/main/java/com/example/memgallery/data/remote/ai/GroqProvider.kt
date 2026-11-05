@@ -647,6 +647,13 @@ class GroqProvider @Inject constructor(
         }
     }
     
+    // The "Voice transcription" job: Whisper, whatever the main brain is.
+    override suspend fun transcribeAudio(audio: AudioData): Result<String> = withContext(Dispatchers.IO) {
+        val localClient = client ?: return@withContext Result.failure(IllegalStateException("Groq is not configured. Add a Groq key in Settings."))
+        val text = transcribeAudio(localClient, audio)
+        if (text.isNullOrBlank()) Result.failure(Exception("Groq could not transcribe the recording")) else Result.success(text)
+    }
+
     // Helper: Transcribe audio using Whisper
     private fun transcribeAudio(localClient: GroqClient, audioData: AudioData): String? {
         return try {
@@ -692,7 +699,7 @@ class GroqProvider @Inject constructor(
     private fun buildGroqTools(toolExecutor: ToolExecutor): List<ChatTool> {
         // webSearch is a Gemini-only capability (it relies on the GoogleSearch tool
         // wired to a Gemini client); don't advertise it on Groq.
-        val toolDefs = toolExecutor.getToolDefinitions().filter { it.name != "webSearch" }
+        val toolDefs = toolExecutor.getToolDefinitions()
         return toolDefs.map { def ->
             val parameters = mutableMapOf<String, Any>(
                 "type" to "object",

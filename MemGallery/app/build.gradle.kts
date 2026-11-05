@@ -188,6 +188,7 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit)
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi.core)
     testImplementation(libs.roborazzi.compose)
