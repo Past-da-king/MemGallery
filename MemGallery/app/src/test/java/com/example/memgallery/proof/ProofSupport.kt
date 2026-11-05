@@ -66,7 +66,7 @@ fun sampleMemories(): List<MemoryEntity> = listOf(
     memory(3, "Evening sky", 0, 9, image = "sunset"),
     memory(9, "Alpine trail", 0, 9, image = "mountains"),
     memory(10, "Flat white", 0, 9, image = "latte"),
-    memory(1, "Cedar Guest Wi-Fi", 0, 8, image = "wifi", tags = listOf("wifi", "password", "guest"), analysis = "Network Wi-Fi password: tide-lamp-4821 WPA2"),
+    memory(1, "Cedar Guest Wi-Fi", 0, 8, image = "wifi", tags = listOf("wifi", "password", "guest"), analysis = "Guest network details card (sample art, no real credentials)"),
     memory(2, "Gift ideas", 0, 8, text = "Ceramic mug set, linen napkins, a good pepper grinder", summary = "Ceramic mug set, linen napkins", tags = listOf("gift")),
     memory(4, "Voice: guest network", 0, 7, audio = true, transcript = "the wifi passcode for the guest room is on the fridge", tags = listOf("wifi", "guest")),
     memory(5, "Night train to Porto", 1, 18, image = "ticket", tags = listOf("travel")),
