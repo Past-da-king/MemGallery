@@ -1,6 +1,7 @@
 
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -79,28 +80,16 @@ fun TextInputScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            TextField(
+            MemTextField(
                 value = text,
                 onValueChange = { text = it },
                 modifier = Modifier.fillMaxSize(),
-                placeholder = {
-                    Text(
-                        stringResource(R.string.common_whats_on_your_mind),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                },
-                textStyle = MaterialTheme.typography.headlineMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
-                )
+                fieldModifier = Modifier.fillMaxSize(),
+                placeholder = stringResource(R.string.common_whats_on_your_mind),
+                singleLine = false,
+                maxLines = Int.MAX_VALUE,
+                textStyle = MaterialTheme.typography.headlineSmall,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
             )
         }
     }

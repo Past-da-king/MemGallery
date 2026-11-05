@@ -6,9 +6,10 @@ import androidx.compose.ui.graphics.Color
 
 // Mirrors com.example.memgallery.ui.theme.Color so widget reads as
 // the same surface the rest of the app does.
-internal val WidgetDefaultAccent = Color(0xFF8C25F4)        // theme.Primary
-internal val WidgetBackgroundDark = Color(0xFF191022)        // theme.BackgroundDark
-internal val WidgetBackgroundLight = Color(0xFFF7F5F8)       // theme.BackgroundLight
+internal val WidgetDefaultAccent = Color(0xFF5B46CF)        // MemTokens.Light.primary
+internal val WidgetDefaultAccentDark = Color(0xFFC9C1FF)    // MemTokens.Dark.primary
+internal val WidgetBackgroundDark = Color(0xFF131318)        // MemTokens.Dark.surface
+internal val WidgetBackgroundLight = Color(0xFFFCF8FF)       // MemTokens.Light.surface
 internal val WidgetAmoledBlack = Color(0xFF000000)
 
 internal data class WidgetPalette(
@@ -47,7 +48,7 @@ internal fun resolvePalette(
             Color(context.getColor(accentRes))
         }
         customColor != -1 -> Color(customColor)
-        else -> WidgetDefaultAccent
+        else -> if (isDark) WidgetDefaultAccentDark else WidgetDefaultAccent
     }
 
     return if (isDark) {

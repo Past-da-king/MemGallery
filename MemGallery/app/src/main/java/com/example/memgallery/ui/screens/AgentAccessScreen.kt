@@ -1,5 +1,7 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.SubScreenHeader
+import com.example.memgallery.ui.design.MemTextField
 import com.example.memgallery.ui.design.MemSheet
 import com.example.memgallery.ui.design.SheetTitle
 import androidx.compose.foundation.background
@@ -51,14 +53,7 @@ fun AgentAccessScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.agent_access_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
-            )
+            SubScreenHeader(title = stringResource(R.string.agent_access_title), onBack = { navController.navigateUp() })
         }
     ) { padding ->
         LazyColumn(
@@ -218,13 +213,12 @@ fun AgentAccessScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     var portText by remember(state.port) { mutableStateOf(state.port.toString()) }
-                    OutlinedTextField(
+                    MemTextField(
                         value = portText,
                         onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-                        label = { Text(stringResource(R.string.agent_access_port)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
+                        label = stringResource(R.string.agent_access_port),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        trailing = {
                             TextButton(onClick = { portText.toIntOrNull()?.let(viewModel::setPort) }) {
                                 Text(stringResource(R.string.agent_access_save))
                             }
@@ -266,21 +260,19 @@ fun AgentAccessScreen(
                     Spacer(Modifier.height(12.dp))
                     var url by remember(state.hubUrl) { mutableStateOf(state.hubUrl) }
                     var token by remember(state.hubToken) { mutableStateOf(state.hubToken) }
-                    OutlinedTextField(
+                    MemTextField(
                         value = url,
                         onValueChange = { url = it },
-                        label = { Text(stringResource(R.string.agent_access_hub_url)) },
-                        placeholder = { Text("https://hub-xxxx.tailnet.ts.net") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        label = stringResource(R.string.agent_access_hub_url),
+                        placeholder = "https://hub-xxxx.tailnet.ts.net",
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    MemTextField(
                         value = token,
                         onValueChange = { token = it },
-                        label = { Text(stringResource(R.string.agent_access_hub_token)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        label = stringResource(R.string.agent_access_hub_token),
+                        isSecret = true,
                     )
                     Spacer(Modifier.height(8.dp))
                     ToggleRow(
@@ -307,13 +299,11 @@ fun AgentAccessScreen(
                         onCheckedChange = { viewModel.setPush(it, topic) }
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    MemTextField(
                         value = topic,
                         onValueChange = { topic = it },
-                        label = { Text(stringResource(R.string.agent_access_push_topic)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
+                        label = stringResource(R.string.agent_access_push_topic),
+                        trailing = {
                             TextButton(onClick = { viewModel.setPush(state.pushEnabled, topic) }) {
                                 Text(stringResource(R.string.agent_access_save))
                             }
@@ -402,12 +392,10 @@ private fun CreateTokenDialog(
     MemSheet(onDismiss = onDismiss) {
         SheetTitle(stringResource(R.string.agent_access_new_token))
         Column(Modifier.padding(horizontal = 24.dp)) {
-            OutlinedTextField(
+            MemTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text(stringResource(R.string.agent_access_token_name)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                label = stringResource(R.string.agent_access_token_name),
             )
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.agent_access_scopes), style = MaterialTheme.typography.labelLarge)
@@ -442,10 +430,10 @@ private fun CreateTokenDialog(
 @Composable
 private fun SectionHeader(text: String) {
     Text(
-        text,
+        text.uppercase(),
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 8.dp, top = 12.dp, bottom = 0.dp)
     )
 }
 
@@ -453,10 +441,13 @@ private fun SectionHeader(text: String) {
 private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
     ) {
-        Column(Modifier.padding(16.dp), content = content)
+        Column(Modifier.padding(20.dp), content = content)
     }
 }
 
@@ -470,7 +461,7 @@ private fun ToggleRow(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             subtitle?.let {
                 Text(
                     it,
@@ -487,7 +478,8 @@ private fun ToggleRow(
 private fun MonoBlock(text: String) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        shape = RoundedCornerShape(10.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(

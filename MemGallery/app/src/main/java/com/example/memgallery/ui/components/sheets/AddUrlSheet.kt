@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.components.sheets
 
+import com.example.memgallery.ui.design.MemTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,20 +42,12 @@ fun AddUrlSheet(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(
+        MemTextField(
             value = tempUrl,
             onValueChange = { tempUrl = it },
-            placeholder = { Text(stringResource(R.string.common_url_placeholder)) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-            ),
-            leadingIcon = {
-                Icon(Icons.Default.Link, contentDescription = null)
-            }
+            placeholder = stringResource(R.string.common_url_placeholder),
+            leadingIcon = Icons.Default.Link,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri),
         )
 
         Spacer(modifier = Modifier.height(32.dp))

@@ -135,6 +135,47 @@
     <string name="settings_hero_local_missing">No model imported yet. Add one below to keep everything on this phone.</string>
     <string name="settings_hero_cloud_body">Memories are sent to this provider with the key you add below.</string>
 
+    <!-- AI: one provider per job, DeepSeek, web search -->
+    <string name="ai_jobs_title">AI jobs</string>
+    <string name="ai_main_title">Main brain</string>
+    <string name="ai_main_hint">Chat, summaries, tags and tasks.</string>
+    <string name="ai_voice_title">Voice transcription</string>
+    <string name="ai_voice_hint">Turns voice notes into text before the main brain reads them.</string>
+    <string name="ai_images_title">Images</string>
+    <string name="ai_images_hint">Reads pictures and the text in them for a main brain that cannot see.</string>
+    <string name="ai_option_off">Off</string>
+    <string name="ai_provider_deepseek">DeepSeek</string>
+    <string name="ai_deepseek_text_only">DeepSeek reads text only. Voice notes go to your voice provider and pictures to your images provider first, then DeepSeek gets the text.</string>
+    <string name="ai_voice_missing">Voice notes will not be transcribed until you pick Gemini or Groq and save its key.</string>
+    <string name="ai_images_missing">Pictures will not be read until you pick Gemini or Groq and save its key.</string>
+    <string name="ai_keys_title">Keys and models</string>
+    <string name="ai_keys_hint">Every key stays saved at the same time. Each job uses its own.</string>
+    <string name="ai_key_saved">Key saved</string>
+    <string name="ai_key_missing">No key yet</string>
+    <string name="ai_on_device_title">On this phone</string>
+    <string name="ai_deepseek_key_label">DeepSeek API key</string>
+    <string name="ai_deepseek_key_placeholder">sk-...</string>
+    <string name="ai_deepseek_model">Model</string>
+    <string name="ai_deepseek_thinking">Thinking mode</string>
+    <string name="ai_deepseek_thinking_hint">Slower and costs more tokens. Off is best for tags and summaries.</string>
+    <string name="ai_deepseek_get_key">Keys come from platform.deepseek.com. Requests go straight from this phone to api.deepseek.com.</string>
+    <string name="vm_deepseek_saved">DeepSeek key works and is saved.</string>
+    <string name="vm_deepseek_invalid">DeepSeek refused the key: %1$s</string>
+    <string name="websearch_title">Web search</string>
+    <string name="websearch_hint">Lets the AI look things up online after it has checked your memories. Sources show under the answer.</string>
+    <string name="search_free">Free</string>
+    <string name="search_free_hint">No key. Tries DuckDuckGo, then Bing, then Wikipedia. Some networks block the first two.</string>
+    <string name="search_brave_hint">Brave Search API. Add your key from api.search.brave.com.</string>
+    <string name="search_tavily_hint">Tavily, built for AI answers. The free plan has 1,000 searches a month: tavily.com.</string>
+    <string name="search_key_label">%1$s API key</string>
+    <string name="search_test">Try it</string>
+    <string name="search_save_test">Save and try</string>
+    <string name="vm_search_ok">Search works (%1$s).</string>
+    <string name="vm_search_failed">No search engine answered. Check the connection or add a key.</string>
+
+    <string name="onboarding_provider_deepseek_title">DeepSeek</string>
+    <string name="onboarding_provider_deepseek_desc">Strong, low-cost text AI with your own key. Voice and pictures use Gemini or Groq.</string>
+
     <!-- Onboarding -->
     <string name="onboarding_tagline_capture">Capture.</string>
     <string name="onboarding_tagline_process">Process.</string>

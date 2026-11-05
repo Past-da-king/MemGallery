@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.components.sheets
 
+import com.example.memgallery.ui.design.MemTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,40 +60,22 @@ fun CreateCollectionSheet(
         Spacer(modifier = Modifier.height(32.dp))
         
         // Stylish Name Field
-        TextField(
+        MemTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text(stringResource(R.string.sheet_collection_name_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
+            label = stringResource(R.string.sheet_collection_name_label),
         )
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Stylish Description Field
-        TextField(
+        MemTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text(stringResource(R.string.sheet_collection_description_label)) },
-            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(R.string.sheet_collection_description_label),
+            singleLine = false,
             minLines = 3,
             maxLines = 5,
-            shape = RoundedCornerShape(16.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
         )
         
         Spacer(modifier = Modifier.height(32.dp))

@@ -1,5 +1,10 @@
 package com.example.memgallery.ui.screens
 
+import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Link
+import com.example.memgallery.ui.design.MemTextField
 import com.example.memgallery.ui.design.MemShape
 import com.example.memgallery.ui.design.appNavigationBarsPadding
 import com.example.memgallery.ui.design.appStatusBarsPadding
@@ -235,6 +240,7 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -275,6 +281,17 @@ fun ChooseAiPage(viewModel: SettingsViewModel = hiltViewModel()) {
             icon = Icons.Default.Bolt,
             isSelected = aiProvider == "GROQ",
             onClick = { viewModel.setAiProvider("GROQ") }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // DeepSeek
+        AiProviderCard(
+            title = stringResource(R.string.onboarding_provider_deepseek_title),
+            description = stringResource(R.string.onboarding_provider_deepseek_desc),
+            icon = Icons.Default.Psychology,
+            isSelected = aiProvider == "DEEPSEEK",
+            onClick = { viewModel.setAiProvider("DEEPSEEK") }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -396,9 +413,46 @@ fun ApiKeySetupPage(viewModel: SettingsViewModel = hiltViewModel()) {
 
         when (aiProvider) {
             "OPENAI_COMPATIBLE" -> OpenAiCompatibleSetupBlock(viewModel)
+            "DEEPSEEK" -> DeepSeekSetupBlock(viewModel)
             else -> StandardKeySetupBlock(viewModel, isGroq = aiProvider == "GROQ")
         }
     }
+}
+
+@Composable
+private fun DeepSeekSetupBlock(viewModel: SettingsViewModel) {
+    val key by viewModel.deepSeekApiKey.collectAsState()
+    val ui by viewModel.deepSeekUiState.collectAsState()
+    Text(
+        text = stringResource(R.string.ai_deepseek_get_key),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = stringResource(R.string.ai_deepseek_text_only),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(modifier = Modifier.height(20.dp))
+    MemTextField(
+        value = key,
+        onValueChange = viewModel::onDeepSeekApiKeyChange,
+        label = stringResource(R.string.ai_deepseek_key_label),
+        placeholder = stringResource(R.string.ai_deepseek_key_placeholder),
+        leadingIcon = Icons.Default.VpnKey,
+        isSecret = true,
+        errorText = (ui as? com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error)?.message,
+    )
+    Spacer(modifier = Modifier.height(12.dp))
+    StatusLine(ui)
+    Spacer(modifier = Modifier.height(16.dp))
+    Button(
+        onClick = viewModel::validateAndSaveDeepSeekKey,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = key.isNotBlank() && ui !is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Loading,
+        shape = RoundedCornerShape(16.dp)
+    ) { Text(stringResource(R.string.common_validate)) }
 }
 
 @Composable
@@ -438,18 +492,17 @@ private fun StandardKeySetupBlock(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    OutlinedTextField(
+    MemTextField(
         value = apiKey,
         onValueChange = {
             if (isGroq) viewModel.onGroqApiKeyChange(it)
             else viewModel.onApiKeyChange(it)
         },
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(inputLabel) },
-        placeholder = { Text(placeholder) },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        isError = apiKeyUiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error
+        label = inputLabel,
+        placeholder = placeholder,
+        leadingIcon = Icons.Default.VpnKey,
+        isSecret = true,
+        errorText = (apiKeyUiState as? com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error)?.message,
     )
 
     KeyValidationFeedback(apiKeyUiState)
@@ -513,39 +566,35 @@ private fun OpenAiCompatibleSetupBlock(viewModel: SettingsViewModel) {
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    OutlinedTextField(
+    MemTextField(
         value = baseUrl,
         onValueChange = viewModel::setCustomBaseUrl,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.settings_custom_base_url_label)) },
-        placeholder = { Text(stringResource(R.string.onboarding_openai_base_url_placeholder)) },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp)
+        label = stringResource(R.string.settings_custom_base_url_label),
+        placeholder = stringResource(R.string.onboarding_openai_base_url_placeholder),
+        leadingIcon = Icons.Default.Link,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri),
     )
 
     Spacer(modifier = Modifier.height(12.dp))
 
-    OutlinedTextField(
+    MemTextField(
         value = modelName,
         onValueChange = viewModel::setCustomModelName,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.onboarding_openai_model_label)) },
-        placeholder = { Text(stringResource(R.string.onboarding_openai_model_placeholder)) },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp)
+        label = stringResource(R.string.onboarding_openai_model_label),
+        placeholder = stringResource(R.string.onboarding_openai_model_placeholder),
+        leadingIcon = Icons.Default.Key,
     )
 
     Spacer(modifier = Modifier.height(12.dp))
 
-    OutlinedTextField(
+    MemTextField(
         value = apiKey,
         onValueChange = viewModel::onCustomApiKeyChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.onboarding_openai_key_label)) },
-        placeholder = { Text(stringResource(R.string.onboarding_openai_key_placeholder)) },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        isError = uiState is com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error
+        label = stringResource(R.string.onboarding_openai_key_label),
+        placeholder = stringResource(R.string.onboarding_openai_key_placeholder),
+        leadingIcon = Icons.Default.VpnKey,
+        isSecret = true,
+        errorText = (uiState as? com.example.memgallery.ui.viewmodels.ApiKeyUiState.Error)?.message,
     )
 
     KeyValidationFeedback(uiState)
@@ -843,12 +892,12 @@ fun HowItWorksPage(onGetStarted: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         StepItem(number = "1", title = stringResource(R.string.onboarding_step_capture_title), desc = stringResource(R.string.onboarding_step_capture_desc))
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         StepItem(number = "2", title = stringResource(R.string.onboarding_step_process_title), desc = stringResource(R.string.onboarding_step_process_desc))
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         StepItem(number = "3", title = stringResource(R.string.onboarding_step_recall_title), desc = stringResource(R.string.onboarding_step_recall_desc))
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -875,13 +924,17 @@ fun HowItWorksPage(onGetStarted: () -> Unit) {
 @Composable
 fun StepItem(number: String, title: String, desc: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(16.dp),
         verticalAlignment = Alignment.Top
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
+                .size(48.dp)
+                .clip(com.example.memgallery.ui.design.MemShape.cookie)
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {

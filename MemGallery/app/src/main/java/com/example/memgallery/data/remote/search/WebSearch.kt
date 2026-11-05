@@ -233,6 +233,8 @@ class WebSearchFactory(private val settings: com.example.memgallery.data.reposit
         }
     }
 
+    suspend fun searchOnce(query: String): SearchOutcome = WebSearchService(engines()).search(query, 1)
+
     suspend fun run(query: String, startAt: Int): Pair<String, List<SearchResult>> {
         val service = WebSearchService(engines())
         val outcome = service.search(query)

@@ -316,3 +316,25 @@ fun SearchPill(
         }
     }
 }
+
+
+/** Header of a page opened from Settings (Advanced, Agent access, Feedback): the blob, a back button, eyebrow and the title. */
+@Composable
+fun SubScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, eyebrow: String? = null) {
+    val scheme = MaterialTheme.colorScheme
+    BlobHeader(modifier) {
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 16.dp, bottom = 28.dp), verticalAlignment = Alignment.Top) {
+            HeaderBackButton(onBack, Modifier.padding(top = 6.dp))
+            Column(Modifier.padding(start = 4.dp, top = 6.dp)) {
+                if (eyebrow != null) {
+                    Text(
+                        eyebrow.uppercase(),
+                        style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.4.sp),
+                        color = scheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                }
+                Text(title, style = MaterialTheme.typography.headlineLarge, color = scheme.onPrimaryContainer)
+            }
+        }
+    }
+}

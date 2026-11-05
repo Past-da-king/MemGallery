@@ -1,6 +1,9 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.SubScreenHeader
+import com.example.memgallery.ui.design.MemTextField
 import com.example.memgallery.ui.design.MemSheet
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 
 
@@ -29,16 +32,32 @@ import com.example.memgallery.R
 import com.example.memgallery.ui.viewmodels.FeedbackUiState
 import com.example.memgallery.ui.viewmodels.FeedbackViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedbackScreen(
     navController: NavController,
     viewModel: FeedbackViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    FeedbackContent(
+        uiState = uiState,
+        onSubmit = viewModel::submitFeedback,
+        onReset = viewModel::resetState,
+        onBack = { navController.navigateUp() }
+    )
+}
+
+/** The feedback page without the view model, so it can be proofed. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FeedbackContent(
+    uiState: FeedbackUiState,
+    onSubmit: (String, Boolean) -> Unit,
+    onReset: () -> Unit,
+    onBack: () -> Unit,
+) {
     var message by remember { mutableStateOf("") }
     var includeLogs by remember { mutableStateOf(true) }
-    val uiState by viewModel.uiState.collectAsState()
-    
+
     val sheetState = rememberModalBottomSheetState()
     var showSuccessSheet by remember { mutableStateOf(false) }
 
@@ -50,17 +69,7 @@ fun FeedbackScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feedback_title), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
+            SubScreenHeader(title = stringResource(R.string.feedback_title), onBack = onBack)
         }
     ) { padding ->
         Box(
@@ -111,18 +120,13 @@ fun FeedbackScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Feedback Input
-                OutlinedTextField(
+                MemTextField(
                     value = message,
                     onValueChange = { message = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    placeholder = { Text(stringResource(R.string.feedback_placeholder)) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
+                    placeholder = stringResource(R.string.feedback_placeholder),
+                    singleLine = false,
+                    minLines = 7,
+                    maxLines = 14,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -131,7 +135,8 @@ fun FeedbackScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .clickable { includeLogs = !includeLogs }
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -142,7 +147,7 @@ fun FeedbackScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text(stringResource(R.string.feedback_toggle_logs_title), style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.feedback_toggle_logs_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             stringResource(R.string.feedback_toggle_logs_description),
                             style = MaterialTheme.typography.bodySmall,
@@ -155,7 +160,7 @@ fun FeedbackScreen(
 
                 // Submit Button
                 Button(
-                    onClick = { viewModel.submitFeedback(message, includeLogs) },
+                    onClick = { onSubmit(message, includeLogs) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -181,8 +186,8 @@ fun FeedbackScreen(
                 MemSheet(
                     onDismissRequest = {
                         showSuccessSheet = false
-                        viewModel.resetState()
-                        navController.navigateUp()
+                        onReset()
+                        onBack()
                     },
                     sheetState = sheetState,
                 ) {
@@ -229,8 +234,8 @@ fun FeedbackScreen(
                         Button(
                             onClick = {
                                 showSuccessSheet = false
-                                viewModel.resetState()
-                                navController.navigateUp()
+                                onReset()
+                                onBack()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -247,7 +252,7 @@ fun FeedbackScreen(
                         .align(Alignment.BottomCenter)
                         .padding(16.dp),
                     action = {
-                        TextButton(onClick = { viewModel.resetState() }) {
+                        TextButton(onClick = { onReset() }) {
                             Text(stringResource(R.string.common_dismiss), color = MaterialTheme.colorScheme.inversePrimary)
                         }
                     }

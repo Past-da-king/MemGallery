@@ -2,8 +2,8 @@
 <resources>
 
     <style name="Theme.MemGallery" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@android:color/white</item>
-        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowBackground">#FCF8FF</item>
+        <item name="android:navigationBarColor">#FCF8FF</item>
     </style>
 
     <style name="Theme.MemGallery.Transparent" parent="android:Theme.Translucent.NoTitleBar">

@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemTextField
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -294,14 +295,13 @@ fun PostCaptureScreen(
     if (showUrlSheet) {
         MemSheet(onDismiss = { showUrlSheet = false }) {
             SheetTitle(stringResource(R.string.post_capture_sheet_add_link_title), stringResource(R.string.post_capture_sheet_add_link_body))
-            OutlinedTextField(
+            MemTextField(
                 value = tempUrl,
                 onValueChange = { tempUrl = it },
-                placeholder = { Text(stringResource(R.string.common_url_placeholder)) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                shape = RoundedCornerShape(16.dp),
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Rounded.Link, null) }
+                placeholder = stringResource(R.string.common_url_placeholder),
+                leadingIcon = Icons.Rounded.Link,
+                modifier = Modifier.padding(horizontal = 24.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri),
             )
             Button(
                 onClick = {

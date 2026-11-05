@@ -9,6 +9,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -117,29 +118,7 @@ fun MemGalleryTheme(
             val context = LocalContext.current
             if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        customColor != -1 -> {
-            val seedColor = Color(customColor)
-            if (useDarkTheme) {
-                val effectiveColor = if (seedColor == Color.Black) Color.White else seedColor
-                DarkColorScheme.copy(
-                    primary = effectiveColor,
-                    onPrimary = Color.Black,
-                    primaryContainer = effectiveColor.copy(alpha = 0.3f),
-                    onPrimaryContainer = Color.White,
-                    secondaryContainer = effectiveColor.copy(alpha = 0.3f),
-                    onSecondaryContainer = Color.White,
-                )
-            } else {
-                LightColorScheme.copy(
-                    primary = seedColor,
-                    onPrimary = Color.White,
-                    primaryContainer = seedColor.copy(alpha = 0.2f),
-                    onPrimaryContainer = Color.Black,
-                    secondaryContainer = seedColor.copy(alpha = 0.2f),
-                    onSecondaryContainer = Color.Black,
-                )
-            }
-        }
+        customColor != -1 -> customColorScheme(if (useDarkTheme) DarkColorScheme else LightColorScheme, Color(customColor), useDarkTheme)
         useDarkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -169,7 +148,12 @@ fun MemGalleryTheme(
         }
     }
 
-    CompositionLocalProvider(LocalMemColors provides if (useDarkTheme) DarkMemColors else LightMemColors) {
+    CompositionLocalProvider(
+        LocalMemColors provides if (useDarkTheme) DarkMemColors else LightMemColors,
+        // Text and icons that name no colour must follow the theme. Without this a plain Text on a themed
+        // background falls back to black, which is invisible on the dark scheme.
+        LocalContentColor provides finalColorScheme.onBackground
+    ) {
         MaterialExpressiveTheme(
             colorScheme = finalColorScheme,
             motionScheme = MotionScheme.expressive(),
@@ -178,4 +162,46 @@ fun MemGalleryTheme(
             content = content
         )
     }
+}
+
+/** WCAG contrast ratio between two opaque colours. */
+fun contrastRatio(a: Color, b: Color): Float {
+    val l1 = a.luminance(); val l2 = b.luminance()
+    return (maxOf(l1, l2) + 0.05f) / (minOf(l1, l2) + 0.05f)
+}
+
+/** Black or white text, whichever reads better on [bg]. */
+private fun readableOn(bg: Color): Color =
+    if (contrastRatio(bg, Color.White) >= contrastRatio(bg, Color.Black)) Color.White else Color.Black
+
+/** Push [c] toward white (dark theme) or black (light theme) until it has at least [min] contrast against [against]. */
+private fun ensureContrast(c: Color, against: Color, min: Float, towardsWhite: Boolean): Color {
+    var out = c
+    var t = 0f
+    while (contrastRatio(out, against) < min && t < 1f) {
+        t += 0.05f
+        out = androidx.compose.ui.graphics.lerp(c, if (towardsWhite) Color.White else Color.Black, t)
+    }
+    return out.copy(alpha = 1f)
+}
+
+/**
+ * A palette built from the user's seed colour that stays readable: opaque containers mixed into the surface,
+ * and every "on" colour chosen by contrast (4.5:1), whatever the seed is (maroon, black, yellow).
+ */
+fun customColorScheme(base: ColorScheme, seed: Color, dark: Boolean): ColorScheme {
+    val surface = base.surface
+    val primary = ensureContrast(seed.copy(alpha = 1f), surface, 3f, towardsWhite = dark)
+    val container = androidx.compose.ui.graphics.lerp(surface, primary, if (dark) 0.38f else 0.20f)
+    val secondaryContainer = androidx.compose.ui.graphics.lerp(surface, primary, if (dark) 0.28f else 0.14f)
+    return base.copy(
+        primary = primary,
+        onPrimary = readableOn(primary),
+        primaryContainer = container,
+        onPrimaryContainer = readableOn(container),
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = readableOn(secondaryContainer),
+        surfaceTint = primary,
+        inversePrimary = ensureContrast(seed.copy(alpha = 1f), base.inverseSurface, 3f, towardsWhite = !dark),
+    )
 }

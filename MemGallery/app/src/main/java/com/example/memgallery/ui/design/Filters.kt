@@ -118,14 +118,21 @@ fun SegmentedChoice(
                     checkedContainerColor = scheme.secondary,
                     checkedContentColor = scheme.onSecondary,
                 ),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = if (options.size >= 4) 2.dp else 8.dp)
             ) {
-                val icon = if (checked && selectedCheck) androidx.compose.material.icons.Icons.Filled.Done else icons[key]
+                // Five or more options get no check icon and a smaller label so each one still fits on a phone.
+                val crowded = options.size >= 4
+                val icon = if (checked && selectedCheck && !crowded) androidx.compose.material.icons.Icons.Filled.Done else icons[key]
                 if (icon != null) {
                     Icon(icon, null, Modifier.size(ToggleButtonDefaults.IconSize))
                     Spacer(Modifier.width(6.dp))
                 }
-                Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                Text(
+                    label,
+                    style = if (crowded) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Clip
+                )
             }
         }
     }
