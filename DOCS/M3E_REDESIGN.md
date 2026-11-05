@@ -24,3 +24,14 @@ The default is now OFF so the app keeps its own violet palette. The Settings tog
 ./gradlew :app:testDebugUnitTest -Proborazzi.test.record=true
 ```
 PNGs are written to `Downloads/MemGallery/build-proof`.
+
+## Second pass (5 Nov 2026): fields, dark-mode text, AI jobs, DeepSeek, web search
+
+- One text field: `ui/design/Fields.kt` `MemTextField` (filled tonal `surfaceContainerHigh`, 20dp radius, primary focus ring, error and helper text, show/hide for secrets). Chat input and the search pill stay as fields embedded in their pill bars.
+- Dark-on-dark text: plain `Text` falls back to `LocalContentColor`, which is black unless a Surface sets it. The theme now provides `LocalContentColor = onBackground`. Custom colours are built by `customColorScheme` so every "on" colour passes 4.5:1 (`ThemeContrastTest`). The proof harness draws no Surface, so this shows up in the PNGs.
+- The maroon palette came from the old default (wallpaper colours on) or a saved custom seed. A one-time migration (`theme_version`) resets both to the designed palette; Settings can turn them on again.
+- Providers per job: `JobRouting` (Main brain, Voice transcription, Images). Old single `ai_provider` becomes Main brain; voice and images are derived from it and from which keys exist, written once by `SettingsMigration`. Keys for Gemini, Groq, DeepSeek, Custom, Brave, Tavily are all stored separately in EncryptedSharedPreferences.
+- `MediaPreprocessor` turns voice notes into a transcript (Voice provider) and pictures into a description (Images provider) when the Main brain cannot take them (DeepSeek).
+- DeepSeek: `DeepSeekProvider` + `OpenAiChatLoop` (shared tool-call loop, keeps `reasoning_content`). Models from `GET /models` (`deepseek-flash`, `deepseek-v4-pro` as of 5 Nov 2026), thinking mode off by default.
+- Web search tool (`data/remote/search`): keyless chain DuckDuckGo, Bing, Wikipedia; optional Brave (`X-Subscription-Token`) or Tavily (Bearer). Gemini as Main brain keeps Google grounding unless Brave or Tavily is picked. Memory search stays first in the tool list. Sources are appended under the answer as markdown.
+- Tests: `app/src/test/.../ai` (routing, migration, DeepSeek request and tool loop on MockWebServer, search parsers and engines, contrast). Proofs: `PolishProofTest` (13 to 21 in build-proof).
