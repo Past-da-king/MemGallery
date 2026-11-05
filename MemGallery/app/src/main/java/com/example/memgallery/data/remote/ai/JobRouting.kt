@@ -37,7 +37,7 @@ object JobRouting {
 
     val MAIN_CHOICES = listOf(GEMINI, GROQ, DEEPSEEK, LOCAL, CUSTOM)
     val VOICE_CHOICES = listOf(GEMINI, GROQ, NONE)
-    val IMAGE_CHOICES = listOf(GEMINI, GROQ, CUSTOM, NONE)
+    val IMAGE_CHOICES = listOf(GEMINI, GROQ, DEEPSEEK, CUSTOM, NONE)
 
     private fun clean(s: String?): String? = s?.trim()?.uppercase()?.takeIf { it.isNotEmpty() }
 
@@ -63,7 +63,7 @@ object JobRouting {
     fun images(s: ProviderSetup): String {
         clean(s.imageProvider)?.let { if (it in IMAGE_CHOICES) return it }
         return when (val m = main(s)) {
-            GEMINI, GROQ, CUSTOM -> m
+            GEMINI, GROQ, DEEPSEEK, CUSTOM -> m
             else -> firstWithKey(s) ?: NONE
         }
     }
@@ -75,7 +75,7 @@ object JobRouting {
     }
 
     /** Providers that take images straight into the same call as the text. */
-    fun seesImagesNatively(provider: String) = provider == GEMINI || provider == GROQ || provider == CUSTOM
+    fun seesImagesNatively(provider: String) = provider == GEMINI || provider == GROQ || provider == DEEPSEEK || provider == CUSTOM
 
     /** Providers that take raw audio straight into the same call (Groq transcribes with Whisper inside its own call). */
     fun hearsAudioNatively(provider: String) = provider == GEMINI || provider == GROQ
@@ -106,6 +106,17 @@ object SettingsMigration {
         voice = if (s.voiceProvider.isNullOrBlank()) JobRouting.voice(s) else null,
         images = if (s.imageProvider.isNullOrBlank()) JobRouting.images(s) else null,
     )
+
+    /**
+     * One-time upgrade (DeepSeek reads pictures now): a DeepSeek Main brain whose Images job is Off, or Custom with
+     * nothing set up, moves to DeepSeek so one key covers chat and pictures. Returns the new value, or null to leave it.
+     */
+    fun imagesUpgradeForDeepSeek(s: ProviderSetup, alreadyDone: Boolean): String? {
+        if (alreadyDone || JobRouting.main(s) != JobRouting.DEEPSEEK) return null
+        val stored = s.imageProvider?.trim()?.uppercase()
+        val needs = stored == JobRouting.NONE || (stored == JobRouting.CUSTOM && !s.hasCustomKey)
+        return if (needs) JobRouting.DEEPSEEK else null
+    }
 
     /**
      * Installs from before the v4 redesign had wallpaper colours on by default (and some a custom seed colour),

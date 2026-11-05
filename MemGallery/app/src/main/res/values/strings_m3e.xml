@@ -142,12 +142,13 @@
     <string name="ai_voice_title">Voice transcription</string>
     <string name="ai_voice_hint">Turns voice notes into text before the main brain reads them.</string>
     <string name="ai_images_title">Images</string>
-    <string name="ai_images_hint">Reads pictures and the text in them for a main brain that cannot see.</string>
+    <string name="ai_images_hint">Reads pictures and the text in them.</string>
     <string name="ai_option_off">Off</string>
     <string name="ai_provider_deepseek">DeepSeek</string>
-    <string name="ai_deepseek_text_only">DeepSeek reads text only. Voice notes go to your voice provider and pictures to your images provider first, then DeepSeek gets the text.</string>
+    <string name="ai_deepseek_reads">DeepSeek reads text and pictures. Voice notes go to your voice provider first.</string>
+    <string name="ai_deepseek_vision_exp">DeepSeek picture reading is new and still labelled experimental by DeepSeek.</string>
     <string name="ai_voice_missing">Voice notes will not be transcribed until you pick Gemini or Groq and save its key.</string>
-    <string name="ai_images_missing">Pictures will not be read until you pick Gemini or Groq and save its key.</string>
+    <string name="ai_images_missing">Pictures will not be read until you pick Gemini, Groq or DeepSeek and save its key.</string>
     <string name="ai_keys_title">Keys and models</string>
     <string name="ai_keys_hint">Every key stays saved at the same time. Each job uses its own.</string>
     <string name="ai_key_saved">Key saved</string>

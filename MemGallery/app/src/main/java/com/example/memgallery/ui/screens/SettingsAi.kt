@@ -188,7 +188,7 @@ fun AiSettingsContent(state: AiSettingsState, actions: AiSettingsActions, expand
                 title = stringResource(R.string.ai_main_title),
                 hint = stringResource(R.string.ai_main_hint),
                 shape = groupedShape(0, 3),
-                note = if (main == JobRouting.DEEPSEEK) stringResource(R.string.ai_deepseek_text_only) else null,
+                note = if (main == JobRouting.DEEPSEEK) stringResource(R.string.ai_deepseek_reads) else null,
             ) {
                 SegmentedChoice(
                     options = listOf(
@@ -216,9 +216,10 @@ fun AiSettingsContent(state: AiSettingsState, actions: AiSettingsActions, expand
                 hint = stringResource(R.string.ai_images_hint),
                 shape = groupedShape(2, 3),
                 warn = if (images == JobRouting.NONE) stringResource(R.string.ai_images_missing) else null,
+                note = if (images == JobRouting.DEEPSEEK) stringResource(R.string.ai_deepseek_vision_exp) else null,
             ) {
                 SegmentedChoice(
-                    options = listOf(JobRouting.GEMINI to gemini, JobRouting.GROQ to groq, JobRouting.CUSTOM to custom, JobRouting.NONE to off),
+                    options = listOf(JobRouting.GEMINI to gemini, JobRouting.GROQ to groq, JobRouting.DEEPSEEK to deepseek, JobRouting.CUSTOM to custom, JobRouting.NONE to off),
                     selectedKey = images,
                     onSelect = actions.setImages,
                 )

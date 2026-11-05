@@ -430,7 +430,7 @@ private fun DeepSeekSetupBlock(viewModel: SettingsViewModel) {
     )
     Spacer(modifier = Modifier.height(8.dp))
     Text(
-        text = stringResource(R.string.ai_deepseek_text_only),
+        text = stringResource(R.string.ai_deepseek_reads),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

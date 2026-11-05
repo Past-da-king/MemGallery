@@ -30,6 +30,22 @@ object DeepSeekConfig {
     /** Current model ids per api-docs.deepseek.com (checked 5 Nov 2026). The list in Settings is fetched live from GET /models. */
     const val DEFAULT_MODEL = "deepseek-flash"
     val KNOWN_MODELS = listOf("deepseek-flash", "deepseek-v4-pro")
+    /**
+     * The model that takes pictures. deepseek-flash accepts text and image input (GET /models, api-docs vision guide);
+     * deepseek-v4-pro is text only, and the older deepseek-v4-flash-vision-exp is served by Flash now.
+     */
+    const val VISION_MODEL = "deepseek-flash"
+
+    /** User message content: a plain string, or text plus base64 image_url parts (images are accepted in user messages only). */
+    fun userContent(text: String, images: List<ImageData>): Any {
+        if (images.isEmpty()) return text
+        val parts = JSONArray().put(JSONObject().put("type", "text").put("text", text))
+        for (img in images) {
+            val b64 = java.util.Base64.getEncoder().encodeToString(img.bytes)
+            parts.put(JSONObject().put("type", "image_url").put("image_url", JSONObject().put("url", "data:${img.mimeType};base64,$b64")))
+        }
+        return parts
+    }
 
     fun chat(baseUrl: String = BASE_URL, apiKey: String, model: String, thinking: Boolean, maxToolCalls: Int): OpenAiConfig =
         OpenAiConfig(
@@ -138,14 +154,14 @@ class OpenAiChatLoop(private val client: OkHttpClient, private val gson: Gson = 
         }
 
     /** Memory processing: ask for one JSON object and parse it into the analysis DTO. */
-    suspend fun completeJson(config: OpenAiConfig, systemPrompt: String, userPrompt: String): Result<AiAnalysisDto> =
+    suspend fun completeJson(config: OpenAiConfig, systemPrompt: String, userPrompt: String, images: List<ImageData> = emptyList()): Result<AiAnalysisDto> =
         withContext(Dispatchers.IO) {
             try {
                 val body = JSONObject().apply {
                     put("model", config.model)
                     put("messages", JSONArray()
                         .put(JSONObject().put("role", "system").put("content", systemPrompt))
-                        .put(JSONObject().put("role", "user").put("content", userPrompt)))
+                        .put(JSONObject().put("role", "user").put("content", DeepSeekConfig.userContent(userPrompt, images))))
                     put("response_format", JSONObject().put("type", "json_object"))
                     applyExtra(this, config.extraBody)
                 }

@@ -59,6 +59,7 @@ class AIProviderFactory @Inject constructor(
     suspend fun imageProviderType(): AIProviderType? = when (settingsRepository.resolvedImageProvider()) {
         JobRouting.GEMINI -> AIProviderType.GEMINI
         JobRouting.GROQ -> AIProviderType.GROQ
+        JobRouting.DEEPSEEK -> AIProviderType.DEEPSEEK
         JobRouting.CUSTOM -> AIProviderType.OPENAI_COMPATIBLE
         else -> null
     }

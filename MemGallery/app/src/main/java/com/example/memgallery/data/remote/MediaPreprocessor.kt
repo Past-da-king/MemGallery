@@ -62,6 +62,7 @@ class MediaPreprocessor @Inject constructor(
 
     private fun typeOf(id: String) = when (id) {
         JobRouting.GROQ -> AIProviderType.GROQ
+        JobRouting.DEEPSEEK -> AIProviderType.DEEPSEEK
         JobRouting.CUSTOM -> AIProviderType.OPENAI_COMPATIBLE
         else -> AIProviderType.GEMINI
     }

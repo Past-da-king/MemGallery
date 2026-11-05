@@ -21,8 +21,9 @@ private const val TAG = "DeepSeekProvider"
 
 /**
  * DeepSeek through its official API (https://api.deepseek.com, OpenAI format) with the user's own key.
- * Text only: DeepSeek takes no audio, and pictures reach it as text from the "Images" provider
- * (see [com.example.memgallery.data.remote.MediaPreprocessor]). Web search is a tool the model calls.
+ * Reads text and pictures (deepseek-flash takes image_url parts in user messages); takes no audio, so voice notes
+ * reach it as a transcript from the Voice provider (see [com.example.memgallery.data.remote.MediaPreprocessor]).
+ * Web search is a tool the model calls.
  */
 @Singleton
 class DeepSeekProvider @Inject constructor(
@@ -45,12 +46,13 @@ class DeepSeekProvider @Inject constructor(
     override fun isEnabled(): Boolean = !apiKey.isNullOrBlank()
     override fun disable() { apiKey = null }
 
-    private suspend fun config(): OpenAiConfig {
+    private suspend fun config(withImages: Boolean = false): OpenAiConfig {
         val key = apiKey ?: settingsRepository.deepSeekApiKeyFlow.first().orEmpty()
         val maxCalls = try { settingsRepository.maxToolCallsFlow.first() } catch (e: Exception) { 5 }
         return DeepSeekConfig.chat(
             apiKey = key,
-            model = settingsRepository.deepSeekModelIdFlow.first(),
+            // Pictures need the vision-capable model whatever text model is picked (Pro is text only).
+            model = if (withImages) DeepSeekConfig.VISION_MODEL else settingsRepository.deepSeekModelIdFlow.first(),
             thinking = settingsRepository.deepSeekThinkingFlow.first(),
             maxToolCalls = maxCalls
         )
@@ -82,21 +84,21 @@ class DeepSeekProvider @Inject constructor(
                 if (!bookmarkDescription.isNullOrBlank()) appendLine("Description: $bookmarkDescription")
             }
             if (!userText.isNullOrBlank()) appendLine("User note: $userText")
-            if (imageDataList.isNotEmpty()) appendLine("(${imageDataList.size} image(s) were attached but this model cannot see them.)")
+            if (imageDataList.isNotEmpty()) appendLine("(${imageDataList.size} image(s) are attached above.)")
             appendLine()
             appendLine("Return ONLY one JSON object that follows this schema:")
             appendLine(responseSchemaJson)
         }
-        return loop.completeJson(config(), systemPrompt, prompt)
+        return loop.completeJson(config(imageDataList.isNotEmpty()), systemPrompt, prompt, imageDataList)
     }
 
-    private fun messagesFor(history: String, user: String, systemPrompt: String): JSONArray {
+    private fun messagesFor(history: String, user: String, systemPrompt: String, images: List<ImageData> = emptyList()): JSONArray {
         val m = JSONArray().put(JSONObject().put("role", "system").put("content", systemPrompt))
         if (history.isNotBlank()) {
             m.put(JSONObject().put("role", "user").put("content", "Earlier in this chat:\n$history"))
             m.put(JSONObject().put("role", "assistant").put("content", "Understood."))
         }
-        m.put(JSONObject().put("role", "user").put("content", user))
+        m.put(JSONObject().put("role", "user").put("content", DeepSeekConfig.userContent(user, images)))
         return m
     }
 
@@ -107,7 +109,7 @@ class DeepSeekProvider @Inject constructor(
         toolExecutor: ToolExecutor?
     ): Result<String> = loop.run(config(), messagesFor(conversationHistory, message, systemPrompt), toolExecutor)
 
-    /** Text only. By the time this runs, media has been turned into text by the voice and image providers. */
+    /** Pictures go straight in as image_url parts. Audio never reaches here: the Voice provider has turned it into text. */
     override suspend fun sendMessageWithMedia(
         conversationHistory: String,
         message: String?,
@@ -116,8 +118,10 @@ class DeepSeekProvider @Inject constructor(
         systemPrompt: String,
         toolExecutor: ToolExecutor?
     ): Result<String> {
-        if (audioData != null || imageData != null) Log.w(TAG, "Raw media reached DeepSeek; sending the text only")
-        return sendMessage(conversationHistory, message ?: "(The user sent media that could not be read as text.)", systemPrompt, toolExecutor)
+        if (audioData != null) Log.w(TAG, "Raw audio reached DeepSeek; it has no audio input, dropping it")
+        val images = listOfNotNull(imageData)
+        val text = message ?: if (images.isNotEmpty()) "Describe this picture." else "(The user sent media that could not be read as text.)"
+        return loop.run(config(images.isNotEmpty()), messagesFor(conversationHistory, text, systemPrompt, images), toolExecutor)
     }
 
     // The tool loop needs whole responses, so "streaming" is one block (same as the other tool-calling providers here).
@@ -149,6 +153,12 @@ class DeepSeekProvider @Inject constructor(
     override suspend fun transcribeAudio(audio: AudioData): Result<String> =
         Result.failure(UnsupportedOperationException("DeepSeek has no audio input. Pick Gemini or Groq for Voice transcription."))
 
+    /** The Images job: all pictures in one request, described and OCR'd. */
     override suspend fun describeImages(images: List<ImageData>): Result<String> =
-        Result.failure(UnsupportedOperationException("DeepSeek has no image input. Pick Gemini or Groq for Images."))
+        loop.run(
+            config(true),
+            messagesFor("", "Describe each image in detail for someone who cannot see it. Then write out, exactly, any text visible in it (OCR). Plain text only.",
+                "You describe images accurately and read text in them.", images),
+            null
+        )
 }

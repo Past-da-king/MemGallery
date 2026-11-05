@@ -97,6 +97,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val DEEPSEEK_THINKING = booleanPreferencesKey("deepseek_thinking")
         val SEARCH_PROVIDER = stringPreferencesKey("search_provider")
         val THEME_VERSION = intPreferencesKey("theme_version")
+        val IMAGES_DEEPSEEK_UPGRADED = androidx.datastore.preferences.core.booleanPreferencesKey("images_deepseek_upgraded")
 
         // Deletion Sync
         val SYNC_DELETION_ENABLED = booleanPreferencesKey("sync_deletion_enabled")
@@ -141,11 +142,21 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     /** Older installs only had one global provider. Write the per-job choices once, from what that implied. */
     private suspend fun migratePerJobProviders() {
         val writes = com.example.memgallery.data.remote.ai.SettingsMigration.perJobWrites(providerSetup())
-        if (writes.main == null && writes.voice == null && writes.images == null) return
-        context.dataStore.edit { e ->
-            writes.main?.let { e[PreferencesKeys.MAIN_PROVIDER] = it }
-            writes.voice?.let { e[PreferencesKeys.VOICE_PROVIDER] = it }
-            writes.images?.let { e[PreferencesKeys.IMAGE_PROVIDER] = it }
+        if (writes.main != null || writes.voice != null || writes.images != null) {
+            context.dataStore.edit { e ->
+                writes.main?.let { e[PreferencesKeys.MAIN_PROVIDER] = it }
+                writes.voice?.let { e[PreferencesKeys.VOICE_PROVIDER] = it }
+                writes.images?.let { e[PreferencesKeys.IMAGE_PROVIDER] = it }
+            }
+        }
+        // One time: DeepSeek reads pictures now, so a DeepSeek Main brain with Images Off moves to DeepSeek.
+        val done = context.dataStore.data.first()[PreferencesKeys.IMAGES_DEEPSEEK_UPGRADED] ?: false
+        if (!done) {
+            val up = com.example.memgallery.data.remote.ai.SettingsMigration.imagesUpgradeForDeepSeek(providerSetup(), false)
+            context.dataStore.edit { e ->
+                up?.let { e[PreferencesKeys.IMAGE_PROVIDER] = it }
+                e[PreferencesKeys.IMAGES_DEEPSEEK_UPGRADED] = true
+            }
         }
     }
 
