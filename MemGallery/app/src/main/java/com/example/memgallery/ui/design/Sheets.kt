@@ -96,3 +96,25 @@ fun ConfirmSheet(
         }
     }
 }
+
+/** Same sheet, with the parameter names of ModalBottomSheet so older call sites keep working. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MemSheet(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = containerColor,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(Modifier.appNavigationBarsPadding(), content = content)
+    }
+}

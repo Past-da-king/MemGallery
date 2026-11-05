@@ -151,7 +151,7 @@ fun AddFabMenu(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .appNavigationBarsPadding()
-                    .padding(end = 16.dp, bottom = 16.dp),
+                    .padding(end = 0.dp, bottom = 0.dp),
                 button = {
                     ToggleFloatingActionButton(
                         checked = true,

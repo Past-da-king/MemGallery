@@ -64,25 +64,28 @@ fun BlobHeader(
             .clip(RoundedCornerShape(bottomStart = 48.dp, bottomEnd = 48.dp))
             .background(scheme.primaryContainer)
     ) {
-        // Cookie, top right, tilted
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 70.dp, y = (-60).dp)
-                .size(260.dp)
-                .rotate(14f)
-                .clip(MemShape.cookie)
-                .background(scheme.primary.copy(alpha = 0.16f))
-        )
-        // Clover, bottom left
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-70).dp, y = 82.dp)
-                .size(170.dp)
-                .clip(MemShape.clover)
-                .background(scheme.tertiary.copy(alpha = 0.14f))
-        )
+        // The blobs fill the header but never decide its size
+        Box(Modifier.matchParentSize()) {
+            // Cookie, top right, tilted
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 70.dp, y = (-60).dp)
+                    .size(260.dp)
+                    .rotate(14f)
+                    .clip(MemShape.cookie)
+                    .background(scheme.primary.copy(alpha = 0.16f))
+            )
+            // Clover, bottom left
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(x = (-70).dp, y = 82.dp)
+                    .size(170.dp)
+                    .clip(MemShape.clover)
+                    .background(scheme.tertiary.copy(alpha = 0.14f))
+            )
+        }
         Column(Modifier.appStatusBarsPadding()) { content() }
     }
 }

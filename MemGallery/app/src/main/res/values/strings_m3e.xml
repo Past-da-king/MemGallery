@@ -118,4 +118,25 @@
     <string name="capture_draft_add_label">Add to this memory</string>
     <string name="capture_draft_ready">Ready when you are</string>
     <string name="capture_draft_audio_attached">Audio recording attached</string>
+
+    <!-- Ask (chat) -->
+    <string name="chat_searched_memories">Searched %1$d memories</string>
+    <string name="chat_searched_one">Searched 1 memory</string>
+    <string name="chat_cd_new_chat">New chat</string>
+    <string name="chat_suggest_today">What did I save today?</string>
+    <string name="chat_suggest_week">Summarise my week</string>
+    <string name="chat_suggest_tasks">What is on my to-do list?</string>
+
+    <!-- Settings -->
+    <string name="settings_header_eyebrow">MemGallery %1$s</string>
+    <string name="settings_hero_local_overline">Running on this phone</string>
+    <string name="settings_hero_cloud_overline">Using your own key</string>
+    <string name="settings_hero_local_loaded">Model loaded. Nothing is sent anywhere while it is on.</string>
+    <string name="settings_hero_local_missing">No model imported yet. Add one below to keep everything on this phone.</string>
+    <string name="settings_hero_cloud_body">Memories are sent to this provider with the key you add below.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_tagline_capture">Capture.</string>
+    <string name="onboarding_tagline_process">Process.</string>
+    <string name="onboarding_tagline_recall">Recall.</string>
 </resources>

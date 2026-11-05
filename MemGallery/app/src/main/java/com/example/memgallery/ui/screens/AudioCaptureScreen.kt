@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemSheet
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
@@ -241,9 +242,8 @@ fun AudioCaptureScreen(
         }
 
         if (showPermissionSheet) {
-            ModalBottomSheet(
+            MemSheet(
                 onDismissRequest = { showPermissionSheet = false },
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
             ) {
                 Column(
                     modifier = Modifier

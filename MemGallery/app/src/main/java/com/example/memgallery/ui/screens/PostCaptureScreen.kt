@@ -351,15 +351,15 @@ private fun SourceRow(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 @Composable
 private fun CapturedHero(images: List<String>, kind: MemoryKind, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    Box(modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.align(Alignment.CenterStart).padding(start = 8.dp).size(170.dp).clip(MemShape.softBurst).background(scheme.tertiaryContainer.copy(alpha = 0.9f)))
-        Box(Modifier.align(Alignment.CenterEnd).padding(end = 0.dp).size(170.dp).clip(MemShape.cookie).background(scheme.primaryContainer))
+    Box(modifier.fillMaxWidth().fillMaxHeight(), contentAlignment = Alignment.Center) {
+        Box(Modifier.align(Alignment.CenterStart).padding(start = 8.dp).size(140.dp).clip(MemShape.softBurst).background(scheme.tertiaryContainer.copy(alpha = 0.9f)))
+        Box(Modifier.align(Alignment.CenterEnd).padding(end = 0.dp).size(140.dp).clip(MemShape.cookie).background(scheme.primaryContainer))
         val first = images.firstOrNull()
         if (first != null) {
             Image(
                 memoryPainter(first), null, contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(width = 230.dp, height = 290.dp)
+                    .size(width = 176.dp, height = 224.dp)
                     .rotate(-3f)
                     .shadow(12.dp, RoundedCornerShape(32.dp))
                     .clip(RoundedCornerShape(32.dp))
@@ -367,7 +367,7 @@ private fun CapturedHero(images: List<String>, kind: MemoryKind, modifier: Modif
             )
         } else {
             Box(
-                Modifier.size(width = 220.dp, height = 270.dp).rotate(-3f).shadow(12.dp, RoundedCornerShape(32.dp)).clip(RoundedCornerShape(32.dp)).background(scheme.surfaceContainerLowest),
+                Modifier.size(width = 170.dp, height = 216.dp).rotate(-3f).shadow(12.dp, RoundedCornerShape(32.dp)).clip(RoundedCornerShape(32.dp)).background(scheme.surfaceContainerLowest),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -423,7 +423,7 @@ fun ProcessingContent(
             Text(stringResource(R.string.post_capture_new_title), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Normal), color = scheme.onSurface)
         }
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp)) {
-            CapturedHero(listOfNotNull(image), kind, Modifier.height(260.dp))
+            CapturedHero(listOfNotNull(image), kind, Modifier.height(236.dp))
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ContainedLoadingIndicator(
@@ -453,7 +453,7 @@ fun ProcessingContent(
             Spacer(Modifier.height(12.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    Modifier.clip(RoundedCornerShape(12.dp)).background(scheme.secondaryContainer).padding(horizontal = 12.dp, vertical = 10.dp),
+                    Modifier.clip(RoundedCornerShape(12.dp)).background(scheme.secondaryContainer).padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Rounded.Smartphone.takeIf { isLocal } ?: Icons.Rounded.AddAPhoto, null, tint = scheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
@@ -462,7 +462,7 @@ fun ProcessingContent(
                 }
                 tags.take(3).forEach { tag ->
                     Row(
-                        Modifier.clip(RoundedCornerShape(12.dp)).background(scheme.surfaceContainerHigh).padding(horizontal = 12.dp, vertical = 10.dp),
+                        Modifier.clip(RoundedCornerShape(12.dp)).background(scheme.surfaceContainerHigh).padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Rounded.LocalOffer, null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
@@ -480,13 +480,13 @@ fun ProcessingContent(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp).appNavigationBarsPadding(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(onClick = onKeepInBackground, modifier = Modifier.weight(1f).height(56.dp)) {
-                Text(stringResource(R.string.processing_keep_background), style = MaterialTheme.typography.titleMedium)
+            OutlinedButton(onClick = onKeepInBackground, modifier = Modifier.weight(1.15f).height(56.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
+                Text(stringResource(R.string.processing_keep_background), style = MaterialTheme.typography.titleMedium, maxLines = 1)
             }
-            Button(onClick = onOpenMemory, enabled = completed, modifier = Modifier.weight(1f).height(56.dp)) {
+            Button(onClick = onOpenMemory, enabled = completed, modifier = Modifier.weight(1f).height(56.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
                 Icon(Icons.Filled.Check, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.processing_open_memory), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.processing_open_memory), style = MaterialTheme.typography.titleMedium, maxLines = 1)
             }
         }
     }
@@ -501,7 +501,7 @@ private fun StepRow(step: ProcessingStep) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(28.dp))
             .background(if (step.state == StepState.Active) scheme.surfaceContainerHigh else Color.Transparent)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         when (step.state) {

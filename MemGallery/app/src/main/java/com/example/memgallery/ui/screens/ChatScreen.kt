@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemSheet
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
@@ -196,178 +197,67 @@ fun ChatScreen(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.imePadding(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            EnhancedChatInputBar(
-                inputMessage = inputMessage,
-                onValueChange = viewModel::updateInputMessage,
-                onSend = { viewModel.sendMessage() },
-                onAttachClick = { showAttachMenu = true },
-                onMicClick = {
-                        if (isRecording) {
-                            audioViewModel.stopRecording()
-                        } else {
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
-                                == PackageManager.PERMISSION_GRANTED) {
-                                audioViewModel.startRecording()
-                            } else {
-                                showPermissionSheet = true
-                            }
-                        }
-                },
-                isLoading = isLoading,
-                isRecording = isRecording,
-                recordingAmplitudes = recordingAmplitudes,
-                recordingDurationSeconds = recordingTime
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Custom Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 8.dp, bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val currentChatTitle = chats.find { it.id == currentChatId }?.title ?: stringResource(R.string.chat_default_title)
-                Text(
-                    text = currentChatTitle,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = { showHistorySheet = true },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    ) {
-                        Icon(
-                            Icons.Default.History,
-                            contentDescription = stringResource(R.string.chat_cd_history),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    if (currentMessages.isNotEmpty()) {
-                        IconButton(
-                            onClick = { currentChatId?.let { viewModel.saveChatAsMemory(it) } },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                        ) {
-                            Icon(
-                                Icons.Default.Save,
-                                contentDescription = stringResource(R.string.chat_cd_save),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Chat Content
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                if (currentMessages.isEmpty()) {
-                    EmptyStateWelcome()
-                } else {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp),
-                        reverseLayout = true,
-                        verticalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        // Streaming Response Item
-                        if (isLoading || isStreaming || currentTool != null) {
-                            item {
-                                Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                                    // Tool Indicator
-                                    currentTool?.let { toolName ->
-                                        ToolExecutionIndicator(toolName = toolName)
-                                    }
-                                    
-                                    // Thinking Process - Hide when content starts streaming to prevent clutter
-                                    if (currentThought.isNotEmpty() && streamingContent.isEmpty()) {
-                                        ThinkingProcessAccordion(thought = currentThought)
-                                    }
-                                    
-                                    // Streaming Content
-                                    if (streamingContent.isNotEmpty()) {
-                                        MarkdownText(
-                                            markdown = streamingContent,
-                                            style = MaterialTheme.typography.bodyLarge.copy(
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        )
-                                        // Blinking cursor
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp, 16.dp)
-                                                .background(MaterialTheme.colorScheme.primary)
-                                        )
-                                    } else if (currentThought.isEmpty() && currentTool == null && isLoading) {
-                                        // Loading state if nothing else is showing
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp), 
-                                            strokeWidth = 2.dp
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        items(currentMessages.reversed()) { message ->
-                            MessageBubble(
-                                message = message,
-                                displayedMemories = displayedMemories,
-                                onSaveAsNote = { viewModel.saveMessageAsNote(message.content) },
-                                onCopy = {
-                                    clipboardManager.setText(AnnotatedString(message.content))
-                                    scope.launch { snackbarHostState.showSnackbar(copiedToClipboardMessage) }
-                                },
-                                isPlaying = isPlaying && currentPlayingAudioPath == message.audioFilePath,
-                                audioProgress = if (currentPlayingAudioPath == message.audioFilePath) audioProgress else 0f,
-                                audioCurrentTime = if (currentPlayingAudioPath == message.audioFilePath) audioCurrentTime else "00:00",
-                                audioTotalTime = if (currentPlayingAudioPath == message.audioFilePath) audioTotalTime else "00:00",
-                                onPlayAudio = viewModel::playAudio,
-                                onPauseAudio = viewModel::pauseAudio,
-                                onSeekAudio = viewModel::seekAudio,
-                                onMemoryClick = { memory -> navController.navigate(Screen.Detail.createRoute(memory.id)) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+    val settingsViewModel: com.example.memgallery.ui.viewmodels.SettingsViewModel = hiltViewModel()
+    val aiProvider by settingsViewModel.aiProvider.collectAsState()
+    val subtitle = when (aiProvider) {
+        "LOCAL" -> stringResource(R.string.processing_provider_local)
+        "GROQ" -> "Groq"
+        "GEMINI" -> "Gemini"
+        else -> stringResource(R.string.settings_ai_provider_custom)
     }
+
+    ChatLayout(
+        title = chats.find { it.id == currentChatId }?.title ?: stringResource(R.string.chat_default_title),
+        subtitle = subtitle,
+        messages = currentMessages,
+        displayedMemories = displayedMemories,
+        inputMessage = inputMessage,
+        isLoading = isLoading,
+        isStreaming = isStreaming,
+        streamingContent = streamingContent,
+        currentThought = currentThought,
+        currentTool = currentTool,
+        isRecording = isRecording,
+        recordingAmplitudes = recordingAmplitudes,
+        recordingTime = recordingTime,
+        playingPath = currentPlayingAudioPath,
+        isPlaying = isPlaying,
+        audioProgress = audioProgress,
+        audioCurrentTime = audioCurrentTime,
+        audioTotalTime = audioTotalTime,
+        snackbarHostState = snackbarHostState,
+        listState = listState,
+        onValueChange = viewModel::updateInputMessage,
+        onSend = { viewModel.sendMessage() },
+        onAttach = { showAttachMenu = true },
+        onMic = {
+            if (isRecording) {
+                audioViewModel.stopRecording()
+            } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                audioViewModel.startRecording()
+            } else {
+                showPermissionSheet = true
+            }
+        },
+        onHistory = { showHistorySheet = true },
+        onNewChat = { viewModel.createNewChat() },
+        onSaveChat = { currentChatId?.let { viewModel.saveChatAsMemory(it) } },
+        onSaveAsNote = { viewModel.saveMessageAsNote(it.content) },
+        onCopy = {
+            clipboardManager.setText(AnnotatedString(it.content))
+            scope.launch { snackbarHostState.showSnackbar(copiedToClipboardMessage) }
+        },
+        onPlayAudio = viewModel::playAudio,
+        onPauseAudio = viewModel::pauseAudio,
+        onSeekAudio = viewModel::seekAudio,
+        onMemoryClick = { memory -> navController.navigate(Screen.Detail.createRoute(memory.id)) },
+        onSuggestion = { viewModel.updateInputMessage(it); viewModel.sendMessage() },
+    )
 
     // Attachment Menu
     if (showAttachMenu) {
-        ModalBottomSheet(
+        MemSheet(
             onDismissRequest = { showAttachMenu = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
         ) {
             PremiumAttachmentSheet(
                 onDismiss = { showAttachMenu = false },
@@ -388,12 +278,11 @@ fun ChatScreen(
     
     // History Sheet
     if (showHistorySheet) {
-        ModalBottomSheet(
+        MemSheet(
             onDismissRequest = { 
                 showHistorySheet = false
                 viewModel.clearSelection()
             },
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
             sheetState = rememberModalBottomSheetState()
         ) {
             ChatHistoryList(
@@ -418,9 +307,8 @@ fun ChatScreen(
     }
 
     if (showPermissionSheet) {
-        ModalBottomSheet(
+        MemSheet(
             onDismissRequest = { showPermissionSheet = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
         ) {
             Column(
                 modifier = Modifier
@@ -469,209 +357,6 @@ fun ChatScreen(
     }
 }
 
-@Composable
-fun EnhancedChatInputBar(
-    inputMessage: String,
-    onValueChange: (String) -> Unit,
-    onSend: () -> Unit,
-    onAttachClick: () -> Unit,
-    onMicClick: () -> Unit,
-    isLoading: Boolean,
-    isRecording: Boolean,
-    recordingAmplitudes: List<Float>,
-    recordingDurationSeconds: Long = 0L
-) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp, // Flat design, container handles shape
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .navigationBarsPadding() // Ensure it respects gesture bar
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp)
-                    .background(containerColor, RoundedCornerShape(28.dp)) // Pill shape
-                    .padding(horizontal = 8.dp, vertical = 4.dp), // Padding inside the pill
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left Action (Attach)
-                AnimatedVisibility(visible = !isRecording) {
-                    IconButton(
-                        onClick = onAttachClick,
-                        enabled = !isLoading,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(R.string.chat_cd_attach),
-                            tint = MaterialTheme.colorScheme.primary, // Dynamic color
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Center Content (TextField or Recording UI)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 4.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (isRecording) {
-                        // Recording UI
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // Pulsing Dot
-                            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                            val alpha by infiniteTransition.animateFloat(
-                                initialValue = 0.3f,
-                                targetValue = 1f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(800),
-                                    repeatMode = RepeatMode.Reverse
-                                ),
-                                label = "pulse"
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .background(MaterialTheme.colorScheme.error.copy(alpha = alpha), CircleShape)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(12.dp))
-                            
-                            // Waveform
-                            MiniWaveform(
-                                amplitudes = recordingAmplitudes, 
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(32.dp),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            
-                            Spacer(modifier = Modifier.width(12.dp))
-                            
-                            Text(
-                                text = formatDuration(recordingDurationSeconds * 1000), 
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    } else {
-                        // Text Input
-                        TextField(
-                            value = inputMessage,
-                            onValueChange = onValueChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = {
-                                Text(
-                                    stringResource(R.string.chat_input_placeholder),
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                    )
-                                ) 
-                            },
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                cursorColor = primaryColor
-                            ),
-                            maxLines = 5,
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.onSurface
-                            ),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                            keyboardActions = KeyboardActions(onSend = { if (inputMessage.isNotBlank() && !isLoading) onSend() })
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Right Action (Mic or Send)
-                val isSendVisible = inputMessage.isNotBlank() && !isRecording
-                
-                Box(
-                    modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    androidx.compose.animation.AnimatedContent(
-                        targetState = when {
-                            isRecording -> "Stop"
-                            isSendVisible -> "Send"
-                            else -> "Mic"
-                        },
-                        label = "Action Button"
-                    ) { state ->
-                        when (state) {
-                            "Stop" -> {
-                                IconButton(
-                                    onClick = onMicClick,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(MaterialTheme.colorScheme.errorContainer, CircleShape)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Stop,
-                                        contentDescription = stringResource(R.string.chat_cd_stop_recording),
-                                        tint = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
-                            }
-                            "Send" -> {
-                                IconButton(
-                                    onClick = onSend,
-                                    enabled = !isLoading,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(primaryColor, CircleShape)
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.Send,
-                                        contentDescription = stringResource(R.string.chat_cd_send),
-                                        tint = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            }
-                            "Mic" -> {
-                                IconButton(
-                                    onClick = onMicClick,
-                                    enabled = !isLoading,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Mic,
-                                        contentDescription = stringResource(R.string.chat_cd_record_audio),
-                                        tint = primaryColor // Dynamic color as requested
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun MiniWaveform(
@@ -704,194 +389,13 @@ fun MiniWaveform(
     }
 }
 
-private fun formatDuration(millis: Long): String {
+internal fun formatDuration(millis: Long): String {
     val seconds = (millis / 1000) % 60
     val minutes = (millis / (1000 * 60)) % 60
     return String.format("%02d:%02d", minutes, seconds)
 }
 
-@Composable
-fun EmptyStateWelcome() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = stringResource(R.string.chat_empty_title),
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-            ),
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.chat_empty_body),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-            ),
-            textAlign = TextAlign.Center
-        )
-    }
-}
 
-@Composable
-fun MessageBubble(
-    message: ChatMessageEntity,
-    displayedMemories: Map<Int, com.example.memgallery.data.local.entity.MemoryEntity> = emptyMap(),
-    onSaveAsNote: () -> Unit,
-    onCopy: () -> Unit,
-    isPlaying: Boolean = false,
-    audioProgress: Float = 0f,
-    audioCurrentTime: String = "00:00",
-    audioTotalTime: String = "00:00",
-    onPlayAudio: (String) -> Unit = {},
-    onPauseAudio: () -> Unit = {},
-    onSeekAudio: (Float) -> Unit = {},
-    onMemoryClick: (com.example.memgallery.data.local.entity.MemoryEntity) -> Unit = {}
-) {
-    val isUser = message.role == "user"
-
-    // Logic to hide text bubble if it's just a placeholder for media.
-    // Compares against DB-persisted markers (kept English in ChatViewModel companion). Do not localize.
-    val isPlaceholder = message.content == ChatViewModel.VOICE_MESSAGE_MARKER || message.content == ChatViewModel.ATTACHMENT_MARKER
-    val hasMedia = message.audioFilePath != null || message.imageUri != null
-    val showTextBubble = !isPlaceholder || !hasMedia
-    
-    if (isUser) {
-        // User messages
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.End
-        ) {
-            // Audio Player
-            if (message.audioFilePath != null) {
-                com.example.memgallery.ui.components.AudioPlayer(
-                    audioUri = message.audioFilePath,
-                    isPlaying = isPlaying,
-                    progress = audioProgress,
-                    durationString = audioTotalTime,
-                    currentPositionString = audioCurrentTime,
-                    onPlayClick = { 
-                        if (isPlaying) onPauseAudio() else onPlayAudio(message.audioFilePath)
-                    },
-                    onSeek = onSeekAudio
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-            
-            // Image Preview
-            if (message.imageUri != null) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier
-                        .padding(bottom = 4.dp)
-                        .widthIn(max = 280.dp)
-                ) {
-                    val isPdf = message.imageUri.endsWith(".pdf", ignoreCase = true)
-                    
-                    if (isPdf) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.AttachFile,
-                                contentDescription = stringResource(R.string.chat_cd_attachment),
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                stringResource(R.string.chat_label_attachment),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    } else {
-                        coil.compose.AsyncImage(
-                            model = message.imageUri,
-                            contentDescription = stringResource(R.string.chat_cd_attachment),
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
-                        )
-                    }
-                }
-            }
-            
-            // Text Bubble (only if needed)
-            if (showTextBubble) {
-                Surface(
-                    shape = RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.widthIn(max = 340.dp)
-                ) {
-                    Text(
-                        text = message.content,
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-        }
-    } else {
-        // AI messages - Full width, no icon
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                MarkdownText(
-                    markdown = message.content,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-            }
-            
-            // Action Buttons
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.ContentCopy, stringResource(R.string.chat_cd_copy), modifier = Modifier.size(16.dp))
-                }
-                IconButton(onClick = onSaveAsNote, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Save, stringResource(R.string.chat_cd_save_as_note), modifier = Modifier.size(16.dp))
-                }
-            }
-
-            // Displayed Memories (if any)
-            if (!message.displayedMemoryIds.isNullOrEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                androidx.compose.foundation.lazy.LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(message.displayedMemoryIds) { id ->
-                        val memory = displayedMemories[id]
-                        if (memory != null) {
-                            Box(modifier = Modifier.width(260.dp)) {
-                                com.example.memgallery.ui.components.MemoryCard(
-                                    memory = memory,
-                                    isSelected = false,
-                                    onClick = onMemoryClick,
-                                    onLongClick = {}
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
 
 
 

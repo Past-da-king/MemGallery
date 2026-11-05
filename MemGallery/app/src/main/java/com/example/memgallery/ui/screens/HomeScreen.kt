@@ -102,6 +102,7 @@ fun HomeScreen(
     }
 
     val page = pagerState.currentPage
+    androidx.activity.compose.BackHandler(enabled = addMenuOpen) { addMenuOpen = false }
     val showNav = page != 0 && !selectionActive
 
     Box(Modifier.fillMaxSize()) {

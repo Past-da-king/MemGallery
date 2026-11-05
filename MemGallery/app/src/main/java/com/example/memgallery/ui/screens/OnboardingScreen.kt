@@ -1,5 +1,14 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemShape
+import com.example.memgallery.ui.design.appNavigationBarsPadding
+import com.example.memgallery.ui.design.appStatusBarsPadding
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.offset
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -34,6 +43,9 @@ import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
@@ -103,13 +115,13 @@ fun OnboardingScreen(
             visible = pagerState.currentPage < 4,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .statusBarsPadding()
+                .appStatusBarsPadding()
                 .padding(end = 16.dp, top = 8.dp)
         ) {
             TextButton(
                 onClick = { skipToGallery() },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Text(
@@ -119,164 +131,101 @@ fun OnboardingScreen(
             }
         }
 
-        // Page progress + Next FAB
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp, start = 24.dp, end = 24.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        OnboardingBottomBar(
+            currentPage = pagerState.currentPage,
+            pageCount = 5,
+            onNext = { coroutineScope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+/** The first page: a collage of memory shapes, then "Capture. Process. Recall." and the privacy note. */
+@Composable
+fun WelcomePage() {
+    var revealed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { revealed = true }
+    val heroScale by animateFloatAsState(if (revealed) 1f else 0.86f, tween(700, easing = EaseOutExpo), label = "heroScale")
+    val heroAlpha by animateFloatAsState(if (revealed) 1f else 0f, tween(500, easing = EaseOutExpo), label = "heroAlpha")
+    val textAlpha by animateFloatAsState(if (revealed) 1f else 0f, tween(600, delayMillis = 250, easing = EaseOutExpo), label = "textAlpha")
+    OnboardingWelcomeContent(heroScale = heroScale, heroAlpha = heroAlpha, textAlpha = textAlpha)
+}
+
+@Composable
+fun OnboardingWelcomeContent(heroScale: Float = 1f, heroAlpha: Float = 1f, textAlpha: Float = 1f) {
+    val scheme = MaterialTheme.colorScheme
+    val mem = com.example.memgallery.ui.theme.LocalMemColors.current
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+        Spacer(Modifier.height(88.dp))
+        // Collage, laid out on a 360 x 372 canvas and centred
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(372.dp)
+                .graphicsLayer { scaleX = heroScale; scaleY = heroScale; alpha = heroAlpha },
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Expanding-pill indicators
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                repeat(5) { iteration ->
-                    val isActive = pagerState.currentPage == iteration
-                    val width by animateDpAsState(
-                        targetValue = if (isActive) 28.dp else 8.dp,
-                        animationSpec = tween(durationMillis = 350, easing = EaseOutExpo),
-                        label = "pillWidth"
-                    )
-                    val color = if (isActive)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.outlineVariant
-                    Box(
-                        modifier = Modifier
-                            .size(width = width, height = 8.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                    )
+            Box(Modifier.size(width = 360.dp, height = 372.dp)) {
+                // plant
+                ShapedArt("plant", MemShape.puffy, Modifier.offset(0.dp, 28.dp).size(148.dp))
+                // sunset, on a soft lavender blob
+                Box(Modifier.offset(140.dp, 86.dp).size(150.dp, 74.dp).clip(MemShape.softBurst).background(scheme.primaryContainer))
+                ShapedArt("sunset", MemShape.softBurst, Modifier.offset(150.dp, 0.dp).size(176.dp, 164.dp))
+                // small sky star
+                Box(Modifier.offset(300.dp, 0.dp).size(46.dp).clip(MemShape.pentagon).background(mem.skyContainer))
+                // done check on a green puffy circle
+                Box(Modifier.offset(102.dp, 124.dp).size(84.dp).clip(MemShape.puffy).background(mem.successContainer), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.TaskAlt, null, tint = mem.onSuccessContainer, modifier = Modifier.size(34.dp))
+                }
+                // link on a primary gem
+                Box(Modifier.offset(294.dp, 124.dp).size(66.dp).clip(MemShape.gem).background(scheme.primary), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Link, null, tint = scheme.onPrimary, modifier = Modifier.size(32.dp))
+                }
+                // latte in a cookie
+                ShapedArt("latte", MemShape.cookie, Modifier.offset(8.dp, 172.dp).size(168.dp))
+                // mic on a pink burst
+                Box(Modifier.offset(190.dp, 180.dp).size(138.dp).clip(MemShape.softBurst).background(scheme.tertiaryContainer), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Mic, null, tint = scheme.onTertiaryContainer, modifier = Modifier.size(40.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (pagerState.currentPage < 4) {
-                FloatingActionButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.common_next))
-                }
+        }
+        Spacer(Modifier.height(12.dp))
+        Column(Modifier.graphicsLayer { alpha = textAlpha }) {
+            Text(
+                stringResource(R.string.onboarding_brand_label),
+                style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.6.sp),
+                color = scheme.primary
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                buildAnnotatedString {
+                    append(stringResource(R.string.onboarding_tagline_capture)); append("\n")
+                    append(stringResource(R.string.onboarding_tagline_process)); append("\n")
+                    withStyle(SpanStyle(color = scheme.primary)) { append(stringResource(R.string.onboarding_tagline_recall)) }
+                },
+                style = MaterialTheme.typography.displayMedium.copy(lineHeight = 50.sp),
+                color = scheme.onSurface
+            )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                Modifier.clip(RoundedCornerShape(16.dp)).background(scheme.surfaceContainerHigh).padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Lock, null, tint = scheme.onSurface, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(stringResource(R.string.onboarding_privacy_chip), style = MaterialTheme.typography.titleSmall, color = scheme.onSurface)
             }
         }
     }
 }
 
 @Composable
-fun WelcomePage() {
-    // Single-shot reveal trigger — animations start as soon as the page composes
-    var revealed by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { revealed = true }
-
-    val heroScale by animateFloatAsState(
-        targetValue = if (revealed) 1f else 0.82f,
-        animationSpec = tween(durationMillis = 700, easing = EaseOutExpo),
-        label = "heroScale"
+private fun ShapedArt(name: String, shape: androidx.compose.ui.graphics.Shape, modifier: Modifier) {
+    androidx.compose.foundation.Image(
+        painter = remember(name) { com.example.memgallery.ui.design.ArtPainter(name) },
+        contentDescription = null,
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        modifier = modifier.clip(shape)
     )
-    val heroAlpha by animateFloatAsState(
-        targetValue = if (revealed) 1f else 0f,
-        animationSpec = tween(durationMillis = 500, easing = EaseOutExpo),
-        label = "heroAlpha"
-    )
-    val titleAlpha by animateFloatAsState(
-        targetValue = if (revealed) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 200, easing = EaseOutExpo),
-        label = "titleAlpha"
-    )
-    val bodyAlpha by animateFloatAsState(
-        targetValue = if (revealed) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 400, easing = EaseOutExpo),
-        label = "bodyAlpha"
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Hero — icon nested inside two soft circular halos for atmospheric depth
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .scale(heroScale)
-                .alpha(heroAlpha),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(220.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
-            )
-            Box(
-                modifier = Modifier
-                    .size(160.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))
-            )
-            Image(
-                painter = androidx.compose.ui.res.painterResource(id = com.example.memgallery.R.mipmap.ic_launcher_foreground),
-                contentDescription = stringResource(R.string.settings_cd_app_icon),
-                modifier = Modifier.size(140.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        Text(
-            text = stringResource(R.string.onboarding_brand_label),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 2.sp,
-            modifier = Modifier.alpha(titleAlpha)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = stringResource(R.string.onboarding_brand_title),
-            style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.alpha(titleAlpha)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = stringResource(R.string.onboarding_brand_tagline),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.alpha(bodyAlpha)
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Privacy assurance — small, set apart with a tertiary tint to give it weight
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
-            modifier = Modifier.alpha(bodyAlpha)
-        ) {
-            Text(
-                text = stringResource(R.string.onboarding_privacy_chip),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
-    }
 }
 
 @Composable
@@ -959,6 +908,47 @@ fun StepItem(number: String, title: String, desc: String) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+/** Page indicator (the current page stretches into a pill) and the main button. */
+@Composable
+fun OnboardingBottomBar(currentPage: Int, pageCount: Int, onNext: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .appNavigationBarsPadding()
+            .padding(bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            repeat(pageCount) { iteration ->
+                val isActive = currentPage == iteration
+                val width by animateDpAsState(
+                    targetValue = if (isActive) 28.dp else 8.dp,
+                    animationSpec = tween(durationMillis = 350, easing = EaseOutExpo),
+                    label = "pillWidth"
+                )
+                Box(
+                    modifier = Modifier
+                        .size(width = width, height = 8.dp)
+                        .clip(CircleShape)
+                        .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                )
+            }
+        }
+        if (currentPage < pageCount - 1) {
+            Spacer(Modifier.height(24.dp))
+            Button(onClick = onNext, modifier = Modifier.fillMaxWidth().height(64.dp)) {
+                Text(
+                    stringResource(if (currentPage == 0) R.string.onboarding_get_started else R.string.common_next),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(Modifier.width(12.dp))
+                Icon(Icons.Default.ArrowForward, null, Modifier.size(24.dp))
+            }
         }
     }
 }

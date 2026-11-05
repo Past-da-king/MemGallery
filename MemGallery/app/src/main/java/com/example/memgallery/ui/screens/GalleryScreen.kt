@@ -254,6 +254,11 @@ fun GalleryContent(
 ) {
     val scheme = MaterialTheme.colorScheme
     var searchOpen by rememberSaveable { mutableStateOf(initialSearchOpen) }
+    androidx.activity.compose.BackHandler(enabled = searchOpen) {
+        searchOpen = false
+        actions.onSearchChange("")
+    }
+    androidx.activity.compose.BackHandler(enabled = state.selectionActive && !searchOpen) { actions.onCancelSelection() }
     val gridState = rememberLazyStaggeredGridState()
     val scope = rememberCoroutineScope()
     val untitled = stringResource(R.string.memory_card_untitled)
@@ -302,7 +307,7 @@ fun GalleryContent(
                         )
                         Spacer(Modifier.height(16.dp))
                         FilterButtonGroup(filterOptions(), state.filter, actions.onFilter)
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(0.dp))
                     }
                 }
             }
@@ -323,7 +328,7 @@ fun GalleryContent(
             } else {
                 // Recent carousel
                 val recent = state.memories.filter { it.imageUri != null }.take(8)
-                if (state.showRecent && state.filter == "All" && state.searchText.isBlank() && recent.size >= 3) {
+                if (state.showRecent && !state.selectionActive && state.filter == "All" && state.searchText.isBlank() && recent.size >= 3) {
                     item(span = StaggeredGridItemSpan.FullLine, key = "recent-header") {
                         Column(Modifier.fullBleed(16.dp)) {
                             Spacer(Modifier.height(16.dp))
@@ -483,6 +488,7 @@ private fun androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScop
                 title = stringResource(R.string.collections_empty_title),
                 body = stringResource(R.string.collections_empty_body),
                 modifier = Modifier.padding(top = 24.dp),
+                artScale = 0.72f,
                 primaryLabel = stringResource(R.string.gallery_cd_create_collection),
                 primaryIcon = Icons.Rounded.CreateNewFolder,
                 onPrimary = onCreate

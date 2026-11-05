@@ -285,7 +285,7 @@
     <string name="chat_sheet_mic_title">Microphone Access</string>
     <string name="chat_sheet_mic_body">MemGallery needs microphone access to send voice messages to Gemini.</string>
     <string name="chat_cd_attach">Attach</string>
-    <string name="chat_input_placeholder">Ask Gemini…</string>
+    <string name="chat_input_placeholder">Ask your memories…</string>
     <string name="chat_cd_stop_recording">Stop Recording</string>
     <string name="chat_cd_send">Send</string>
     <string name="chat_cd_record_audio">Record Audio</string>
@@ -377,7 +377,7 @@
     <string name="onboarding_brand_label">YOUR SECOND BRAIN</string>
     <string name="onboarding_brand_title">MemGallery</string>
     <string name="onboarding_brand_tagline">Capture. Process. Recall.</string>
-    <string name="onboarding_privacy_chip">Stays on your device. No cloud.</string>
+    <string name="onboarding_privacy_chip">Stays on your device by default</string>
     <string name="onboarding_choose_intelligence_title">Choose Your Intelligence</string>
     <string name="onboarding_choose_intelligence_body">Pick the AI engine that powers MemGallery. You can change this anytime in Settings.</string>
     <string name="onboarding_provider_gemini_title">Google Gemini</string>

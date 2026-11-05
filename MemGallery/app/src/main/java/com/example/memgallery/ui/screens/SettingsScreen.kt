@@ -1,5 +1,12 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.BlobHeader
+import com.example.memgallery.ui.design.HeaderBackButton
+import com.example.memgallery.ui.design.SegmentedChoice
+import com.example.memgallery.ui.design.colors
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
+import com.example.memgallery.ui.design.MemSheet
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -133,86 +140,42 @@ fun SettingsScreen(
     }
 
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.settings_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { padding ->
+    val aiProviderForHero by viewModel.aiProvider.collectAsState()
+    val localModelPathForHero by viewModel.localModelPath.collectAsState()
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+        SettingsHeader(onBack = { navController.navigateUp() })
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            ActiveProviderCard(provider = aiProviderForHero, localModelLoaded = !localModelPathForHero.isNullOrBlank())
             // AI Provider & API Configuration Card
             SettingsCard(
                 icon = Icons.Default.Key,
                 title = stringResource(R.string.settings_card_ai_title),
-                description = stringResource(R.string.settings_card_ai_description)
+                description = stringResource(R.string.settings_card_ai_description),
+                grouped = true
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Provider Selector
                     val aiProvider by viewModel.aiProvider.collectAsState()
 
-                    Text(
-                        stringResource(R.string.settings_ai_provider_label),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
 
-                    SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4),
-                            onClick = { viewModel.setAiProvider("GEMINI") },
-                            selected = aiProvider == "GEMINI"
-                        ) {
-                            Text(stringResource(R.string.settings_ai_provider_gemini))
-                        }
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
-                            onClick = { viewModel.setAiProvider("GROQ") },
-                            selected = aiProvider == "GROQ"
-                        ) {
-                            Text(stringResource(R.string.settings_ai_provider_groq))
-                        }
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
-                            onClick = { viewModel.setAiProvider("LOCAL") },
-                            selected = aiProvider == "LOCAL"
-                        ) {
-                            Text(stringResource(R.string.settings_ai_provider_local))
-                        }
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
-                            onClick = { viewModel.setAiProvider("OPENAI_COMPATIBLE") },
-                            selected = aiProvider == "OPENAI_COMPATIBLE"
-                        ) {
-                            Text(stringResource(R.string.settings_ai_provider_custom))
-                        }
-                    }
+                    SegmentedChoice(
+                        options = listOf(
+                            "GEMINI" to stringResource(R.string.settings_ai_provider_gemini),
+                            "GROQ" to stringResource(R.string.settings_ai_provider_groq),
+                            "LOCAL" to stringResource(R.string.settings_ai_provider_local),
+                            "OPENAI_COMPATIBLE" to stringResource(R.string.settings_ai_provider_custom),
+                        ),
+                        selectedKey = aiProvider,
+                        onSelect = { viewModel.setAiProvider(it) }
+                    )
                     
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(MaterialTheme.colorScheme.surfaceContainer).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     
                     // Show appropriate API key section based on selected provider
                     if (aiProvider == "GEMINI") {
@@ -419,6 +382,7 @@ fun SettingsScreen(
                             onClearKey = viewModel::clearCustomKey
                         )
                     }
+                    }
                 }
             }
             
@@ -426,7 +390,8 @@ fun SettingsScreen(
             SettingsCard(
                 icon = Icons.Default.Palette,
                 title = stringResource(R.string.settings_card_appearance_title),
-                description = stringResource(R.string.settings_card_appearance_description)
+                description = stringResource(R.string.settings_card_appearance_description),
+                grouped = true
             ) {
                 AppearanceSection(
                     appThemeMode = viewModel.appThemeMode.collectAsState().value,
@@ -444,7 +409,8 @@ fun SettingsScreen(
             SettingsCard(
                 icon = Icons.Default.PhotoLibrary,
                 title = stringResource(R.string.settings_card_features_title),
-                description = stringResource(R.string.settings_card_features_description)
+                description = stringResource(R.string.settings_card_features_description),
+                grouped = true
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Screenshot Auto-indexing
@@ -459,20 +425,20 @@ fun SettingsScreen(
                             } else {
                                 viewModel.setAutoIndexScreenshots(false)
                             }
-                        }
+                        },
+                        shape = groupedShape(0, 4), tone = com.example.memgallery.ui.design.Tone.Sky
                     )
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     SettingToggleItem(
                         icon = Icons.Default.AutoAwesome,
                         title = stringResource(R.string.settings_toggle_highlight_title),
                         description = stringResource(R.string.settings_toggle_highlight_description),
                         checked = viewModel.showHighlights.collectAsState().value,
-                        onCheckedChange = { viewModel.setShowHighlights(it) }
+                        onCheckedChange = { viewModel.setShowHighlights(it) },
+                        shape = groupedShape(1, 4), tone = com.example.memgallery.ui.design.Tone.Tertiary
                     )
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Task Screen
                     SettingToggleItem(
@@ -480,10 +446,10 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_toggle_task_manager_title),
                         description = stringResource(R.string.settings_toggle_task_manager_description),
                         checked = taskScreenEnabled,
-                        onCheckedChange = { viewModel.setTaskScreenEnabled(it) }
+                        onCheckedChange = { viewModel.setTaskScreenEnabled(it) },
+                        shape = groupedShape(2, 4), tone = com.example.memgallery.ui.design.Tone.Success
                     )
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Share Menu
                     SettingToggleItem(
@@ -491,7 +457,8 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_toggle_share_menu_title),
                         description = stringResource(R.string.settings_toggle_share_menu_description),
                         checked = showInShareSheet,
-                        onCheckedChange = { viewModel.setShowInShareSheet(it) }
+                        onCheckedChange = { viewModel.setShowInShareSheet(it) },
+                        shape = groupedShape(3, 4), tone = com.example.memgallery.ui.design.Tone.Amber
                     )
                 }
             }
@@ -637,190 +604,30 @@ fun SettingsScreen(
                 }
             }
 
-            // Agent Access — tokens, network policy and the agent inbox
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                onClick = { navController.navigate(com.example.memgallery.navigation.Screen.AgentAccess.route) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.agent_access_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.agent_access_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Advanced Settings
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                onClick = { navController.navigate(com.example.memgallery.navigation.Screen.AdvancedSettings.route) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Build,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(16.dp))
-                    
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.settings_card_advanced_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_card_advanced_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = stringResource(R.string.settings_cd_open_advanced),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // About & Updates (Full Screen Entry)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                onClick = { showAboutScreen = true }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Update,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.settings_card_about_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_version_label, com.example.memgallery.BuildConfig.VERSION_NAME),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (latestAvailableVersion != null && latestAvailableVersion != com.example.memgallery.BuildConfig.VERSION_NAME) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(8.dp)
-                        ) {}
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = stringResource(R.string.settings_cd_open_about),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            // Agent Access, Advanced settings, About: one grouped list of navigation rows
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SettingsNavRow(
+                    icon = Icons.Default.Share,
+                    title = stringResource(R.string.agent_access_title),
+                    subtitle = stringResource(R.string.agent_access_subtitle),
+                    shape = groupedShape(0, 3),
+                    onClick = { navController.navigate(com.example.memgallery.navigation.Screen.AgentAccess.route) }
+                )
+                SettingsNavRow(
+                    icon = Icons.Default.Build,
+                    title = stringResource(R.string.settings_card_advanced_title),
+                    subtitle = stringResource(R.string.settings_card_advanced_description),
+                    shape = groupedShape(1, 3),
+                    onClick = { navController.navigate(com.example.memgallery.navigation.Screen.AdvancedSettings.route) }
+                )
+                SettingsNavRow(
+                    icon = Icons.Default.Update,
+                    title = stringResource(R.string.settings_card_about_title),
+                    subtitle = stringResource(R.string.settings_version_label, com.example.memgallery.BuildConfig.VERSION_NAME),
+                    shape = groupedShape(2, 3),
+                    badge = latestAvailableVersion != null && latestAvailableVersion != com.example.memgallery.BuildConfig.VERSION_NAME,
+                    onClick = { showAboutScreen = true }
+                )
             }
 
             // Bottom spacing
@@ -838,118 +645,174 @@ fun SettingsScreen(
     }
 }
 
+/** Corner shape for item [index] of [count] in a grouped list: big outer corners, small inner corners. */
+fun groupedShape(index: Int, count: Int): RoundedCornerShape {
+    val outer = 28.dp
+    val inner = 6.dp
+    return RoundedCornerShape(
+        topStart = if (index == 0) outer else inner, topEnd = if (index == 0) outer else inner,
+        bottomStart = if (index == count - 1) outer else inner, bottomEnd = if (index == count - 1) outer else inner
+    )
+}
+
+/** Header of the Settings page: back arrow, version eyebrow and the big title on the blob. */
+@Composable
+fun SettingsHeader(onBack: () -> Unit, version: String = com.example.memgallery.BuildConfig.VERSION_NAME) {
+    BlobHeader {
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 16.dp, bottom = 50.dp), verticalAlignment = Alignment.Top) {
+            HeaderBackButton(onBack, Modifier.padding(top = 6.dp))
+            Column(Modifier.padding(start = 4.dp, top = 6.dp)) {
+                Text(
+                    stringResource(R.string.settings_header_eyebrow, version).uppercase(),
+                    style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.4.sp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                )
+                Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+        }
+    }
+}
+
+/** The card at the top: which AI is doing the work and whether anything leaves the phone. */
+@Composable
+fun ActiveProviderCard(provider: String, localModelLoaded: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    val isLocal = provider == "LOCAL"
+    val name = when (provider) {
+        "LOCAL" -> stringResource(R.string.processing_provider_local)
+        "GROQ" -> stringResource(R.string.settings_ai_provider_groq)
+        "GEMINI" -> stringResource(R.string.settings_ai_provider_gemini)
+        else -> stringResource(R.string.settings_ai_provider_custom)
+    }
+    val overline = stringResource(if (isLocal) R.string.settings_hero_local_overline else R.string.settings_hero_cloud_overline)
+    val body = stringResource(
+        when {
+            isLocal && localModelLoaded -> R.string.settings_hero_local_loaded
+            isLocal -> R.string.settings_hero_local_missing
+            else -> R.string.settings_hero_cloud_body
+        }
+    )
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(scheme.primaryContainer)
+            .padding(24.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (isLocal) Icons.Default.Smartphone else Icons.Default.Cloud, null, tint = scheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(overline.uppercase(), style = MaterialTheme.typography.labelLarge, color = scheme.onPrimaryContainer)
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(name, style = MaterialTheme.typography.headlineLarge, color = scheme.onPrimaryContainer)
+        Spacer(Modifier.height(6.dp))
+        Text(body, style = MaterialTheme.typography.bodyLarge, color = scheme.onPrimaryContainer.copy(alpha = 0.85f))
+    }
+}
+
+/** A titled section: small caps label, then its content in grouped containers. */
 @Composable
 fun SettingsCard(
     icon: ImageVector,
     title: String,
     description: String,
+    grouped: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            
-            content()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title.uppercase(),
+            Modifier.padding(horizontal = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (grouped) {
+            Column { content() }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(20.dp)
+            ) { content() }
         }
     }
 }
 
+/** A row that opens another page: tonal icon square, title, supporting text and an arrow. */
+@Composable
+fun SettingsNavRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    shape: androidx.compose.ui.graphics.Shape,
+    onClick: () -> Unit,
+    badge: Boolean = false
+) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(scheme.surfaceContainer)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(scheme.primaryContainer), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = scheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = scheme.onSurface)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+        }
+        if (badge) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(scheme.error))
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = scheme.onSurfaceVariant)
+    }
+}
+
+/** A switch row: tonal icon square, title, supporting text and a switch that shows a check when on. */
 @Composable
 fun SettingToggleItem(
     icon: ImageVector,
     title: String,
     description: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(20.dp),
+    tone: com.example.memgallery.ui.design.Tone = com.example.memgallery.ui.design.Tone.Tertiary,
+    container: Boolean = true
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val (toneBg, toneFg) = tone.colors()
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (container) Modifier.clip(shape).background(scheme.surfaceContainer).padding(horizontal = 16.dp, vertical = 14.dp) else Modifier)
+            .clickable { onCheckedChange(!checked) },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(toneBg), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = toneFg, modifier = Modifier.size(24.dp))
         }
-        
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = scheme.onSurface)
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(12.dp))
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            thumbContent = if (checked) {
+                { Icon(Icons.Default.Check, null, Modifier.size(SwitchDefaults.IconSize)) }
+            } else null
         )
     }
 }
@@ -1290,131 +1153,89 @@ fun AppearanceSection(
     onAmoledModeChange: (Boolean) -> Unit,
     onSelectedColorChange: (Int) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Theme Mode
-        Text(
-            stringResource(R.string.settings_section_theme_mode),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium
-        )
-
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth()
+    val scheme = MaterialTheme.colorScheme
+    val dynamicSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val showAccent = !dynamicThemingEnabled || !dynamicSupported
+    val rowCount = 2 + (if (dynamicSupported) 1 else 0) + (if (showAccent) 1 else 0)
+    var row = 0
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Theme mode
+        Column(
+            Modifier.fillMaxWidth().clip(groupedShape(row++, rowCount)).background(scheme.surfaceContainer).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            val options = listOf(
-                stringResource(R.string.settings_theme_light),
-                stringResource(R.string.settings_theme_system),
-                stringResource(R.string.settings_theme_dark)
+            Text(stringResource(R.string.settings_section_theme_mode), style = MaterialTheme.typography.titleMedium, color = scheme.onSurface)
+            SegmentedChoice(
+                options = listOf(
+                    "LIGHT" to stringResource(R.string.settings_theme_light),
+                    "SYSTEM" to stringResource(R.string.settings_theme_system),
+                    "DARK" to stringResource(R.string.settings_theme_dark),
+                ),
+                selectedKey = appThemeMode,
+                onSelect = onAppThemeModeChange,
+                icons = mapOf("LIGHT" to Icons.Default.LightMode, "DARK" to Icons.Default.DarkMode),
+                selectedCheck = true
             )
-            val values = listOf("LIGHT", "SYSTEM", "DARK")
-            
-            values.forEachIndexed { index, value ->
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    onClick = { onAppThemeModeChange(value) },
-                    selected = appThemeMode == value
-                ) {
-                    Text(options[index])
-                }
-            }
         }
 
-        HorizontalDivider()
-
-        // Dynamic Color
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (dynamicSupported) {
             SettingToggleItem(
                 icon = Icons.Default.ColorLens,
                 title = stringResource(R.string.settings_toggle_dynamic_color_title),
                 description = stringResource(R.string.settings_toggle_dynamic_color_description),
                 checked = dynamicThemingEnabled,
-                onCheckedChange = onDynamicThemingChange
+                onCheckedChange = onDynamicThemingChange,
+                shape = groupedShape(row++, rowCount),
+                tone = com.example.memgallery.ui.design.Tone.Tertiary
             )
         }
 
-        // Custom Color Picker (only if Dynamic Color is off or not supported)
-        if (!dynamicThemingEnabled || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            
-            Text(
-                stringResource(R.string.settings_section_accent_color),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(vertical = 8.dp), // Add padding for better touch area
-                horizontalArrangement = Arrangement.spacedBy(12.dp) // Use spacedBy for consistent spacing
+        // Accent colour (only when dynamic colour is off or not supported)
+        if (showAccent) {
+            Column(
+                Modifier.fillMaxWidth().clip(groupedShape(row++, rowCount)).background(scheme.surfaceContainer).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val colors = listOf(
-                    0xFF6750A4.toInt(), // Purple (Default)
-                    0xFFBF0031.toInt(), // Red
-                    0xFF006D3B.toInt(), // Green
-                    0xFF006874.toInt(), // Cyan
-                    0xFF3A5BA9.toInt(), // Blue
-                    0xFF825500.toInt(), // Orange
-                    0xFF009688.toInt(), // Teal
-                    0xFF3F51B5.toInt(), // Indigo
-                    0xFFCDDC39.toInt(), // Lime
-                    0xFFFFC107.toInt(), // Amber
-                    0xFFFF5722.toInt(), // Deep Orange
-                    0xFFE91E63.toInt(), // Pink
-                    0xFF795548.toInt(), // Brown
-                    0xFF607D8B.toInt(), // Blue Grey
-                    0xFF9C27B0.toInt(), // Deep Purple
-                    0xFF2196F3.toInt(), // Light Blue
-                    0xFF4CAF50.toInt(), // Light Green
-                    0xFFFFEB3B.toInt(), // Yellow
-                    0xFF9E9E9E.toInt(), // Grey
-                    0xFF000000.toInt()  // Black
-                )
-                
-                colors.forEach { color ->
-                    val isSelected = (selectedColor == color) || (selectedColor == -1 && color == 0xFF6750A4.toInt())
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp) // Slightly larger touch target
-                            .clip(CircleShape)
-                            .background(Color(color))
-                            .clickable { onSelectedColorChange(color) }
-                            .then(
-                                if (isSelected) {
-                                    Modifier.border(
-                                        3.dp, // Thicker border for better visibility
-                                        MaterialTheme.colorScheme.onSurface,
-                                        CircleShape
-                                    )
-                                } else Modifier
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isSelected) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = null,
-                                tint = if (color == 0xFFFFFFFF.toInt()) Color.Black else Color.White, // Handle white color checkmark
-                                modifier = Modifier.size(24.dp)
-                            )
+                Text(stringResource(R.string.settings_section_accent_color), style = MaterialTheme.typography.titleMedium, color = scheme.onSurface)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    val defaultSwatch = com.example.memgallery.ui.theme.MemTokens.Light.primary.toArgb()
+                    val colors = listOf(
+                        defaultSwatch,
+                        0xFFBF0031.toInt(), 0xFF006D3B.toInt(), 0xFF006874.toInt(), 0xFF3A5BA9.toInt(), 0xFF825500.toInt(),
+                        0xFF009688.toInt(), 0xFF3F51B5.toInt(), 0xFFCDDC39.toInt(), 0xFFFFC107.toInt(), 0xFFFF5722.toInt(),
+                        0xFFE91E63.toInt(), 0xFF795548.toInt(), 0xFF607D8B.toInt(), 0xFF9C27B0.toInt(), 0xFF2196F3.toInt(),
+                        0xFF4CAF50.toInt(), 0xFFFFEB3B.toInt(), 0xFF9E9E9E.toInt(), 0xFF000000.toInt()
+                    )
+                    colors.forEach { color ->
+                        // The first swatch is the app's own palette: choosing it clears the custom colour.
+                        val isSelected = (selectedColor == color) || (selectedColor == -1 && color == defaultSwatch)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(color))
+                                .clickable { onSelectedColorChange(if (color == defaultSwatch) -1 else color) }
+                                .then(if (isSelected) Modifier.border(3.dp, scheme.onSurface, CircleShape) else Modifier),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(24.dp))
                         }
                     }
                 }
             }
         }
 
-        HorizontalDivider()
-
-        // AMOLED Mode
         SettingToggleItem(
             icon = Icons.Default.DarkMode,
             title = stringResource(R.string.settings_toggle_amoled_title),
             description = stringResource(R.string.settings_toggle_amoled_description),
             checked = amoledModeEnabled,
-            onCheckedChange = onAmoledModeChange
+            onCheckedChange = onAmoledModeChange,
+            shape = groupedShape(row++, rowCount),
+            tone = com.example.memgallery.ui.design.Tone.Primary
         )
     }
 }
@@ -1468,11 +1289,9 @@ fun GroqModelSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
-    ModalBottomSheet(
+    MemSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -1919,11 +1738,9 @@ fun GeminiModelSheet(
         else (availableModels + FALLBACK_GEMINI_MODELS).distinct()
     }
 
-    ModalBottomSheet(
+    MemSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier

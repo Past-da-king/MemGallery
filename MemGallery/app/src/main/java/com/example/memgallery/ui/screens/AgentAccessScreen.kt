@@ -1,5 +1,7 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemSheet
+import com.example.memgallery.ui.design.SheetTitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -364,82 +366,77 @@ fun AgentAccessScreen(
     }
 
     state.freshToken?.let { token ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissFreshToken,
-            title = { Text(stringResource(R.string.agent_access_new_token)) },
-            text = {
-                Column {
-                    Text(
-                        stringResource(R.string.agent_access_token_once),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    MonoBlock(token)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    clipboard.setText(AnnotatedString(token))
-                    viewModel.dismissFreshToken()
-                }) { Text(stringResource(R.string.agent_access_copy)) }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissFreshToken) {
+        MemSheet(onDismiss = viewModel::dismissFreshToken) {
+            SheetTitle(stringResource(R.string.agent_access_new_token), stringResource(R.string.agent_access_token_once))
+            Box(Modifier.padding(horizontal = 24.dp)) { MonoBlock(token) }
+            Row(
+                Modifier.fillMaxWidth().padding(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(onClick = viewModel::dismissFreshToken, modifier = Modifier.weight(1f).height(56.dp)) {
                     Text(stringResource(R.string.agent_access_done))
                 }
+                Button(
+                    onClick = {
+                        clipboard.setText(AnnotatedString(token))
+                        viewModel.dismissFreshToken()
+                    },
+                    modifier = Modifier.weight(1f).height(56.dp)
+                ) { Text(stringResource(R.string.agent_access_copy)) }
             }
-        )
+        }
     }
 }
 
+/** Slide-up form for a new agent token. */
 @Composable
 private fun CreateTokenDialog(
     onDismiss: () -> Unit,
     onCreate: (String, Set<AgentScope>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    // media:read is absent from the default set on purpose — granting an agent the ability
+    // media:read is absent from the default set on purpose: granting an agent the ability
     // to pull the operator's actual photos should be a decision, not a default.
     var scopes by remember { mutableStateOf(AgentScope.DEFAULT) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.agent_access_new_token)) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.agent_access_token_name)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.agent_access_scopes), style = MaterialTheme.typography.labelLarge)
-                AgentScope.entries.forEach { scope ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = scope in scopes,
-                            onCheckedChange = { checked ->
-                                scopes = if (checked) scopes + scope else scopes - scope
-                            }
-                        )
-                        Text(scope.wire, style = MaterialTheme.typography.bodyMedium)
-                    }
+    MemSheet(onDismiss = onDismiss) {
+        SheetTitle(stringResource(R.string.agent_access_new_token))
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.agent_access_token_name)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.agent_access_scopes), style = MaterialTheme.typography.labelLarge)
+            AgentScope.entries.forEach { scope ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = scope in scopes,
+                        onCheckedChange = { checked ->
+                            scopes = if (checked) scopes + scope else scopes - scope
+                        }
+                    )
+                    Text(scope.wire, style = MaterialTheme.typography.bodyMedium)
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = name.isNotBlank() && scopes.isNotEmpty(),
-                onClick = { onCreate(name.trim(), scopes) }
-            ) { Text(stringResource(R.string.agent_access_create)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.agent_access_cancel)) }
         }
-    )
+        Row(
+            Modifier.fillMaxWidth().padding(24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(56.dp)) {
+                Text(stringResource(R.string.agent_access_cancel))
+            }
+            Button(
+                enabled = name.isNotBlank() && scopes.isNotEmpty(),
+                onClick = { onCreate(name.trim(), scopes) },
+                modifier = Modifier.weight(1f).height(56.dp)
+            ) { Text(stringResource(R.string.agent_access_create)) }
+        }
+    }
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.MemSheet
 import androidx.compose.foundation.clickable
 
 
@@ -177,15 +178,13 @@ fun FeedbackScreen(
 
             // Status Overlays
             if (showSuccessSheet) {
-                ModalBottomSheet(
+                MemSheet(
                     onDismissRequest = {
                         showSuccessSheet = false
                         viewModel.resetState()
                         navController.navigateUp()
                     },
                     sheetState = sheetState,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
                     Column(
                         modifier = Modifier

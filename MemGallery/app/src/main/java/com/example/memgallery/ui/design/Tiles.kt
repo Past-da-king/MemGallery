@@ -78,6 +78,7 @@ fun MemoryEntity.displayTitle(fallback: String): String =
 
 fun MemoryEntity.displayBody(): String? =
     aiSummary?.takeIf { it.isNotBlank() } ?: userText?.takeIf { it.isNotBlank() } ?: bookmarkDescription?.takeIf { it.isNotBlank() }
+        ?: aiImageAnalysis?.takeIf { it.isNotBlank() } ?: aiAudioTranscription?.takeIf { it.isNotBlank() }?.let { "“$it”" }
 
 private fun hostOf(url: String): String =
     runCatching { java.net.URI(url).host?.removePrefix("www.") }.getOrNull() ?: url

@@ -27,17 +27,17 @@ import com.example.memgallery.ui.theme.memColors
 
 /** Empty-state artwork: a soft burst with a clover behind a primary cookie that carries the icon, plus small satellites. */
 @Composable
-fun EmptyArt(icon: ImageVector, modifier: Modifier = Modifier) {
+fun EmptyArt(icon: ImageVector, modifier: Modifier = Modifier, scale: Float = 1f) {
     val scheme = MaterialTheme.colorScheme
-    Box(modifier.size(260.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(230.dp).clip(MemShape.softBurst).background(scheme.primaryContainer))
-        Box(Modifier.size(130.dp).rotate(20f).clip(MemShape.clover).background(scheme.tertiaryContainer))
-        Box(Modifier.size(78.dp).clip(MemShape.cookie).background(scheme.primary), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = scheme.onPrimary, modifier = Modifier.size(40.dp))
+    Box(modifier.size(260.dp * scale), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(230.dp * scale).clip(MemShape.softBurst).background(scheme.primaryContainer))
+        Box(Modifier.size(130.dp * scale).rotate(20f).clip(MemShape.clover).background(scheme.tertiaryContainer))
+        Box(Modifier.size(78.dp * scale).clip(MemShape.cookie).background(scheme.primary), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = scheme.onPrimary, modifier = Modifier.size(40.dp * scale))
         }
-        Box(Modifier.align(Alignment.TopEnd).offset(x = (-14).dp, y = 6.dp).size(46.dp).clip(MemShape.pentagon).background(MaterialTheme.memColors.successContainer))
-        Box(Modifier.align(Alignment.BottomStart).offset(x = 10.dp, y = (-26).dp).size(32.dp).clip(MemShape.gem).background(MaterialTheme.memColors.skyContainer))
-        Box(Modifier.align(Alignment.BottomEnd).offset(x = (-26).dp, y = (-24).dp).size(34.dp).clip(MemShape.sunny).background(MaterialTheme.memColors.amberContainer))
+        Box(Modifier.align(Alignment.TopEnd).offset(x = (-14).dp * scale, y = 6.dp * scale).size(46.dp * scale).clip(MemShape.pentagon).background(MaterialTheme.memColors.successContainer))
+        Box(Modifier.align(Alignment.BottomStart).offset(x = 10.dp * scale, y = (-26).dp * scale).size(32.dp * scale).clip(MemShape.gem).background(MaterialTheme.memColors.skyContainer))
+        Box(Modifier.align(Alignment.BottomEnd).offset(x = (-26).dp * scale, y = (-24).dp * scale).size(34.dp * scale).clip(MemShape.sunny).background(MaterialTheme.memColors.amberContainer))
     }
 }
 
@@ -51,14 +51,15 @@ fun EmptyState(
     primaryIcon: ImageVector? = null,
     onPrimary: () -> Unit = {},
     secondaryLabel: String? = null,
-    onSecondary: () -> Unit = {}
+    onSecondary: () -> Unit = {},
+    artScale: Float = 1f
 ) {
     Column(
         modifier.fillMaxWidth().padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        EmptyArt(icon)
+        EmptyArt(icon, scale = artScale)
         Spacer(Modifier.height(24.dp))
         Text(title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
