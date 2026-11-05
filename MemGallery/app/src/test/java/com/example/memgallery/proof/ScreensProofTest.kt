@@ -168,7 +168,7 @@ class ScreensProofTest {
     // ---- 09 Settings (the real building blocks, composed the way SettingsScreen composes them) ----
     private fun settings(dark: Boolean) = rule.proof("09-settings", dark) {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).verticalScroll(rememberScrollState())) {
-            SettingsHeader(onBack = {}, version = "0.3.4")
+            SettingsHeader(onBack = {}, version = "0.4.0")
             Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
                 ActiveProviderCard(provider = "LOCAL", localModelLoaded = true)
                 SettingsCard(Icons.Filled.AutoAwesome, "AI Provider", "") {

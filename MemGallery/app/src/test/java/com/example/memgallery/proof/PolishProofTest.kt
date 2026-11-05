@@ -65,7 +65,7 @@ class PolishProofTest {
     @Composable
     private fun Page(content: @Composable () -> Unit) {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).verticalScroll(rememberScrollState())) {
-            SettingsHeader(onBack = {}, version = "0.3.4")
+            SettingsHeader(onBack = {}, version = "0.4.0")
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
         }
     }
