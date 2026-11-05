@@ -3,46 +3,104 @@ package com.example.memgallery.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
+val LocalMemColors = staticCompositionLocalOf { LightMemColors }
+
+/** Success, sky and amber roles (memory kinds). */
+val MaterialTheme.memColors: MemColors
+    @Composable @ReadOnlyComposable get() = LocalMemColors.current
+
+/** True when the active scheme is the dark one (read from the surface luminance, so it follows the app theme mode). */
+val MaterialTheme.isDark: Boolean
+    @Composable @ReadOnlyComposable get() = colorScheme.surface.luminance() < 0.5f
+
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-    background = BackgroundDark
+    primary = MemTokens.Dark.primary, onPrimary = MemTokens.Dark.onPrimary,
+    primaryContainer = MemTokens.Dark.primaryContainer, onPrimaryContainer = MemTokens.Dark.onPrimaryContainer,
+    secondary = MemTokens.Dark.secondary, onSecondary = MemTokens.Dark.onSecondary,
+    secondaryContainer = MemTokens.Dark.secondaryContainer, onSecondaryContainer = MemTokens.Dark.onSecondaryContainer,
+    tertiary = MemTokens.Dark.tertiary, onTertiary = MemTokens.Dark.onTertiary,
+    tertiaryContainer = MemTokens.Dark.tertiaryContainer, onTertiaryContainer = MemTokens.Dark.onTertiaryContainer,
+    error = MemTokens.Dark.error, onError = MemTokens.Dark.onError,
+    errorContainer = MemTokens.Dark.errorContainer, onErrorContainer = MemTokens.Dark.onErrorContainer,
+    background = MemTokens.Dark.surface, onBackground = MemTokens.Dark.onSurface,
+    surface = MemTokens.Dark.surface, onSurface = MemTokens.Dark.onSurface,
+    surfaceVariant = MemTokens.Dark.surfaceHighest, onSurfaceVariant = MemTokens.Dark.onSurfaceVariant,
+    surfaceTint = MemTokens.Dark.primary,
+    inverseSurface = MemTokens.Dark.inverseSurface, inverseOnSurface = MemTokens.Dark.inverseOnSurface,
+    inversePrimary = MemTokens.Light.primary,
+    outline = MemTokens.Dark.outline, outlineVariant = MemTokens.Dark.outlineVariant,
+    scrim = MemTokens.Dark.scrim,
+    surfaceDim = MemTokens.Dark.surface, surfaceBright = MemTokens.Dark.surfaceHighest,
+    surfaceContainerLowest = MemTokens.Dark.surfaceLowest, surfaceContainerLow = MemTokens.Dark.surfaceLow,
+    surfaceContainer = MemTokens.Dark.surfaceContainer, surfaceContainerHigh = MemTokens.Dark.surfaceHigh,
+    surfaceContainerHighest = MemTokens.Dark.surfaceHighest,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-    background = BackgroundLight
-
-    /* Other default colors to override
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = MemTokens.Light.primary, onPrimary = MemTokens.Light.onPrimary,
+    primaryContainer = MemTokens.Light.primaryContainer, onPrimaryContainer = MemTokens.Light.onPrimaryContainer,
+    secondary = MemTokens.Light.secondary, onSecondary = MemTokens.Light.onSecondary,
+    secondaryContainer = MemTokens.Light.secondaryContainer, onSecondaryContainer = MemTokens.Light.onSecondaryContainer,
+    tertiary = MemTokens.Light.tertiary, onTertiary = MemTokens.Light.onTertiary,
+    tertiaryContainer = MemTokens.Light.tertiaryContainer, onTertiaryContainer = MemTokens.Light.onTertiaryContainer,
+    error = MemTokens.Light.error, onError = MemTokens.Light.onError,
+    errorContainer = MemTokens.Light.errorContainer, onErrorContainer = MemTokens.Light.onErrorContainer,
+    background = MemTokens.Light.surface, onBackground = MemTokens.Light.onSurface,
+    surface = MemTokens.Light.surface, onSurface = MemTokens.Light.onSurface,
+    surfaceVariant = MemTokens.Light.surfaceHighest, onSurfaceVariant = MemTokens.Light.onSurfaceVariant,
+    surfaceTint = MemTokens.Light.primary,
+    inverseSurface = MemTokens.Light.inverseSurface, inverseOnSurface = MemTokens.Light.inverseOnSurface,
+    inversePrimary = MemTokens.Dark.primary,
+    outline = MemTokens.Light.outline, outlineVariant = MemTokens.Light.outlineVariant,
+    scrim = MemTokens.Light.scrim,
+    surfaceDim = MemTokens.Light.surfaceHigh, surfaceBright = MemTokens.Light.surface,
+    surfaceContainerLowest = MemTokens.Light.surfaceLowest, surfaceContainerLow = MemTokens.Light.surfaceLow,
+    surfaceContainer = MemTokens.Light.surfaceContainer, surfaceContainerHigh = MemTokens.Light.surfaceHigh,
+    surfaceContainerHighest = MemTokens.Light.surfaceHighest,
 )
 
+/** Shape scale from the v4 tokens: 4, 8, 12, 16, 20, 28, 32, 48, full. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+val MemShapes = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    largeIncreased = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+    extraLargeIncreased = RoundedCornerShape(32.dp),
+    extraExtraLarge = RoundedCornerShape(48.dp),
+)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MemGalleryTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic colour is opt-in so the app keeps its own violet identity by default.
+    dynamicColor: Boolean = false,
     appThemeMode: String = "SYSTEM",
     amoledMode: Boolean = false,
     customColor: Int = -1,
@@ -54,46 +112,31 @@ fun MemGalleryTheme(
         else -> darkTheme
     }
 
-    val colorScheme = when {
+    val colorScheme: ColorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         customColor != -1 -> {
-            val seedColor = androidx.compose.ui.graphics.Color(customColor)
+            val seedColor = Color(customColor)
             if (useDarkTheme) {
-                // Fix for Black Theme: If selected color is Black, force accents to White for visibility
-                val isBlackTheme = seedColor == androidx.compose.ui.graphics.Color.Black
-                val effectiveColor = if (isBlackTheme) androidx.compose.ui.graphics.Color.White else seedColor
-
-                darkColorScheme(
+                val effectiveColor = if (seedColor == Color.Black) Color.White else seedColor
+                DarkColorScheme.copy(
                     primary = effectiveColor,
-                    onPrimary = androidx.compose.ui.graphics.Color.Black,
+                    onPrimary = Color.Black,
                     primaryContainer = effectiveColor.copy(alpha = 0.3f),
-                    onPrimaryContainer = androidx.compose.ui.graphics.Color.White, // High contrast for dark mode
-                    secondary = effectiveColor,
-                    onSecondary = androidx.compose.ui.graphics.Color.Black,
+                    onPrimaryContainer = Color.White,
                     secondaryContainer = effectiveColor.copy(alpha = 0.3f),
-                    onSecondaryContainer = androidx.compose.ui.graphics.Color.White,
-                    tertiary = effectiveColor,
-                    onTertiary = androidx.compose.ui.graphics.Color.Black,
-                    tertiaryContainer = effectiveColor.copy(alpha = 0.3f),
-                    onTertiaryContainer = androidx.compose.ui.graphics.Color.White
+                    onSecondaryContainer = Color.White,
                 )
             } else {
-                lightColorScheme(
+                LightColorScheme.copy(
                     primary = seedColor,
-                    onPrimary = androidx.compose.ui.graphics.Color.White,
-                    primaryContainer = seedColor.copy(alpha = 0.2f), // Slightly more visible container
-                    onPrimaryContainer = androidx.compose.ui.graphics.Color.Black, // High contrast for light mode
-                    secondary = seedColor,
-                    onSecondary = androidx.compose.ui.graphics.Color.White,
+                    onPrimary = Color.White,
+                    primaryContainer = seedColor.copy(alpha = 0.2f),
+                    onPrimaryContainer = Color.Black,
                     secondaryContainer = seedColor.copy(alpha = 0.2f),
-                    onSecondaryContainer = androidx.compose.ui.graphics.Color.Black,
-                    tertiary = seedColor,
-                    onTertiary = androidx.compose.ui.graphics.Color.White,
-                    tertiaryContainer = seedColor.copy(alpha = 0.2f),
-                    onTertiaryContainer = androidx.compose.ui.graphics.Color.Black
+                    onSecondaryContainer = Color.Black,
                 )
             }
         }
@@ -103,12 +146,12 @@ fun MemGalleryTheme(
 
     val finalColorScheme = if (amoledMode && useDarkTheme) {
         colorScheme.copy(
-            background = androidx.compose.ui.graphics.Color.Black,
-            surface = androidx.compose.ui.graphics.Color.Black,
-            surfaceContainer = androidx.compose.ui.graphics.Color.Black,
-            surfaceContainerLow = androidx.compose.ui.graphics.Color.Black,
-            surfaceContainerLowest = androidx.compose.ui.graphics.Color.Black,
-            surfaceContainerHigh = androidx.compose.ui.graphics.Color(0xFF121212) // Slightly lighter for cards
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceContainer = Color.Black,
+            surfaceContainerLow = Color.Black,
+            surfaceContainerLowest = Color.Black,
+            surfaceContainerHigh = Color(0xFF121212)
         )
     } else {
         colorScheme
@@ -126,9 +169,13 @@ fun MemGalleryTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = finalColorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalMemColors provides if (useDarkTheme) DarkMemColors else LightMemColors) {
+        MaterialExpressiveTheme(
+            colorScheme = finalColorScheme,
+            motionScheme = MotionScheme.expressive(),
+            shapes = MemShapes,
+            typography = Typography,
+            content = content
+        )
+    }
 }

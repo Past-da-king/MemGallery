@@ -261,11 +261,7 @@ fun MemoryDetailContent(
         MemoryKind.Audio -> Icons.Rounded.Mic
         MemoryKind.Link -> Icons.Rounded.Link
     }
-    val whenText = whenLabel(
-        memory.creationTimestamp, now, "",
-        yesterday = { stringResource2(R.string.detail_when_yesterday, it) },
-        todayFmt = { stringResource2(R.string.detail_when_today, it) }
-    )
+    val whenText = whenLabel(memory.creationTimestamp, now)
     val allText = listOfNotNull(memory.aiSummary, memory.userText, memory.aiImageAnalysis, memory.aiAudioTranscription, memory.bookmarkDescription)
         .filter { it.isNotBlank() }.joinToString("\n\n")
 
@@ -610,9 +606,6 @@ fun MemoryDetailContent(
 }
 
 @Composable
-private fun stringResource2(id: Int, arg: String): String = stringResource(id, arg)
-
-@Composable
 private fun MoreRow(icon: ImageVector, label: String, danger: Boolean = false, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val color = if (danger) scheme.error else scheme.onSurface
@@ -690,7 +683,7 @@ private fun ActionRow(action: ActionDto, onAdd: () -> Unit, onEditFirst: () -> U
             leadingButton = {
                 SplitButtonDefaults.TonalLeadingButton(onClick = onAdd, colors = colors) {
                     Icon(Icons.Rounded.CalendarMonth.takeIf { isEvent } ?: Icons.Rounded.TaskAlt, null, Modifier.size(SplitButtonDefaults.LeadingIconSize))
-                    Spacer(Modifier.width(SplitButtonDefaults.LeadingIconSpacing))
+                    Spacer(Modifier.width(8.dp))
                     Text(label, style = MaterialTheme.typography.titleSmall)
                 }
             },

@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val isOnboardingCompleted by settingsRepository.isOnboardingCompletedFlow.collectAsState(initial = true)
-            val dynamicTheming by settingsRepository.dynamicThemingEnabledFlow.collectAsState(initial = true)
+            val dynamicTheming by settingsRepository.dynamicThemingEnabledFlow.collectAsState(initial = false)
             val appThemeMode by settingsRepository.appThemeModeFlow.collectAsState(initial = "SYSTEM")
             val amoledMode by settingsRepository.amoledModeEnabledFlow.collectAsState(initial = false)
             val selectedColor by settingsRepository.selectedColorFlow.collectAsState(initial = -1)

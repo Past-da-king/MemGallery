@@ -1,894 +1,567 @@
 package com.example.memgallery.ui.screens
 
+import com.example.memgallery.ui.design.appStatusBarsPadding
+import com.example.memgallery.ui.design.appNavigationBarsPadding
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.StickyNote2
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.StickyNote2
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CreateNewFolder
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.PhotoLibrary
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.rememberCarouselState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.memgallery.R
-import com.example.memgallery.navigation.Screen
-import com.example.memgallery.ui.components.MemoryCard
-import com.example.memgallery.ui.viewmodels.GalleryViewModel
+import com.example.memgallery.data.local.entity.CollectionEntity
 import com.example.memgallery.data.local.entity.MemoryEntity
+import com.example.memgallery.navigation.Screen
+import com.example.memgallery.ui.design.ActivityDots
+import com.example.memgallery.ui.design.BlobHeader
+import com.example.memgallery.ui.design.CookieIconButton
+import com.example.memgallery.ui.design.EmptyState
+import com.example.memgallery.ui.design.FilterButtonGroup
+import com.example.memgallery.ui.design.FilterOption
+import com.example.memgallery.ui.design.HeaderTitleRow
+import com.example.memgallery.ui.design.MemShape
+import com.example.memgallery.ui.design.MemoryTile
+import com.example.memgallery.ui.design.RoundIconButton
+import com.example.memgallery.ui.design.SearchPill
+import com.example.memgallery.ui.design.SectionHeader
+import com.example.memgallery.ui.design.StatTileRow
+import com.example.memgallery.ui.design.Tone
+import com.example.memgallery.ui.design.colors
+import com.example.memgallery.ui.design.displayTitle
+import com.example.memgallery.ui.design.kind
+import com.example.memgallery.ui.design.memoryPainter
+import com.example.memgallery.ui.design.overlapUp
+import com.example.memgallery.ui.design.fullBleed
+import com.example.memgallery.ui.viewmodels.CollectionInfo
+import com.example.memgallery.ui.viewmodels.GalleryStats
+import com.example.memgallery.ui.viewmodels.GalleryViewModel
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.ActivityResultLauncher
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import coil.compose.rememberAsyncImagePainter
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
-import java.util.Random
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.draw.drawBehind
-import com.example.memgallery.ui.components.CollectionCard
-import com.example.memgallery.ui.components.sheets.CreateCollectionSheet
-import com.example.memgallery.ui.components.sheets.SelectCollectionSheet
+/** Everything the Home page draws. Real data in the app, sample data in screenshot tests. */
+data class GalleryUiState(
+    val memories: List<MemoryEntity> = emptyList(),
+    val collections: List<CollectionEntity> = emptyList(),
+    val collectionInfo: Map<Int, CollectionInfo> = emptyMap(),
+    val searchText: String = "",
+    val filter: String = "All",
+    val stats: GalleryStats = GalleryStats(),
+    val heat: Map<LocalDate, Int> = emptyMap(),
+    val showRecent: Boolean = true,
+    val selectionActive: Boolean = false,
+    val selectedIds: Set<Int> = emptySet(),
+    val today: LocalDate = LocalDate.now(),
+)
 
-@OptIn(ExperimentalMaterial3Api::class)
+class GalleryActions(
+    val onSearchChange: (String) -> Unit = {},
+    val onFilter: (String) -> Unit = {},
+    val onOpenMemory: (MemoryEntity) -> Unit = {},
+    val onToggleSelect: (MemoryEntity) -> Unit = {},
+    val onLongPress: (MemoryEntity) -> Unit = {},
+    val onCancelSelection: () -> Unit = {},
+    val onAddSelectionToCollection: () -> Unit = {},
+    val onDeleteSelection: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
+    val onOpenStats: () -> Unit = {},
+    val onOpenCollection: (CollectionEntity) -> Unit = {},
+    val onAsk: (String) -> Unit = {},
+    val onCapture: () -> Unit = {},
+)
+
+private val FILTER_KEYS = listOf("All", "Images", "Notes", "Audio", "Bookmarks", "Collections")
+
+@Composable
+private fun filterOptions(): List<FilterOption> = listOf(
+    FilterOption("All", stringResource(R.string.gallery_filter_all), Icons.Outlined.Apps, Icons.Filled.Apps),
+    FilterOption("Images", stringResource(R.string.gallery_filter_images), Icons.Outlined.Image, Icons.Filled.Image),
+    FilterOption("Notes", stringResource(R.string.gallery_filter_notes), Icons.Outlined.StickyNote2, Icons.Filled.StickyNote2),
+    FilterOption("Audio", stringResource(R.string.gallery_filter_audio), Icons.Outlined.Mic, Icons.Filled.Mic),
+    FilterOption("Bookmarks", stringResource(R.string.gallery_filter_bookmarks), Icons.Outlined.Bookmark, Icons.Filled.Bookmark),
+    FilterOption("Collections", stringResource(R.string.gallery_filter_collections), Icons.Outlined.Folder, Icons.Filled.Folder),
+)
+
+/** Stateful Home page. Sheets that need the nav bar's FAB (add menu, create collection) live in HomeScreen. */
 @Composable
 fun GalleryScreen(
     navController: NavController,
+    bottomPadding: Dp,
+    onCreateCollection: () -> Unit,
+    onAddToCollection: () -> Unit,
+    onAskAboutSearch: (String) -> Unit,
     viewModel: GalleryViewModel = hiltViewModel(),
-    openAddSheet: Boolean = false
+    initialSearchOpen: Boolean = false,
 ) {
-    val collections by viewModel.collections.collectAsState()
     val memories by viewModel.memories.collectAsState()
+    val collections by viewModel.collections.collectAsState()
+    val collectionInfo by viewModel.collectionInfo.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
-    val selectedFilter by viewModel.selectedFilter.collectAsState()
-    val highlightTag by viewModel.highlightTag.collectAsState()
-    val highlightMemories by viewModel.highlightMemories.collectAsState()
-    val selectionModeActive by viewModel.selectionModeActive.collectAsState()
-    val selectedMemoryIds by viewModel.selectedMemoryIds.collectAsState()
+    val filter by viewModel.selectedFilter.collectAsState()
+    val stats by viewModel.stats.collectAsState()
+    val heat by viewModel.heatMapData.collectAsState()
+    val highlights by viewModel.highlightMemories.collectAsState()
+    val selectionActive by viewModel.selectionModeActive.collectAsState()
+    val selectedIds by viewModel.selectedMemoryIds.collectAsState()
 
-    val sheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-    val gridState = rememberLazyStaggeredGridState()
+    var showStatsSheet by remember { mutableStateOf(false) }
+    var showDeleteSheet by remember { mutableStateOf(false) }
 
-    // Deletion Permission Launcher
+    // Deletion that needs the system's permission (scoped storage) comes back through this launcher.
     val pendingDeletionIntent by viewModel.pendingDeletionIntent.collectAsState()
-    val deleteLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            // User approved deletion, retry the operation
-            // Since we don't know which specific memory caused it in the batch,
-            // simplest specific retry or continue batch would be needed.
-            // For now, re-triggering batch delete handles remaining selected items.
-            viewModel.deleteSelectedMemories()
-        } else {
-            viewModel.clearPendingDeletionIntent()
+    val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) viewModel.deleteSelectedMemories()
+        else viewModel.clearPendingDeletionIntent()
+    }
+    LaunchedEffect(pendingDeletionIntent) {
+        pendingDeletionIntent?.let { deleteLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(it).build()) }
+    }
+
+    val state = GalleryUiState(
+        memories = memories, collections = collections, collectionInfo = collectionInfo,
+        searchText = searchText, filter = filter, stats = stats, heat = heat,
+        showRecent = highlights.isNotEmpty(), selectionActive = selectionActive, selectedIds = selectedIds
+    )
+    val actions = GalleryActions(
+        onSearchChange = viewModel::onSearchTextChange,
+        onFilter = viewModel::onFilterSelected,
+        onOpenMemory = { navController.navigate(Screen.Detail.createRoute(it.id)) },
+        onToggleSelect = { viewModel.toggleMemorySelection(it.id) },
+        onLongPress = {
+            if (!selectionActive) viewModel.toggleSelectionMode()
+            viewModel.toggleMemorySelection(it.id)
+        },
+        onCancelSelection = viewModel::clearSelection,
+        onAddSelectionToCollection = onAddToCollection,
+        onDeleteSelection = { showDeleteSheet = true },
+        onOpenSettings = { navController.navigate(Screen.Settings.route) },
+        onOpenStats = { showStatsSheet = true },
+        onOpenCollection = { navController.navigate(Screen.CollectionDetail.createRoute(it.id)) },
+        onAsk = onAskAboutSearch,
+        onCapture = onCreateCollection,
+    )
+
+    GalleryContent(state, actions, bottomPadding, initialSearchOpen = initialSearchOpen, onCreateCollection = onCreateCollection)
+
+    if (showStatsSheet) {
+        com.example.memgallery.ui.design.MemSheet(onDismiss = { showStatsSheet = false }) {
+            com.example.memgallery.ui.design.SheetTitle(stringResource(R.string.gallery_stats_title))
+            com.example.memgallery.ui.components.ContributionGraph(
+                data = heat,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            Spacer(Modifier.height(24.dp))
         }
     }
 
-    LaunchedEffect(pendingDeletionIntent) {
-        pendingDeletionIntent?.let { intent ->
-            deleteLauncher.launch(
-                androidx.activity.result.IntentSenderRequest.Builder(intent).build()
+    if (showDeleteSheet) {
+        com.example.memgallery.ui.design.ConfirmSheet(
+            title = stringResource(R.string.gallery_dialog_confirm_delete_title),
+            body = stringResource(R.string.gallery_dialog_confirm_bulk_delete_body, selectedIds.size),
+            confirmLabel = stringResource(R.string.gallery_button_delete_all),
+            dismissLabel = stringResource(R.string.common_cancel),
+            destructive = true,
+            onConfirm = {
+                viewModel.deleteSelectedMemories()
+                showDeleteSheet = false
+            },
+            onDismiss = { showDeleteSheet = false }
+        )
+    }
+}
+
+private fun MemoryEntity.day(): LocalDate =
+    Instant.ofEpochMilli(creationTimestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun GalleryContent(
+    state: GalleryUiState,
+    actions: GalleryActions,
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier,
+    initialSearchOpen: Boolean = false,
+    onCreateCollection: () -> Unit = {},
+) {
+    val scheme = MaterialTheme.colorScheme
+    var searchOpen by rememberSaveable { mutableStateOf(initialSearchOpen) }
+    val gridState = rememberLazyStaggeredGridState()
+    val scope = rememberCoroutineScope()
+    val untitled = stringResource(R.string.memory_card_untitled)
+    val inCollections = state.filter == "Collections"
+    val today = state.today
+
+    Box(modifier.fillMaxSize().background(scheme.surface)) {
+        LazyVerticalStaggeredGrid(
+            state = gridState,
+            columns = StaggeredGridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomPadding),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalItemSpacing = 4.dp
+        ) {
+            // Header, floating search pill and filters
+            item(span = StaggeredGridItemSpan.FullLine, key = "header") {
+                Column(Modifier.fullBleed(16.dp)) {
+                    if (state.selectionActive) {
+                        SelectionBar(state.selectedIds.size, actions)
+                    } else {
+                        BlobHeader {
+                            HeaderTitleRow(
+                                eyebrow = stringResource(R.string.home_eyebrow, today.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())), state.stats.kept),
+                                title = stringResource(R.string.home_title)
+                            ) {
+                                RoundIconButton(Icons.Rounded.Insights, stringResource(R.string.gallery_cd_activity_stats), actions.onOpenStats)
+                                CookieIconButton(Icons.Rounded.Settings, stringResource(R.string.gallery_cd_settings), actions.onOpenSettings)
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            StatTileRow(
+                                listOf(
+                                    state.stats.thisWeek.toString() to stringResource(R.string.home_stat_this_week),
+                                    state.stats.reviewCount.toString() to stringResource(R.string.home_stat_to_review),
+                                    state.stats.dayStreak.toString() to stringResource(R.string.home_stat_streak),
+                                )
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            ActivityDots(state.heat, today = today)
+                            Spacer(Modifier.height(41.dp))
+                        }
+                        SearchPill(
+                            placeholder = stringResource(R.string.gallery_search_placeholder),
+                            onClick = { searchOpen = true },
+                            modifier = Modifier.overlapUp(24.dp)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        FilterButtonGroup(filterOptions(), state.filter, actions.onFilter)
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+
+            if (inCollections) {
+                collectionItems(state, actions, onCreateCollection)
+            } else if (state.memories.isEmpty()) {
+                item(span = StaggeredGridItemSpan.FullLine, key = "empty") {
+                    EmptyState(
+                        icon = Icons.Rounded.PhotoLibrary,
+                        title = stringResource(if (state.searchText.isBlank()) R.string.home_empty_title else R.string.home_empty_search),
+                        body = stringResource(R.string.home_empty_body),
+                        modifier = Modifier.padding(top = 24.dp),
+                        primaryLabel = if (state.searchText.isBlank()) stringResource(R.string.gallery_cd_add_memory) else null,
+                        onPrimary = actions.onCapture
+                    )
+                }
+            } else {
+                // Recent carousel
+                val recent = state.memories.filter { it.imageUri != null }.take(8)
+                if (state.showRecent && state.filter == "All" && state.searchText.isBlank() && recent.size >= 3) {
+                    item(span = StaggeredGridItemSpan.FullLine, key = "recent-header") {
+                        Column(Modifier.fullBleed(16.dp)) {
+                            Spacer(Modifier.height(16.dp))
+                            SectionHeader(stringResource(R.string.home_recent)) {
+                                TextButton(onClick = {
+                                    scope.launch { gridState.animateScrollToItem(3) }
+                                }) { Text(stringResource(R.string.home_see_all), style = MaterialTheme.typography.titleSmall) }
+                            }
+                        }
+                    }
+                    item(span = StaggeredGridItemSpan.FullLine, key = "recent") {
+                        Column(Modifier.fullBleed(16.dp)) {
+                            RecentCarousel(recent, untitled, actions.onOpenMemory)
+                            Spacer(Modifier.height(16.dp))
+                        }
+                    }
+                }
+                // Day groups
+                val groups = state.memories.groupBy { it.day() }.toSortedMap(compareByDescending { it })
+                groups.forEach { (day, list) ->
+                    item(span = StaggeredGridItemSpan.FullLine, key = "day-$day") {
+                        val label = when (day) {
+                            today -> stringResource(R.string.home_today)
+                            today.minusDays(1) -> stringResource(R.string.home_yesterday)
+                            else -> day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                        }
+                        Column(Modifier.fullBleed(16.dp)) {
+                            Spacer(Modifier.height(12.dp))
+                            SectionHeader(label) {
+                                Text(
+                                    stringResource(R.string.home_n_memories, list.size).uppercase(),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = scheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
+                    items(list.size, key = { "m-${list[it].id}" }) { i ->
+                        val m = list[i]
+                        MemoryTile(
+                            memory = m,
+                            selected = state.selectedIds.contains(m.id),
+                            onClick = { if (state.selectionActive) actions.onToggleSelect(m) else actions.onOpenMemory(m) },
+                            onLongClick = { actions.onLongPress(m) },
+                            untitledLabel = untitled,
+                            modifier = Modifier.padding(horizontal = if (i % 2 == 0) 0.dp else 0.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (searchOpen) {
+            SearchView(
+                query = state.searchText,
+                onQueryChange = actions.onSearchChange,
+                onClose = {
+                    searchOpen = false
+                    actions.onSearchChange("")
+                },
+                filter = state.filter.takeIf { it != "Collections" } ?: "All",
+                onFilter = actions.onFilter,
+                results = state.memories,
+                onOpen = {
+                    searchOpen = false
+                    actions.onOpenMemory(it)
+                },
+                onAsk = {
+                    searchOpen = false
+                    actions.onAsk(it)
+                },
+                today = today,
+                requestFocus = !initialSearchOpen
             )
         }
     }
+}
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            navController.navigate(Screen.PostCapture.createRoute(imageUri = uri.toString())) {
-                popUpTo(Screen.Gallery.route) { inclusive = false }
-            }
+@Composable
+private fun SelectionBar(count: Int, actions: GalleryActions) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(scheme.surfaceContainerHigh)
+            .appStatusBarsPadding()
+            .height(64.dp)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = actions.onCancelSelection), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Close, stringResource(R.string.gallery_cd_cancel_selection), tint = scheme.onSurface)
+        }
+        Text(
+            stringResource(R.string.gallery_selection_count, count),
+            Modifier.weight(1f).padding(start = 8.dp),
+            style = MaterialTheme.typography.titleLarge, color = scheme.onSurface
+        )
+        Box(Modifier.size(48.dp).clip(CircleShape).clickable(enabled = count > 0, onClick = actions.onAddSelectionToCollection), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.CreateNewFolder, stringResource(R.string.gallery_cd_add_to_collection), tint = scheme.onSurface)
+        }
+        Box(Modifier.size(48.dp).clip(CircleShape).clickable(enabled = count > 0, onClick = actions.onDeleteSelection), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Delete, stringResource(R.string.gallery_cd_delete_selected), tint = scheme.onSurface)
         }
     }
+}
 
-    var showMemoryOptionsSheet by remember { mutableStateOf(false) }
-    var selectedMemoryForOptions by remember { mutableStateOf<MemoryEntity?>(null) }
-    var showDeleteMultipleMemoriesDialog by remember { mutableStateOf(false) }
-    var showCreateCollectionDialog by remember { mutableStateOf(false) }
-    var showAddToCollectionSheet by remember { mutableStateOf(false) }
-    var showStatsSheet by remember { mutableStateOf(false) }
-    
-    val heatMapData by viewModel.heatMapData.collectAsState()
-
-    // State to control Search Bar visibility (Drop Down)
-    var isSearchBarVisible by remember { mutableStateOf(true) }
-
-    // Header Height State for Padding
-    val localDensity = LocalDensity.current
-    var headerHeightDp by remember { mutableStateOf(0.dp) }
-
-    // Scroll detection to toggle search bar visibility
-    // Update search bar visibility based on scroll
-    // Scroll detection to toggle search bar visibility efficiently
-    val shouldShowSearchBar by remember {
-        derivedStateOf {
-            gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
-        }
-    }
-
-    LaunchedEffect(shouldShowSearchBar) {
-        isSearchBarVisible = shouldShowSearchBar
-    }
-
-    // Handle shortcut to open add sheet
-    LaunchedEffect(openAddSheet) {
-        if (openAddSheet) {
-            showBottomSheet = true
-        }
-    }
-
-    Scaffold(
-        floatingActionButton = {
-            if (!selectionModeActive) {
-                if (selectedFilter == "Collections") {
-                    FloatingActionButton(
-                        onClick = { showCreateCollectionDialog = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
-                        Icon(Icons.Default.CreateNewFolder, contentDescription = stringResource(R.string.gallery_cd_create_collection))
-                    }
-                } else {
-                    FloatingActionButton(
-                        onClick = { showBottomSheet = true },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_add_memory))
-                    }
-                }
-            }
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            if (selectedFilter == "Collections") {
-                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        top = headerHeightDp + 16.dp,
-                        bottom = padding.calculateBottomPadding() + 80.dp,
-                        start = 16.dp,
-                        end = 16.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(collections) { collection ->
-                        CollectionCard(
-                            name = collection.name,
-                            description = collection.description,
-                            onClick = { navController.navigate(Screen.CollectionDetail.createRoute(collection.id)) }
-                        )
-                    }
-                    if (collections.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 48.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(stringResource(R.string.gallery_no_collections), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
-                    }
-                }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RecentCarousel(recent: List<MemoryEntity>, untitled: String, onOpen: (MemoryEntity) -> Unit) {
+    val carouselState = rememberCarouselState { recent.size }
+    val shapes = listOf<@Composable () -> androidx.compose.ui.graphics.Shape>(
+        { RoundedCornerShape(28.dp) }, { RoundedCornerShape(50) }, { MemShape.cookie }, { RoundedCornerShape(28.dp) }, { RoundedCornerShape(50) }
+    )
+    HorizontalMultiBrowseCarousel(
+        state = carouselState,
+        preferredItemWidth = 168.dp,
+        modifier = Modifier.fillMaxWidth().height(196.dp).padding(top = 0.dp),
+        itemSpacing = 8.dp,
+        contentPadding = PaddingValues(horizontal = 16.dp)
+    ) { index ->
+        val m = recent[index]
+        val shape = shapes[index % shapes.size]()
+        Box(Modifier.fillMaxSize().maskClip(shape).clickable { onOpen(m) }) {
+            if (m.imageUri != null) {
+                Image(
+                    memoryPainter(m.imageUri), m.aiTitle, contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                )
             } else {
-                LazyVerticalStaggeredGrid(
-                    state = gridState,
-                    columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        // Content starts exactly where the header ends
-                        top = headerHeightDp + 16.dp, 
-                        bottom = padding.calculateBottomPadding() + 80.dp,
-                        start = 16.dp,
-                        end = 16.dp
-                    ),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalItemSpacing = 12.dp
-                ) {
-
-                    // Highlight Section
-                    if (highlightTag != null && highlightMemories.isNotEmpty()) {
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            highlightMemories.firstOrNull()?.let { highlightMemory ->
-                                HighlightMemoryCard(
-                                    memory = highlightMemory,
-                                    tag = highlightTag!!,
-                                    onClick = { navController.navigate(Screen.Detail.createRoute(highlightMemory.id)) }
-                                )
-                            }
-                        }
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            Text(
-                                text = stringResource(R.string.gallery_section_all_memories),
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
-                    }
-
-                    items(memories) { memory ->
-                        val isSelected = selectedMemoryIds.contains(memory.id)
-                        MemoryCard(
-                            memory = memory,
-                            isSelected = isSelected,
-                            onClick = { clickedMemory ->
-                                if (selectionModeActive) {
-                                    viewModel.toggleMemorySelection(clickedMemory.id)
-                                } else {
-                                    navController.navigate(Screen.Detail.createRoute(clickedMemory.id))
-                                }
-                            },
-                            onLongClick = { longPressedMemory ->
-                                if (!selectionModeActive) {
-                                    viewModel.toggleSelectionMode()
-                                }
-                                viewModel.toggleMemorySelection(longPressedMemory.id)
-                            }
-                        )
-                    }
+                val tone = Tone.entries[(m.id.mod(3)) * 2 % Tone.entries.size]
+                val (bg, fg) = tone.colors()
+                Box(Modifier.fillMaxSize().background(bg), contentAlignment = Alignment.Center) {
+                    Text(
+                        m.displayTitle(untitled),
+                        Modifier.padding(20.dp),
+                        style = MaterialTheme.typography.titleMedium, color = fg, maxLines = 4, overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
+        }
+    }
+}
 
-            // Floating Header with Seamless Gradient Blur
-            val backgroundColor = MaterialTheme.colorScheme.background
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .onGloballyPositioned { coordinates ->
-                        headerHeightDp = with(localDensity) { coordinates.size.height.toDp() }
-                    }
-                    .drawBehind {
-                        // Solid background with very subtle fade at the bottom
-                        // to prevent content bleeding through during scroll
-                        val solidStop = 0.95f 
-                        
-                        val brush = Brush.verticalGradient(
-                            0.0f to backgroundColor,
-                            solidStop to backgroundColor,
-                            1.0f to backgroundColor.copy(alpha = 0.7f)
-                        )
-                        drawRect(brush)
-                    }
-            ) {
-                if (selectionModeActive) {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.gallery_selection_count, selectedMemoryIds.size)) },
-                        navigationIcon = {
-                            IconButton(onClick = { viewModel.clearSelection() }) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_cancel_selection))
-                            }
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    if (selectedMemoryIds.size >= 1) {
-                                        showAddToCollectionSheet = true
-                                    }
-                                },
-                                enabled = selectedMemoryIds.isNotEmpty()
-                            ) {
-                                Icon(Icons.Default.Folder, contentDescription = stringResource(R.string.gallery_cd_add_to_collection))
-                            }
-                            IconButton(
-                                onClick = {
-                                    if (selectedMemoryIds.size == 1) {
-                                        val singleSelectedMemoryId = selectedMemoryIds.first()
-                                        selectedMemoryForOptions = memories.firstOrNull { it.id == singleSelectedMemoryId }
-                                        showMemoryOptionsSheet = true
-                                    } else if (selectedMemoryIds.size > 1) {
-                                        showDeleteMultipleMemoriesDialog = true
-                                    }
-                                },
-                                enabled = selectedMemoryIds.isNotEmpty()
-                            ) {
-                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete_selected))
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent // Transparent to let the gradient background show
-                        )
-                    )
-                } else {
-                    // Fixed Header for Normal Mode
+// ---- Collections ----
+
+private fun androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope.collectionItems(
+    state: GalleryUiState,
+    actions: GalleryActions,
+    onCreate: () -> Unit
+) {
+    if (state.collections.isEmpty()) {
+        item(span = StaggeredGridItemSpan.FullLine, key = "collections-empty") {
+            EmptyState(
+                icon = Icons.Rounded.CreateNewFolder,
+                title = stringResource(R.string.collections_empty_title),
+                body = stringResource(R.string.collections_empty_body),
+                modifier = Modifier.padding(top = 24.dp),
+                primaryLabel = stringResource(R.string.gallery_cd_create_collection),
+                primaryIcon = Icons.Rounded.CreateNewFolder,
+                onPrimary = onCreate
+            )
+        }
+        return
+    }
+    state.collections.forEachIndexed { index, c ->
+        val info = state.collectionInfo[c.id] ?: CollectionInfo()
+        item(span = if (index == 0) StaggeredGridItemSpan.FullLine else StaggeredGridItemSpan.SingleLane, key = "c-${c.id}") {
+            CollectionTile(c, info, index, featured = index == 0, onClick = { actions.onOpenCollection(c) })
+        }
+    }
+}
+
+private val collectionTones = listOf(Tone.Primary, Tone.Tertiary, Tone.Sky, Tone.Amber, Tone.Success, Tone.Secondary)
+
+/** A collection: tonal card with cover art, name and count. The first one is wide and features its cover stack. */
+@Composable
+fun CollectionTile(
+    collection: CollectionEntity,
+    info: CollectionInfo,
+    index: Int,
+    featured: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val (bg, fg) = collectionTones[index % collectionTones.size].colors()
+    val covers = info.covers
+    val countLabel = stringResource(R.string.collections_n_memories, info.count)
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(20.dp)
+    ) {
+        if (featured) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
+                if (collection.description.isNotBlank()) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding() // Adds padding for status bar
-                            .padding(horizontal = 24.dp)
-                            .padding(top = 8.dp, bottom = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        Modifier.clip(RoundedCornerShape(12.dp)).background(fg.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = stringResource(R.string.gallery_brand),
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Search Icon (Visible when Search Bar is hidden)
-                            AnimatedVisibility(
-                                visible = !isSearchBarVisible,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
-                                IconButton(
-                                    onClick = { isSearchBarVisible = true }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = stringResource(R.string.gallery_cd_search),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                            
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                            // Stats Icon
-                            IconButton(
-                                onClick = { showStatsSheet = true },
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.TrendingUp,
-                                    contentDescription = stringResource(R.string.gallery_cd_activity_stats),
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            // Settings Icon
-                            IconButton(
-                                onClick = { navController.navigate(Screen.Settings.route) },
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                            ) {
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = stringResource(R.string.gallery_cd_settings),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
+                        Icon(Icons.Rounded.AutoAwesome, null, tint = fg, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.collections_auto_sorted).uppercase(), style = MaterialTheme.typography.labelMedium, color = fg)
                     }
-                }
-
-                // Collapsible Search Bar & Filters (Drop Down)
-                AnimatedVisibility(
-                    visible = isSearchBarVisible && !selectionModeActive,
-                    enter = androidx.compose.animation.expandVertically() + fadeIn(),
-                    exit = androidx.compose.animation.shrinkVertically() + fadeOut()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp)
-                    ) {
-                        // Search Bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            TextField(
-                                value = searchText,
-                                onValueChange = viewModel::onSearchTextChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.gallery_search_placeholder), style = MaterialTheme.typography.bodyLarge) },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.gallery_cd_search)) },
-                                shape = RoundedCornerShape(24.dp),
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                ),
-                                singleLine = true
-                            )
-                        }
-
-                        // Filters
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp),
-                            modifier = Modifier.padding(top = 12.dp)
-                        ) {
-                            val filters = listOf("All", "Images", "Notes", "Audio", "Bookmarks", "Collections")
-                            items(filters) { filter ->
-                                    val isSelected = selectedFilter == filter
-                                    val filterLabel = when (filter) {
-                                        "All" -> stringResource(R.string.gallery_filter_all)
-                                        "Images" -> stringResource(R.string.gallery_filter_images)
-                                        "Notes" -> stringResource(R.string.gallery_filter_notes)
-                                        "Audio" -> stringResource(R.string.gallery_filter_audio)
-                                        "Bookmarks" -> stringResource(R.string.gallery_filter_bookmarks)
-                                        "Collections" -> stringResource(R.string.gallery_filter_collections)
-                                        else -> filter
-                                    }
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { viewModel.onFilterSelected(filter) },
-                                        label = { Text(filterLabel) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        ),
-                                        border = FilterChipDefaults.filterChipBorder(
-                                            enabled = true,
-                                            selected = isSelected,
-                                            borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
-                                        )
-                                    )
-                            }
-                        }
-                    }
-                }
+                } else Spacer(Modifier.size(1.dp))
+                CoverStack(covers)
             }
+            Spacer(Modifier.height(12.dp))
+        } else {
+            CoverStack(covers.take(1), size = 64.dp)
+            Spacer(Modifier.height(if (covers.isEmpty()) 12.dp else 24.dp))
         }
-
-        if (showStatsSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showStatsSheet = false },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                 Column(
-                     modifier = Modifier
-                         .fillMaxWidth()
-                         .padding(16.dp)
-                         .padding(bottom = 32.dp),
-                     horizontalAlignment = Alignment.CenterHorizontally
-                 ) {
-                     Text(
-                         stringResource(R.string.gallery_stats_title),
-                         style = MaterialTheme.typography.titleLarge,
-                         fontWeight = FontWeight.Bold,
-                         modifier = Modifier.padding(bottom = 24.dp)
-                     )
-                     
-                     com.example.memgallery.ui.components.ContributionGraph(
-                         data = heatMapData,
-                         modifier = Modifier.fillMaxWidth()
-                     )
-                     
-                     Spacer(modifier = Modifier.height(24.dp))
-                 }
-            }
-        }
-
-        if (showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                com.example.memgallery.ui.components.sheets.AddMemorySheet(
-                    onTextNote = {
-                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
-                        navController.navigate(Screen.TextInput.createRoute())
-                    },
-                    onUploadImage = {
-                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
-                        imagePickerLauncher.launch("image/*")
-                    },
-                    onTakePhoto = {
-                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
-                        navController.navigate(Screen.CameraCapture.route)
-                    },
-                    onRecordAudio = {
-                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
-                        navController.navigate(Screen.AudioCapture.createRoute())
-                    },
-                    onSaveBookmark = {
-                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion { showBottomSheet = false }
-                        navController.navigate(Screen.BookmarkInput.createRoute())
-                    }
-                )
-            }
-        }
-        
-        if (showCreateCollectionDialog) {
-            ModalBottomSheet(
-                onDismissRequest = { showCreateCollectionDialog = false },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                com.example.memgallery.ui.components.sheets.CreateCollectionSheet(
-                    onDismiss = { showCreateCollectionDialog = false },
-                    onCreate = { name, desc ->
-                        // If we are in selection mode or have selected memories, add them
-                        val memoriesToAdd = if (selectionModeActive || selectedMemoryIds.isNotEmpty()) {
-                            selectedMemoryIds.toList()
-                        } else {
-                            emptyList()
-                        }
-                        viewModel.createCollection(name, desc, memoriesToAdd)
-                        showCreateCollectionDialog = false
-                    }
-                )
-            }
-        }
-        
-        if (showAddToCollectionSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showAddToCollectionSheet = false },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                SelectCollectionSheet(
-                    collections = collections,
-                    onSelect = { collectionId ->
-                        viewModel.addSelectedMemoriesToCollection(collectionId)
-                        showAddToCollectionSheet = false
-                    },
-                    onCreateNew = {
-                        showAddToCollectionSheet = false
-                        showCreateCollectionDialog = true
-                    },
-                    onDismiss = { showAddToCollectionSheet = false }
-                )
-            }
-        }
-
-        if (showMemoryOptionsSheet) {
-            selectedMemoryForOptions?.let { memory ->
-                ModalBottomSheet(
-                    onDismissRequest = { showMemoryOptionsSheet = false },
-                    sheetState = sheetState
-                ) {
-                    MemoryOptionsSheet(
-                        memory = memory,
-                        onDismiss = { showMemoryOptionsSheet = false },
-                        viewModel = viewModel,
-                        navController = navController
-                    )
-                }
-            }
-        }
-
-        if (showDeleteMultipleMemoriesDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteMultipleMemoriesDialog = false },
-                title = { Text(stringResource(R.string.gallery_dialog_confirm_delete_title)) },
-                text = { Text(stringResource(R.string.gallery_dialog_confirm_bulk_delete_body, selectedMemoryIds.size)) },
-                confirmButton = {
-                    Button(onClick = {
-                        viewModel.deleteSelectedMemories()
-                        showDeleteMultipleMemoriesDialog = false
-                    }) {
-                        Text(stringResource(R.string.gallery_button_delete_all))
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showDeleteMultipleMemoriesDialog = false }) {
-                        Text(stringResource(R.string.common_cancel))
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun MemoryOptionsSheet(
-    memory: MemoryEntity,
-    onDismiss: () -> Unit,
-    viewModel: GalleryViewModel,
-    navController: NavController
-) {
-    var showDeleteMediaDialog by remember { mutableStateOf(false) }
-    var showDeleteFullMemoryDialog by remember { mutableStateOf(false) }
-    var showHideMemoryPrompt by remember { mutableStateOf(false) } // For after media deletion
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+        Text(collection.name, style = if (featured) MaterialTheme.typography.displaySmall else MaterialTheme.typography.headlineSmall, color = fg, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(2.dp))
         Text(
-            stringResource(R.string.gallery_options_for, memory.aiTitle ?: stringResource(R.string.gallery_options_memory_fallback)),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { showDeleteMediaDialog = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.gallery_button_delete_media))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = { showDeleteFullMemoryDialog = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.gallery_button_delete_full_memory))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = {
-                viewModel.hideMemory(memory.id)
-                onDismiss()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.gallery_button_hide_memory))
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.common_dismiss))
-        }
-    }
-
-    // Dialogs
-    if (showDeleteMediaDialog) {
-        DeleteMediaDialog(
-            memory = memory,
-            onDismiss = { showDeleteMediaDialog = false },
-            onConfirm = { deleteImage, deleteAudio ->
-                viewModel.deleteMedia(memory.id, deleteImage, deleteAudio)
-                // Check if all media is deleted to prompt for hiding
-                if ((deleteImage && memory.imageUri != null) && (deleteAudio && memory.audioFilePath != null)) {
-                    showHideMemoryPrompt = true
-                } else if (deleteImage && memory.imageUri != null && memory.audioFilePath == null) {
-                    showHideMemoryPrompt = true
-                } else if (deleteAudio && memory.audioFilePath != null && memory.imageUri == null) {
-                    showHideMemoryPrompt = true
-                }
-                showDeleteMediaDialog = false
-                onDismiss()
-            }
-        )
-    }
-
-    if (showDeleteFullMemoryDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteFullMemoryDialog = false },
-            title = { Text(stringResource(R.string.gallery_dialog_confirm_delete_title)) },
-            text = { Text(stringResource(R.string.gallery_dialog_confirm_single_delete_body)) },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.deleteFullMemory(memory.id)
-                    showDeleteFullMemoryDialog = false
-                    onDismiss()
-                }) {
-                    Text(stringResource(R.string.common_delete))
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showDeleteFullMemoryDialog = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            }
-        )
-    }
-
-    if (showHideMemoryPrompt) {
-        AlertDialog(
-            onDismissRequest = { showHideMemoryPrompt = false },
-            title = { Text(stringResource(R.string.gallery_dialog_hide_title)) },
-            text = { Text(stringResource(R.string.gallery_dialog_hide_body)) },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.hideMemory(memory.id)
-                    showHideMemoryPrompt = false
-                    onDismiss()
-                }) {
-                    Text(stringResource(R.string.gallery_button_hide))
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showHideMemoryPrompt = false }) {
-                    Text(stringResource(R.string.gallery_button_keep_visible))
-                }
-            }
+            if (featured && collection.description.isNotBlank()) "${collection.description} · $countLabel" else countLabel,
+            style = MaterialTheme.typography.bodyLarge, color = fg.copy(alpha = 0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis
         )
     }
 }
 
 @Composable
-private fun DeleteMediaDialog(
-    memory: MemoryEntity,
-    onDismiss: () -> Unit,
-    onConfirm: (deleteImage: Boolean, deleteAudio: Boolean) -> Unit
-) {
-    var deleteImage by remember { mutableStateOf(false) }
-    var deleteAudio by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.gallery_dialog_delete_media_title)) },
-        text = {
-            Column {
-                Text(stringResource(R.string.gallery_dialog_delete_media_question))
-                Spacer(modifier = Modifier.height(8.dp))
-                if (memory.imageUri != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = deleteImage, onCheckedChange = { deleteImage = it })
-                        Text(stringResource(R.string.gallery_checkbox_image))
-                    }
-                }
-                if (memory.audioFilePath != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = deleteAudio, onCheckedChange = { deleteAudio = it })
-                        Text(stringResource(R.string.gallery_checkbox_audio))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(deleteImage, deleteAudio) },
-                enabled = deleteImage || deleteAudio
-            ) {
-                Text(stringResource(R.string.common_delete))
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
-            }
-        }
-    )
-}
-
-private fun generateRandomGradientBrush(seed: Int): Brush {
-    val colors = listOf(
-        listOf(Color(0xFF6A11CB), Color(0xFF2575FC)), // Purple to Blue
-        listOf(Color(0xFFFC00FF), Color(0xFF00DBDE)), // Pink to Cyan
-        listOf(Color(0xFFF7971E), Color(0xFFFFD200)), // Orange to Yellow
-        listOf(Color(0xFFEE0979), Color(0xFFFF6A00)), // Red to Orange
-        listOf(Color(0xFF00C6FF), Color(0xFF0072FF))  // Light Blue to Dark Blue
-    )
-    val random = java.util.Random(seed.toLong())
-    val selectedColors = colors[random.nextInt(colors.size)]
-    return Brush.verticalGradient(selectedColors)
-}
-
-@Composable
-fun HighlightMemoryCard(
-    memory: MemoryEntity,
-    tag: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(220.dp)
-            .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        )
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (memory.imageUri != null) {
-                Image(
-                    painter = rememberAsyncImagePainter(model = memory.imageUri),
-                    contentDescription = memory.aiTitle,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(generateRandomGradientBrush(memory.id))
-                )
-            }
-
-            // Gradient Overlay
-            Box(
+private fun CoverStack(covers: List<String>, size: Dp = 112.dp) {
+    if (covers.isEmpty()) return
+    val shapes = listOf<@Composable () -> androidx.compose.ui.graphics.Shape>({ MemShape.softBurst }, { RoundedCornerShape(16.dp) }, { MemShape.cookie })
+    Box(Modifier.size(width = if (covers.size > 1) size * 1.55f else size, height = size)) {
+        covers.take(3).forEachIndexed { i, uri ->
+            Image(
+                memoryPainter(uri), null, contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.4f),
-                                Color.Black.copy(alpha = 0.8f)
-                            ),
-                            startY = 200f
-                        )
-                    )
+                    .align(if (i == 0) Alignment.TopStart else Alignment.BottomEnd)
+                    .size(if (i == 0) size * 0.9f else size * 0.7f)
+                    .clip(shapes[i % shapes.size]())
             )
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-            ) {
-                SuggestionChip(
-                    onClick = { },
-                    label = { Text(stringResource(R.string.gallery_chip_featured, tag)) },
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
-                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    border = null
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = memory.aiTitle ?: stringResource(R.string.gallery_untitled_memory),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (memory.aiSummary != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = memory.aiSummary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
         }
     }
 }

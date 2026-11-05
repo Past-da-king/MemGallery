@@ -21,6 +21,7 @@ import com.example.memgallery.ui.widget.WidgetRefreshManager
 class TaskViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val taskDao: TaskDao,
+    private val memoryDao: com.example.memgallery.data.local.dao.MemoryDao,
     private val settingsRepository: SettingsRepository,
     private val taskExporter: TaskExporter
 ) : ViewModel() {
@@ -62,6 +63,16 @@ class TaskViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    /** Title and cover of the memory each task came from, for "From your ticket" and the thumbnail. */
+    val taskSources: StateFlow<Map<Int, com.example.memgallery.data.local.dao.TaskSourceMemory>> =
+        memoryDao.observeTaskSources()
+            .map { list -> list.associateBy { it.id } }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyMap()
+            )
 
     fun selectDate(date: LocalDate?) {
         _selectedDate.value = date

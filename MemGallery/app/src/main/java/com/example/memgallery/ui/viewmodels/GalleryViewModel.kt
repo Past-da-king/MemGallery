@@ -23,10 +23,40 @@ private fun String.foldForSearch(): String =
         .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
         .lowercase()
 
+data class CollectionInfo(val count: Int = 0, val covers: List<String> = emptyList())
+
+/** Numbers shown in the Home header. All are derived from real memories and tasks. */
+data class GalleryStats(
+    val kept: Int = 0,
+    val thisWeek: Int = 0,
+    val reviewCount: Int = 0,
+    val dayStreak: Int = 0,
+) {
+    companion object {
+        fun from(
+            perDay: Map<java.time.LocalDate, Int>,
+            reviewCount: Int,
+            today: java.time.LocalDate = java.time.LocalDate.now()
+        ): GalleryStats {
+            val kept = perDay.values.sum()
+            val thisWeek = (0..6).sumOf { perDay[today.minusDays(it.toLong())] ?: 0 }
+            // The streak counts back from today; if nothing was kept yet today, from yesterday.
+            var day = if ((perDay[today] ?: 0) > 0) today else today.minusDays(1)
+            var streak = 0
+            while ((perDay[day] ?: 0) > 0) {
+                streak++
+                day = day.minusDays(1)
+            }
+            return GalleryStats(kept, thisWeek, reviewCount, streak)
+        }
+    }
+}
+
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
     private val memoryRepository: MemoryRepository,
-    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository
+    private val settingsRepository: com.example.memgallery.data.repository.SettingsRepository,
+    taskDao: com.example.memgallery.data.local.dao.TaskDao
 ) : ViewModel() {
 
     private val _searchText = MutableStateFlow("")
@@ -68,12 +98,37 @@ class GalleryViewModel @Inject constructor(
             initialValue = emptyMap()
         )
 
+    /** Real numbers for the Home header: kept, this week, day streak and tasks waiting for review. */
+    val stats: StateFlow<GalleryStats> = combine(
+        heatMapData,
+        taskDao.getUnapprovedTasks().map { it.size }
+    ) { heat, review ->
+        GalleryStats.from(heat, review)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = GalleryStats()
+    )
+
     val collections = memoryRepository.getAllCollections()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    /** Memory count and up to three cover images per collection. */
+    val collectionInfo: StateFlow<Map<Int, CollectionInfo>> = combine(
+        memoryRepository.observeCollectionCounts(),
+        memoryRepository.observeCollectionCovers()
+    ) { counts, covers ->
+        val coverMap = covers.groupBy { it.collectionId }.mapValues { (_, v) -> v.take(3).map { it.imageUri } }
+        counts.associate { it.collectionId to CollectionInfo(it.total, coverMap[it.collectionId].orEmpty()) }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyMap()
+    )
 
     private val _memories = memoryRepository.getMemories()
 

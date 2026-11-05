@@ -10,6 +10,8 @@ import com.example.memgallery.data.local.entity.MemoryEntity
 import com.example.memgallery.data.local.model.PulseMemory
 import kotlinx.coroutines.flow.Flow
 
+data class TaskSourceMemory(val id: Int, val aiTitle: String?, val imageUri: String?)
+
 @Dao
 interface MemoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -30,6 +32,9 @@ interface MemoryDao {
 
     @Query("SELECT * FROM memories ORDER BY creationTimestamp DESC")
     fun getAllMemoriesIncludingHidden(): Flow<List<MemoryEntity>>
+
+    @Query("SELECT id, aiTitle, imageUri FROM memories WHERE id IN (SELECT DISTINCT memoryId FROM tasks WHERE memoryId IS NOT NULL)")
+    fun observeTaskSources(): Flow<List<TaskSourceMemory>>
 
     @Query("SELECT * FROM memories WHERE id = :id")
     fun getMemoryById(id: Int): Flow<MemoryEntity?>

@@ -245,7 +245,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     // Theme Preferences
     val dynamicThemingEnabledFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.DYNAMIC_THEMING_ENABLED] ?: true
+            preferences[PreferencesKeys.DYNAMIC_THEMING_ENABLED] ?: false
         }
 
     suspend fun setDynamicThemingEnabled(enabled: Boolean) {
