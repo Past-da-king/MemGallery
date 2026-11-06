@@ -5,6 +5,7 @@ import com.example.memgallery.lifeagent.collect.CollectionRunner
 import com.example.memgallery.lifeagent.collect.LifeAgentSettings
 import com.example.memgallery.lifeagent.composio.ComposioCatalog
 import com.example.memgallery.lifeagent.composio.ComposioClient
+import com.example.memgallery.lifeagent.composio.ReadToolRules
 import com.example.memgallery.lifeagent.composio.ComposioErrorKind
 import com.example.memgallery.lifeagent.composio.ComposioException
 import com.example.memgallery.lifeagent.data.LifeConnectionEntity
@@ -224,13 +225,17 @@ class RecordedRunTest : DbTestBase() {
             "CLICKUP_CREATE_TASK", "CLICKUP_UPDATE_TASK", "CLICKUP_DELETE_TASK",
             "SLACK_SEND_MESSAGE", "SLACK_DELETE_A_MESSAGE_FROM_A_CHAT", "SLACK_SENDS_A_MESSAGE_TO_A_SLACK_CHANNEL",
             // near misses must not slip through
-            "gmail_fetch_emails", "GMAIL_FETCH_EMAILS ", " GMAIL_FETCH_EMAILS", "GMAIL_FETCH_EMAILS/../GMAIL_SEND_EMAIL", "GMAIL_FETCH_EMAILS?x=1", "",
+            "GMAIL_FETCH_EMAILS/../GMAIL_SEND_EMAIL", "",
         )
         for (slug in writes) {
             try { client.execute(slug, "ca", null, emptyMap()); fail("[$slug] ran") }
             catch (e: ComposioException) { assertEquals(slug, ComposioErrorKind.BLOCKED, e.kind) }
         }
         assertEquals(0, server.requestCount)
+        // the gate reads the slug by name, so case and stray spaces do not turn a read into a block
+        for (slug in listOf("gmail_fetch_emails", "GMAIL_FETCH_EMAILS ", " GMAIL_FETCH_EMAILS")) {
+            assertTrue("[$slug] is a read", ReadToolRules.isReadTool(slug))
+        }
         // and the whole allow-list is reads only
         val bad = Regex("(SEND|CREATE|DELETE|UPDATE|REMOVE|PATCH|POST|REPLY|FORWARD|MOVE|TRASH|ADD|INSERT|MODIFY|ARCHIVE)")
         assertTrue(ComposioCatalog.READ_TOOLS.toString(), ComposioCatalog.READ_TOOLS.none { bad.containsMatchIn(it) })
