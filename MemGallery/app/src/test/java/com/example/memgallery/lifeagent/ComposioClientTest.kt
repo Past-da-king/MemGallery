@@ -62,7 +62,7 @@ class ComposioClientTest {
     }
 
     @Test fun refusesAnyToolThatIsNotAReadToolAndSendsNothing() = runBlocking {
-        for (slug in listOf("GMAIL_SEND_EMAIL", "GMAIL_DELETE_MESSAGE", "SLACK_SEND_MESSAGE", "CLICKUP_CREATE_TASK", "GOOGLECALENDAR_CREATE_EVENT")) {
+        for (slug in listOf("GMAIL_SEND_EMAIL", "SLACK_POST_MESSAGE", "GMAIL_DELETE_MESSAGE", "SLACK_SEND_MESSAGE", "CLICKUP_CREATE_TASK", "GOOGLECALENDAR_CREATE_EVENT", "NOTION_CREATE_PAGE")) {
             try { client().execute(slug, "ca", null, emptyMap()); fail("$slug ran") }
             catch (e: ComposioException) { assertEquals(ComposioErrorKind.BLOCKED, e.kind) }
         }

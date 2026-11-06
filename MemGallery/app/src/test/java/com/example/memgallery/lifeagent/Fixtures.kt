@@ -6,7 +6,10 @@ import com.example.memgallery.lifeagent.composio.ComposioErrorKind
 import com.example.memgallery.lifeagent.composio.ComposioException
 import com.example.memgallery.lifeagent.composio.ConnectedAccount
 import com.example.memgallery.lifeagent.composio.RawItem
+import com.example.memgallery.lifeagent.composio.ReadToolRules
 import com.example.memgallery.lifeagent.composio.RawType
+import com.example.memgallery.lifeagent.composio.ToolPage
+import com.example.memgallery.lifeagent.composio.ToolSpec
 import com.example.memgallery.lifeagent.composio.ToolResult
 import com.google.gson.JsonParser
 import java.time.LocalDateTime
@@ -50,6 +53,9 @@ object Fixtures {
 class FakeComposio(
     var accounts: List<ConnectedAccount> = emptyList(),
     var listFails: Boolean = false,
+    /** The tools the catalog says each toolkit has, so discovery can be faked for any toolkit. */
+    var toolSpecs: Map<String, List<String>> = emptyMap(),
+    var toolsFail: Boolean = false,
     private val handlers: MutableMap<String, (Map<String, Any?>) -> ToolResult> = mutableMapOf(),
 ) : ComposioApi {
     val calls = mutableListOf<Pair<String, Map<String, Any?>>>()
@@ -63,9 +69,15 @@ class FakeComposio(
         return accounts
     }
 
+    override suspend fun listTools(toolkitSlug: String, cursor: String?, limit: Int): ToolPage {
+        if (toolsFail) throw ComposioException(ComposioErrorKind.SERVER, "Composio had a problem (500)")
+        return ToolPage((toolSpecs[toolkitSlug] ?: emptyList()).map { ToolSpec(it, it, null) }, null)
+    }
+
     override suspend fun execute(slug: String, accountId: String, userId: String?, arguments: Map<String, Any?>): ToolResult {
         calls += slug to arguments
-        if (slug !in ComposioCatalog.READ_TOOLS) throw ComposioException(ComposioErrorKind.BLOCKED, "Refused: $slug is not a read tool")
+        // The same gate the real client uses: anything that is not a read is refused before a request.
+        if (!ReadToolRules.isReadTool(slug)) throw ComposioException(ComposioErrorKind.BLOCKED, "Refused: $slug is not a read tool")
         return (handlers[slug] ?: { ToolResult(true, JsonParser.parseString("{}"), null) })(arguments)
     }
 

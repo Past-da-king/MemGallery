@@ -9,6 +9,8 @@ import com.example.memgallery.lifeagent.composio.ComposioErrorKind
 import com.example.memgallery.lifeagent.data.AppState
 import com.example.memgallery.lifeagent.data.LifeConnectionEntity
 import com.example.memgallery.lifeagent.data.LifeLearningEntity
+import com.example.memgallery.lifeagent.data.LifeToolkitEntity
+import com.example.memgallery.lifeagent.composio.ReadToolRules
 import com.example.memgallery.lifeagent.data.runStatsFromJson
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -180,6 +182,111 @@ class CollectionRunnerTest : DbTestBase() {
         val r = runner.run()
         assertEquals("done", r.apps.first { it.app == "gmail" }.state)
         assertEquals("failed", r.apps.first { it.app == "gcal" }.state)
+    }
+
+    // ---- any connected toolkit, not only the four hand-written ones ----
+
+    private val notionSearch = """{"object":"list","results":[
+      {"object":"page","id":"pg-1","title":"Studio lease renewal for Kagiso","text":"The landlord needs the signed lease back by Fri 13 Nov","created_time":"2026-11-06T07:10:00Z","url":"https://notion.example/pg-1"},
+      {"object":"page","id":"pg-2","title":"Groceries","text":"milk, bread, coffee","created_time":"2026-11-06T07:20:00Z","url":"https://notion.example/pg-2"}]}"""
+
+    private val notionDatabase = """{"results":[
+      {"object":"page","id":"db-1","title":"Invoice INV-77 from Anele Jacobs","text":"Invoice INV-77 for R8,400 due 13 Nov","created_at":"2026-11-06T08:00:00Z","url":"https://notion.example/db-1"}]}"""
+
+    private suspend fun connectNotion(label: String = "notion") {
+        dao.upsertConnection(LifeConnectionEntity("notion", label, true, null, 0L, null, null, null))
+        api.accounts = api.accounts + FakeComposio.account("ca_n", "notion")
+        api.on(ComposioCatalog.GMAIL_FETCH) { FakeComposio.ok("""{"messages":[]}""") }
+        api.on(ComposioCatalog.CAL_LIST) { FakeComposio.ok("""{"items":[]}""") }
+    }
+
+    @Test fun anUnknownToolkitIsReadThroughItsOwnReadToolsAndBecomesProposals() = runBlocking {
+        connectNotion(label = "notion") // no display name on the connection: the cached catalog row must name it
+        dao.upsertToolkits(listOf(LifeToolkitEntity("notion", "Notion", null, null, null, null, false, null, null, Fixtures.NOW)))
+        api.toolSpecs = mapOf("notion" to listOf("NOTION_SEARCH_NOTION_PAGE", "NOTION_GET_DATABASE", "NOTION_CREATE_PAGE"))
+        api.on("NOTION_SEARCH_NOTION_PAGE") { FakeComposio.ok(notionSearch) }
+        api.on("NOTION_GET_DATABASE") { FakeComposio.ok(notionDatabase) }
+
+        val r = runner.run()
+        val notion = r.apps.first { it.app == "notion" }
+        assertEquals("done", notion.state)
+        assertEquals(3, notion.found)
+        assertEquals(1, notion.dropped) // the groceries page has nothing to act on
+        assertEquals(2, notion.proposed)
+        assertEquals(2, r.proposalsCreated)
+
+        val kept = dao.getProposed().filter { it.app == "notion" }.associateBy { it.sourceId }
+        assertEquals(setOf("pg-1", "db-1"), kept.keys)
+        assertEquals("money", kept["db-1"]!!.kind)
+        assertTrue(kept["pg-1"]!!.kind in setOf("commitment", "deadline", "document"))
+        assertTrue(kept["pg-1"]!!.title.contains("lease", ignoreCase = true))
+
+        // Only read tools ran, with empty arguments, and the write tool was never called.
+        val notionCalls = api.calls.filter { it.first.startsWith("NOTION") }
+        assertEquals(setOf("NOTION_SEARCH_NOTION_PAGE", "NOTION_GET_DATABASE"), notionCalls.map { it.first }.toSet())
+        assertTrue(api.calls.all { ReadToolRules.isReadTool(it.first) })
+        assertTrue(notionCalls.all { it.second.isEmpty() })
+
+        // The Collecting screen tells the truth for a toolkit it has no parser for.
+        val shown = bus.progress.value.apps.first { it.app == "notion" }
+        assertEquals("Notion", shown.label)
+        assertEquals(notion.found, shown.found); assertEquals(notion.dropped, shown.dropped)
+        assertEquals(AppState.DONE, shown.state)
+        assertNull(shown.note)
+        assertEquals(Fixtures.NOW, dao.getConnection("notion")!!.lastPulledAt)
+    }
+
+    @Test fun aToolkitWithNoReadToolFailsAloneWithAClearNote() = runBlocking {
+        connectNotion()
+        api.toolSpecs = mapOf("notion" to listOf("NOTION_CREATE_PAGE", "NOTION_DELETE_PAGE"))
+        val r = runner.run()
+        assertEquals("done", r.status)
+        val notion = r.apps.first { it.app == "notion" }
+        assertEquals("failed", notion.state)
+        assertEquals("No read tool found for Notion", notion.note)
+        assertEquals("No read tool found for Notion", dao.getConnection("notion")!!.lastError)
+        assertEquals(0L, dao.getConnection("notion")!!.lastPulledAt)
+        assertTrue(api.calls.none { it.first.startsWith("NOTION") })
+        assertEquals(AppState.FAILED, bus.progress.value.apps.first { it.app == "notion" }.state)
+        assertEquals("done", r.apps.first { it.app == "gmail" }.state)
+    }
+
+    @Test fun oneToolFailingDoesNotStopTheOthersAndTheNoteSaysWhich() = runBlocking {
+        connectNotion()
+        api.toolSpecs = mapOf("notion" to listOf("NOTION_SEARCH_NOTION_PAGE", "NOTION_GET_DATABASE"))
+        api.fail("NOTION_SEARCH_NOTION_PAGE", ComposioErrorKind.SERVER, "Composio had a problem (503)")
+        api.on("NOTION_GET_DATABASE") { FakeComposio.ok(notionDatabase) }
+        val r = runner.run()
+        val notion = r.apps.first { it.app == "notion" }
+        assertEquals("done", notion.state)
+        assertEquals(1, notion.proposed)
+        assertTrue(notion.note!!.contains("NOTION_SEARCH_NOTION_PAGE refused"))
+        assertEquals("Invoice INV-77", dao.getProposed().first { it.app == "notion" }.sourceTitle.substringBefore(" from"))
+        assertNull(dao.getConnection("notion")!!.lastError)
+    }
+
+    @Test fun aToolThatAnswersWithNothingIsNotedAndStillCountsAsDone() = runBlocking {
+        connectNotion()
+        api.toolSpecs = mapOf("notion" to listOf("NOTION_SEARCH_NOTION_PAGE"))
+        api.on("NOTION_SEARCH_NOTION_PAGE") { FakeComposio.ok("""{"results":[]}""") }
+        val r = runner.run()
+        val notion = r.apps.first { it.app == "notion" }
+        assertEquals("done", notion.state)
+        assertEquals(0, notion.found)
+        assertEquals("NOTION_SEARCH_NOTION_PAGE returned nothing", notion.note)
+    }
+
+    @Test fun aToolkitWhoseEveryReadToolFailsFailsAlone() = runBlocking {
+        connectNotion()
+        api.toolSpecs = mapOf("notion" to listOf("NOTION_SEARCH_NOTION_PAGE", "NOTION_GET_DATABASE"))
+        api.fail("NOTION_SEARCH_NOTION_PAGE", ComposioErrorKind.TOOL_FAILED, "Token expired")
+        api.fail("NOTION_GET_DATABASE", ComposioErrorKind.TOOL_FAILED, "Token expired")
+        val r = runner.run()
+        assertEquals("done", r.status)
+        val notion = r.apps.first { it.app == "notion" }
+        assertEquals("failed", notion.state)
+        assertTrue(notion.note!!.contains("NOTION_SEARCH_NOTION_PAGE refused: Token expired"))
+        assertEquals("done", r.apps.first { it.app == "gmail" }.state)
     }
 
     @Test fun onlyReadToolsAreEverCalledAndProgressEndsIdle() = runBlocking {
