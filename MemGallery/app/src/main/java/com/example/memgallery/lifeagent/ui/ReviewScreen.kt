@@ -63,6 +63,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -263,7 +264,7 @@ private fun TopCard(
             .rotate(x.value / widthPx * 14f)
             .shadow(8.dp, RoundedCornerShape(32.dp))
             .clip(RoundedCornerShape(32.dp))
-            .background(scheme.surfaceContainerLowest)
+            .background(if (scheme.surface.luminance() < 0.5f) scheme.surfaceContainerHigh else scheme.surfaceContainerLowest)
             .pointerInput(card.id) {
                 detectDragGestures(
                     onDragEnd = {

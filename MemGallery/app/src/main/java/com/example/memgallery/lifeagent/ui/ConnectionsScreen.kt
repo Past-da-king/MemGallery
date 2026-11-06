@@ -221,7 +221,7 @@ private fun ConnectionRow(
                         status,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (failed) scheme.error else scheme.onSurfaceVariant,
-                        maxLines = 2,
+                        maxLines = 3,
                     )
                 }
             }
