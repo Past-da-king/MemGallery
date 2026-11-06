@@ -83,6 +83,11 @@ fun HomeScreen(
     LaunchedEffect(forceTaskPage) {
         if (forceTaskPage && taskScreenEnabled) pagerState.scrollToPage(2)
     }
+    // "Ask about" from the Life Agent screens: show the chat, which picks the question up
+    val lifeQuestion by com.example.memgallery.lifeagent.ui.LifeChatBridge.pending.collectAsState()
+    LaunchedEffect(lifeQuestion) {
+        if (lifeQuestion != null) pagerState.scrollToPage(0)
+    }
 
     val filter by galleryViewModel.selectedFilter.collectAsState()
     val selectionActive by galleryViewModel.selectionModeActive.collectAsState()

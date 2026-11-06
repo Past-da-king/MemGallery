@@ -127,8 +127,11 @@ fun ChatLayout(
     onMemoryClick: (MemoryEntity) -> Unit,
     onSuggestion: (String) -> Unit,
     modifier: Modifier = Modifier,
+    lifeSources: List<com.example.memgallery.lifeagent.ui.LifeSourceUi> = emptyList(),
+    onOpenLifeSource: (String) -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
+    val newestAnswerId = messages.lastOrNull { it.role != "user" }?.id
     Box(modifier.fillMaxSize().background(scheme.surface).imePadding()) {
         Column(Modifier.fillMaxSize()) {
             ChatHeader(title, subtitle, hasMessages = messages.isNotEmpty(), onHistory, onNewChat, onSaveChat)
@@ -170,7 +173,9 @@ fun ChatLayout(
                                 onPlayAudio = onPlayAudio,
                                 onPauseAudio = onPauseAudio,
                                 onSeekAudio = onSeekAudio,
-                                onMemoryClick = onMemoryClick
+                                onMemoryClick = onMemoryClick,
+                                lifeSources = if (message.id == newestAnswerId) lifeSources else emptyList(),
+                                onOpenLifeSource = onOpenLifeSource
                             )
                         }
                     }
@@ -288,7 +293,9 @@ fun MessageBubble(
     onPlayAudio: (String) -> Unit = {},
     onPauseAudio: () -> Unit = {},
     onSeekAudio: (Float) -> Unit = {},
-    onMemoryClick: (MemoryEntity) -> Unit = {}
+    onMemoryClick: (MemoryEntity) -> Unit = {},
+    lifeSources: List<com.example.memgallery.lifeagent.ui.LifeSourceUi> = emptyList(),
+    onOpenLifeSource: (String) -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
     val isUser = message.role == "user"
@@ -377,6 +384,8 @@ fun MessageBubble(
                     items(sources.size) { i -> SourceCard(i + 1, sources[i]) { onMemoryClick(sources[i]) } }
                 }
             }
+            // Answers that cite the user's own apps: numbered source rows under the answer
+            com.example.memgallery.lifeagent.ui.LifeSourceRows(message.content, lifeSources, onOpenLifeSource)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onCopy), contentAlignment = Alignment.Center) {

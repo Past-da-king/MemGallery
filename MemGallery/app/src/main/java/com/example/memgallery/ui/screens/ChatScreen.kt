@@ -88,6 +88,12 @@ fun ChatScreen(
     val currentMessages by viewModel.currentMessages.collectAsState()
     val currentChatId by viewModel.currentChatId.collectAsState()
     val displayedMemories by viewModel.displayedMemories.collectAsState()
+    val lifeSources by com.example.memgallery.lifeagent.ui.LifeChatBridge.sources.collectAsState()
+    val lifeQuestion by com.example.memgallery.lifeagent.ui.LifeChatBridge.pending.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(lifeQuestion) {
+        com.example.memgallery.lifeagent.ui.LifeChatBridge.consume()?.let { q -> viewModel.updateInputMessage(q) }
+    }
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     val inputMessage by viewModel.inputMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val snackbarMessage by viewModel.snackbarMessage.collectAsState()
@@ -211,6 +217,8 @@ fun ChatScreen(
         subtitle = subtitle,
         messages = currentMessages,
         displayedMemories = displayedMemories,
+        lifeSources = lifeSources,
+        onOpenLifeSource = { url -> if (url.startsWith("https://") || url.startsWith("http://")) runCatching { uriHandler.openUri(url) } },
         inputMessage = inputMessage,
         isLoading = isLoading,
         isStreaming = isStreaming,

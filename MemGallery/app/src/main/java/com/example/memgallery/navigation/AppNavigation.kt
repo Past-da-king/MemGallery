@@ -12,6 +12,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.memgallery.lifeagent.ui.CollectingScreen
+import com.example.memgallery.lifeagent.ui.ConnectionsScreen
+import com.example.memgallery.lifeagent.ui.DailyReportScreen
+import com.example.memgallery.lifeagent.ui.LifeRoutes
+import com.example.memgallery.lifeagent.ui.PeopleScreen
+import com.example.memgallery.lifeagent.ui.PersonScreen
+import com.example.memgallery.lifeagent.ui.ReviewScreen
 import com.example.memgallery.ui.screens.*
 
 sealed class Screen(val route: String) {
@@ -315,6 +322,31 @@ fun AppNavigation(
             popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
         ) {
             FeedbackScreen(navController = navController)
+        }
+
+        // Life Agent (read-only connections to the user's own apps)
+        val lifeEnter = { _: androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry> -> slideInHorizontally(initialOffsetX = { it }) + fadeIn() }
+        composable(LifeRoutes.Connections, enterTransition = lifeEnter, popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }) {
+            ConnectionsScreen(navController = navController)
+        }
+        composable(LifeRoutes.Collecting, enterTransition = lifeEnter, popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }) {
+            CollectingScreen(navController = navController)
+        }
+        composable(LifeRoutes.Review, enterTransition = lifeEnter, popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }) {
+            ReviewScreen(navController = navController)
+        }
+        composable(LifeRoutes.People, enterTransition = lifeEnter, popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }) {
+            PeopleScreen(navController = navController)
+        }
+        composable(
+            LifeRoutes.Person,
+            arguments = listOf(navArgument("name") { type = NavType.StringType }),
+            enterTransition = lifeEnter, popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) {
+            PersonScreen(navController = navController)
+        }
+        composable(LifeRoutes.Report, enterTransition = lifeEnter, popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }) {
+            DailyReportScreen(navController = navController)
         }
     }
 }

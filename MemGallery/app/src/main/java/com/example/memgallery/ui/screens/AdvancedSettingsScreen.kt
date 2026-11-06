@@ -94,6 +94,15 @@ fun AdvancedSettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // 0. Life Agent: read-only connections to the user's own apps
+            SettingsNavRow(
+                icon = Icons.Default.Link,
+                title = stringResource(R.string.la_connections_title),
+                subtitle = stringResource(R.string.la_connections_entry_sub),
+                shape = RoundedCornerShape(28.dp),
+                onClick = { navController.navigate(com.example.memgallery.lifeagent.ui.LifeRoutes.Connections) }
+            )
+
             // 1. AI System Prompt Section
             SettingsCard(
                 icon = Icons.Default.Psychology,

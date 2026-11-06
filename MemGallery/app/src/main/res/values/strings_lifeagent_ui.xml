@@ -237,4 +237,36 @@
     <!-- Chat sources -->
     <string name="la_chat_sources">Sources</string>
     <string name="la_chat_read_apps">Read %1$d apps</string>
+
+    <!-- Labels made by the ViewModels -->
+    <string name="la_word_today">Today</string>
+    <string name="la_word_tomorrow">Tomorrow</string>
+    <string name="la_word_yesterday">Yesterday</string>
+    <string name="la_when_today_at">today %1$s</string>
+    <string name="la_when_tomorrow_at">tomorrow %1$s</string>
+    <string name="la_when_none">no date</string>
+    <plurals name="la_when_late">
+        <item quantity="one">%1$d day late</item>
+        <item quantity="other">%1$d days late</item>
+    </plurals>
+    <string name="la_tag_due_today">Due today</string>
+    <string name="la_tag_overdue">Overdue</string>
+    <string name="la_tag_tomorrow">Due tomorrow</string>
+    <string name="la_tag_in_days">In %1$d days</string>
+    <string name="la_date_today">Today, %1$s</string>
+    <string name="la_date_tomorrow">Tomorrow, %1$s</string>
+    <string name="la_next_today">Today · %1$s</string>
+    <string name="la_next_tomorrow">Tomorrow, %1$s · %2$s</string>
+    <string name="la_next_off">Daily collection is off</string>
+    <string name="la_report_ended_at">Ended %1$s</string>
+    <string name="la_reason_newsletter">Newsletters</string>
+    <string name="la_reason_promotion">Promotions</string>
+    <string name="la_reason_receipt">Receipts</string>
+    <string name="la_reason_social">Social alerts</string>
+    <string name="la_reason_duplicate">Repeats</string>
+    <string name="la_reason_other">Other noise</string>
+    <string name="la_key_too_short">That key looks too short. Paste the whole key.</string>
+    <string name="la_ask_person">What is open between me and %1$s, and what did we last talk about?</string>
+    <string name="la_ask_person_facts">What is open between me and %1$s, and what did we last talk about? Facts you can cite as [1], [2]: %2$s</string>
+    <string name="la_connections_entry_sub">Read-only: Gmail, Calendar, ClickUp, Slack</string>
 </resources>

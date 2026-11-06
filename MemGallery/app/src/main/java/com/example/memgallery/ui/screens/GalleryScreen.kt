@@ -210,7 +210,10 @@ fun GalleryScreen(
         onCapture = onCreateCollection,
     )
 
-    GalleryContent(state, actions, bottomPadding, initialSearchOpen = initialSearchOpen, onCreateCollection = onCreateCollection)
+    GalleryContent(
+        state, actions, bottomPadding, initialSearchOpen = initialSearchOpen, onCreateCollection = onCreateCollection,
+        lifeEntry = { com.example.memgallery.lifeagent.ui.LifeAgentHomeEntry(navController) }
+    )
 
     if (showStatsSheet) {
         com.example.memgallery.ui.design.MemSheet(onDismiss = { showStatsSheet = false }) {
@@ -251,6 +254,7 @@ fun GalleryContent(
     modifier: Modifier = Modifier,
     initialSearchOpen: Boolean = false,
     onCreateCollection: () -> Unit = {},
+    lifeEntry: @Composable () -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     var searchOpen by rememberSaveable { mutableStateOf(initialSearchOpen) }
@@ -307,6 +311,10 @@ fun GalleryContent(
                         )
                         Spacer(Modifier.height(16.dp))
                         FilterButtonGroup(filterOptions(), state.filter, actions.onFilter)
+                        if (state.filter == "All" && state.searchText.isBlank()) {
+                            Spacer(Modifier.height(12.dp))
+                            Box(Modifier.fullBleed(0.dp).padding(horizontal = 0.dp)) { lifeEntry() }
+                        }
                         Spacer(Modifier.height(0.dp))
                     }
                 }
