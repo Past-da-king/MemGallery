@@ -1,0 +1,13 @@
+# Secret scan config for MemGallery.
+#
+# The default gitleaks rules are kept. One narrow allowlist is added: the unit test sources carry deliberately fake
+# keys (for example `ak_test_...` and `ck_live_abc123`) and recorded Composio payloads, which the generic-api-key
+# rule matches on. No live credential is ever put in a test, and nothing outside `app/src/test` is allowlisted.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake keys and recorded fixture payloads in unit tests only."
+paths = [
+  '''MemGallery/app/src/test/.*''',
+]
