@@ -97,6 +97,11 @@ fun ReviewScreen(navController: NavController, viewModel: ReviewViewModel = hilt
             onUndo = viewModel::undo,
             onApproveAll = viewModel::approveAll,
             onOpenSource = uri::openSafely,
+            onAsk = { id ->
+                viewModel.ask(id) {
+                    navController.navigate(Screen.Gallery.route) { popUpTo(Screen.Gallery.route) { inclusive = false } }
+                }
+            },
         ),
     )
 }

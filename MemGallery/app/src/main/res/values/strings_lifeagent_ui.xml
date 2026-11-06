@@ -266,6 +266,9 @@
     <string name="la_reason_duplicate">Repeats</string>
     <string name="la_reason_other">Other noise</string>
     <string name="la_key_too_short">That key looks too short. Paste the whole key.</string>
+    <string name="la_ask">Ask about this</string>
+    <string name="la_ask_card">What is this about, and what should I do about it? Facts you can cite as [1]: %1$s</string>
+    <string name="la_ask_card_plain">What is this about, and what should I do about it?</string>
     <string name="la_ask_person">What is open between me and %1$s, and what did we last talk about?</string>
     <string name="la_ask_person_facts">What is open between me and %1$s, and what did we last talk about? Facts you can cite as [1], [2]: %2$s</string>
     <string name="la_connections_entry_sub">Read-only: Gmail, Calendar, ClickUp, Slack</string>

@@ -100,6 +100,7 @@ class ReviewActions(
     val onApproveAll: () -> Unit = {},
     val onOpenSource: (String) -> Unit = {},
     val onOpenConnections: () -> Unit = {},
+    val onAsk: (String) -> Unit = {},
 )
 
 /** Proposed memories as a swipe deck: right keeps, left drops, undo, Approve all as a slide-up sheet, then the caught-up state. */
@@ -190,6 +191,7 @@ private fun Deck(state: ReviewUiState, actions: ReviewActions) {
                     widthPx = with(LocalDensity.current) { maxWidth.toPx() },
                     onDecided = { keep -> if (keep) actions.onKeep(top.id) else actions.onDrop(top.id) },
                     onOpenSource = actions.onOpenSource,
+                    onAsk = actions.onAsk,
                     modifier = Modifier.padding(bottom = 34.dp),
                 )
             }
@@ -239,6 +241,7 @@ private fun TopCard(
     widthPx: Float,
     onDecided: (Boolean) -> Unit,
     onOpenSource: (String) -> Unit,
+    onAsk: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -292,6 +295,18 @@ private fun TopCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AppChipLarge(card)
                 Spacer(Modifier.weight(1f))
+                IconButton(
+                    onClick = { onAsk(card.id) },
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(scheme.surface.copy(alpha = 0.9f)),
+                ) {
+                    Icon(
+                        Icons.Rounded.AutoAwesome,
+                        stringResource(R.string.la_ask),
+                        tint = scheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
                 Row(
                     Modifier.height(36.dp).clip(RoundedCornerShape(14.dp)).background(scheme.surface.copy(alpha = 0.9f)).padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically

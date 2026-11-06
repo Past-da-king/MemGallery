@@ -228,6 +228,24 @@ class ReviewViewModel @Inject constructor(
     fun commitPending() = session.commitPending()
     fun approveAll() = session.approve(state.value.remaining.map { it.id to it.suggestKeep })
 
+    /**
+     * Ask about the card in the chat. The card's own source becomes [1] through askContext, so the answer can cite it
+     * and the chat shows the source row, exactly like a person page.
+     */
+    fun ask(id: String, onReady: () -> Unit) {
+        LifeAgentUiScope.scope.launch {
+            val proposal = runCatching { repo.allProposals.first().firstOrNull { it.id == id } }.getOrNull()
+            val facts = runCatching { repo.askContext(id) }.getOrDefault("")
+            val source = proposal?.let {
+                LifeSourceUi(1, it.sourceTitle.ifBlank { it.title }, LifeAppId.from(it.app), it.app, it.personName.orEmpty(), it.sourceUrl)
+            }
+            val question = if (facts.isBlank()) context.getString(R.string.la_ask_card_plain)
+            else context.getString(R.string.la_ask_card, facts)
+            LifeChatBridge.ask(question, listOfNotNull(source))
+            onReady()
+        }
+    }
+
     override fun onCleared() {
         // The undo window ends with the screen: write what is waiting.
         session.commitPending()
