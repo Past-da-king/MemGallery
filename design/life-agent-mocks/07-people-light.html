@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-b.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script>
+<script>
+const mountB = (html, time) => { mount(html); document.querySelector('.status span').textContent = time; };
+/* avatar tones: mixes of kit tokens only */
+const AV = {
+  sand: ['var(--amber-container)', 'var(--on-amber-container)'],
+  teal: ['color-mix(in srgb,var(--sky-container) 70%,var(--success-container))', 'var(--on-sky-container)'],
+  rose: ['var(--tertiary-container)', 'var(--on-tertiary-container)'],
+  olive: ['color-mix(in srgb,var(--success-container) 55%,var(--amber-container))', 'var(--on-success-container)'],
+  amber: ['color-mix(in srgb,var(--amber-container) 62%,var(--tertiary-container))', 'var(--on-amber-container)'],
+  slate: ['var(--secondary-container)', 'var(--on-secondary-container)'],
+  moss: ['color-mix(in srgb,var(--success-container) 78%,var(--sky-container))', 'var(--on-success-container)'],
+};
+const av = (ini, shape, tn, s = 52) => `<div class="shi" style="width:${s}px;height:${s}px;background:${AV[tn][0]};color:${AV[tn][1]};${clip(shape)}"><span style="font:700 ${Math.round(s * .31)}px/1 var(--font);letter-spacing:.2px">${ini}</span></div>`;
+const person = (ini, shape, tn, name, role, kind, cm, date) => `<div class="row pr"><div>${av(ini, shape, tn)}</div><div class="txt" style="min-width:0"><div class="nm"><span class="title-m-em">${name}</span><span class="d">${date}</span></div><div class="rl">${role}</div><div class="cm"><b class="${kind[0]}">${kind[1]}</b><span style="overflow:hidden;text-overflow:ellipsis">${cm}</span></div></div></div>`;
+const OW = ['ow', 'You owe'], OU = ['ou', 'Owes you'], WT = ['wt', 'Waiting'], MT = ['wt', 'Meeting'];
+
+mountB(`
+${blobHeader({ eyebrow: '7 PEOPLE', title: 'People', h: 176, icon1: 'sort_by_alpha', icon2: 'person_add', float: searchPill('Search people, roles, companies') })}
+
+<div class="abs" style="top:212px;left:16px;right:16px">
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px 10px 10px;border-radius:20px;background:var(--tertiary-container);color:var(--on-tertiary-container)">
+    <div class="shi" style="width:32px;height:32px;background:color-mix(in srgb,var(--on-tertiary-container) 14%,transparent);${clip('cookie9')}">${ic('auto_awesome', 'f s20')}</div>
+    <div class="body-s" style="font-size:13px;line-height:18px;flex:1">Built from your memories. A person appears when a mail, task or note names them.</div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px">
+    <div class="fg"><div class="fi on">${ic('schedule', 'f')}Recent</div><div class="fi">A to Z</div><div class="fi">${ic('flag')}Open</div></div>
+    <span class="label-m muted">Last memory</span>
+  </div>
+</div>
+
+<div class="abs grp" style="top:322px;left:0;right:0">
+  ${person('NM', 'cookie9', 'sand', 'Nomsa Mahlangu', 'Client, Umoya Lodge', OW, 'signed lease, Sat 7 Nov 16:00', '6 Nov')}
+  ${person('KM', 'clover4', 'teal', 'Kagiso Motaung', 'Accountant, Brightline Books', OW, 'Q4 expense sheet, Mon 9 Nov', '6 Nov')}
+  ${person('JS', 'sunny', 'moss', 'Jaco Steyn', 'Freelance photographer', OU, 'retouched Umoya set, promised today', '6 Nov')}
+  ${person('SN', 'puffy', 'olive', 'Sizwe Ndlovu', 'Client, Ndlovu &amp; Sons', MT, 'pitch Thu 12 Nov, 10:00 (moved)', '5 Nov')}
+  ${person('TZ', 'softburst', 'rose', 'Thandeka Zulu', 'Studio partner', OU, 'final artwork, Tue 10 Nov', '5 Nov')}
+  ${person('AJ', 'gem', 'amber', 'Anele Jacobs', 'Supplier, Kloof Print Works', OW, 'R8,400 invoice INV-2043, Fri 13 Nov', '4 Nov')}
+  ${person('PN', 'arch', 'slate', 'Priya Naidoo', 'Landlord, Morningside', WT, 'reply on the deposit refund', '26 Oct')}
+</div>
+`, '17:09');
+</script></body></html>

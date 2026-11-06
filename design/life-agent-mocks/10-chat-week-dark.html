@@ -1,0 +1,48 @@
+<!doctype html><html class="dark"><head><meta charset="utf-8"><link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-b.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script><script>document.documentElement.classList.add("dark")</script>
+<script>
+const SRC = { gmail: ['mail', '--tertiary-container', '--on-tertiary-container', 'Gmail'], cal: ['event', '--sky-container', '--on-sky-container', 'Calendar'], clickup: ['task_alt', '--primary-container', '--on-primary-container', 'ClickUp'], slack: ['tag', '--amber-container', '--on-amber-container', 'Slack'] };
+const mountB = (html, time) => { mount(html); document.querySelector('.status span').textContent = time; };
+const grp = (icon, tn, shape, html) => `<div class="cg"><div class="shi" style="${tone(tn)}${clip(shape)}">${ic(icon, 'f s18')}</div><div class="tx">${html}</div></div>`;
+const cite = n => `<sup>[${n}]</sup>`;
+const srow = (n, k, who, title) => { const [i, bg, fg, l] = SRC[k]; return `<div class="srow"><span class="n">${n}</span><div class="shi" style="width:32px;height:32px;border-radius:10px;background:var(${bg});color:var(${fg})">${ic(i, 'f s18')}</div><div class="st"><div class="s1">${title}</div><div class="s2">${l} &middot; ${who}</div></div><div class="ib">${ic('arrow_outward', 's20')}</div></div>`; };
+
+mountB(`
+<div class="abs" style="top:40px;left:4px;right:4px;height:64px;display:flex;align-items:center"><div class="ib">${ic('history')}</div><div style="flex:1;text-align:center" class="title-m-em">This week<div class="label-s muted" style="font-weight:500">Life agent &middot; Local &middot; Gemma 3</div></div><div class="ib">${ic('edit_square')}</div></div>
+
+<div class="abs" style="top:108px;left:16px;right:16px;display:flex;flex-direction:column;gap:16px">
+  <div style="align-self:flex-end;max-width:292px;padding:12px 20px;background:var(--primary);color:var(--on-primary);border-radius:28px 28px 8px 28px" class="body-l">What do I need to handle this week?</div>
+
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div class="shi" style="width:32px;height:32px;background:var(--tertiary-container);color:var(--on-tertiary-container);${clip('cookie9')}">${ic('auto_awesome', 'f s20')}</div>
+      <span class="chip tag" style="background:var(--surface-container-high);height:28px;font-size:12px">${ic('search', 's18')}Read 4 apps &middot; collected 17:04</span></div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${grp('payments', 'a', 'puffy', `<b>Money.</b> INV-2043, R8,400 to Kloof Print Works, is due Fri 13 Nov.${cite(2)} Approve the payment <span class="ct">ClickUp task</span>`)}
+      ${grp('group', 'k', 'clover4', `<b>People.</b> Nomsa needs the signed lease by Sat 7 Nov, 16:00.${cite(1)} Jaco promised the retouched set today.${cite(4)}`)}
+      ${grp('event', 'p', 'gem', `<b>Meetings.</b> The pitch moved to Thu 12 Nov, 10:00.${cite(3)} Standup is Mon 9 Nov, 09:00.`)}
+      ${grp('alarm', 't', 'sunny', `<b>Late.</b> The Durban workshop flights were due Wed 4 Nov and are still not booked. <span class="ct">ClickUp task</span>`)}
+      ${grp('shield', 'g', 'cookie9', `<b>Watch.</b> A new sign-in from Chrome on Windows (Durban), Thu 5 Nov at 21:12. <span class="ct">Gmail alert</span>`)}
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px">
+      <span class="label-m muted" style="letter-spacing:1.2px">SOURCES</span>
+      <div style="display:flex;align-items:center;gap:4px;margin-right:-12px"><div class="ib" style="width:40px">${ic('content_copy', 's20')}</div><span class="btn tonal" style="margin-right:12px">${ic('note_add')}Save as note</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;margin:0 -4px">
+      ${srow(1, 'gmail', 'Nomsa Mahlangu', 'Signed lease, before the weekend')}
+      ${srow(2, 'gmail', 'Anele Jacobs', 'INV-2043 due 13 Nov')}
+      ${srow(3, 'cal', 'Ndlovu &amp; Sons', 'Ndlovu &amp; Sons pitch, moved')}
+      ${srow(4, 'slack', 'Jaco Steyn', '#studio')}
+    </div>
+  </div>
+</div>
+
+<div class="abs" style="left:0;right:0;bottom:112px;display:flex;gap:8px;padding:0 16px;overflow:hidden;z-index:51">${chip('Draft the reply to Nomsa', { icon: 'edit_note' })}${chip('Tick off the standup notes', { icon: 'task_alt' })}${chip('What is still open from last week?', { icon: 'history' })}</div>
+<div class="fade" style="height:190px"></div>
+<div class="abs" style="left:16px;right:16px;bottom:36px;height:64px;border-radius:32px;background:var(--surface-container-high);display:flex;align-items:center;padding:0 8px 0 4px;box-shadow:var(--e1);gap:0;z-index:51">
+  <div class="ib">${ic('add_circle')}</div><span class="body-l muted" style="flex:1">Ask your memories…</span><div class="ib">${ic('mic')}</div>
+  <div style="width:48px;height:48px;border-radius:24px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center">${ic('arrow_upward', 'b')}</div></div>
+`, '17:12');
+</script></body></html>

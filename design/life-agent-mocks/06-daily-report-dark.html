@@ -1,0 +1,51 @@
+<!doctype html><html class="dark"><head><meta charset="utf-8"><link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-b.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script><script>document.documentElement.classList.add("dark")</script>
+<script>
+const SRC = { gmail: ['mail', '--tertiary-container', '--on-tertiary-container', 'Gmail'], cal: ['event', '--sky-container', '--on-sky-container', 'Calendar'], clickup: ['task_alt', '--primary-container', '--on-primary-container', 'ClickUp'], slack: ['tag', '--amber-container', '--on-amber-container', 'Slack'] };
+const sc = (k, n = '') => { const [i, bg, fg, l] = SRC[k]; return n ? `<span class="src n">${ic(i)}${l}</span>` : `<span class="src" style="background:var(${bg});color:var(${fg})">${ic(i)}${l}</span>`; };
+const mountB = (html, time) => { mount(html); document.querySelector('.status span').textContent = time; };
+
+const sec = (l, c, r = '') => `<div class="sec"><span class="l">${l}${c !== undefined ? `<span class="c">${c}</span>` : ''}</span>${r ? `<span class="r">${r}</span>` : ''}</div>`;
+const card = (tn, badge, bi, text, src) => `<div class="awc" style="${tone(tn)}"><div class="b">${ic(bi)}${badge}</div><div class="x">${text}</div><div class="f">${sc(src, 1)}<span class="go">${ic('arrow_outward', 's18')}</span></div></div>`;
+const task = (t, src, when, o = {}) => `<div class="row ${o.late ? 'late' : ''}"><div class="tickw"><div class="tick ${o.late ? 'late' : ''}"></div></div><div class="txt"><div class="ttl">${t}</div><div class="meta">${sc(src)}<span class="t ${o.late ? 'late' : ''}">${when}</span></div></div><div class="ib">${ic('snooze', 's20')}</div></div>`;
+const open = (t, src, when) => `<div class="row" style="min-height:52px"><div class="tickw"><div class="tick"></div></div><div class="txt"><div class="ttl" style="font-weight:500">${t}</div></div>${sc(src)}<span class="t label-m muted" style="width:62px;text-align:right;margin-right:8px">${when}</span></div>`;
+
+mountB(`
+${blobHeader({ eyebrow: 'FRIDAY 6 NOVEMBER', title: '<span style="font:700 36px/42px var(--font);letter-spacing:-.8px">Daily report</span>', back: 1, h: 212, tiles: [['3', 'DUE TODAY'], ['1', 'OVERDUE'], ['5', 'STILL OPEN']], icon1: 'history', icon2: 'tune' })}
+
+<div class="abs" style="top:222px;left:0;right:0">
+  <div style="display:flex;align-items:center;gap:8px;padding:0 20px;height:28px" class="label-m muted">${ic('sync', 's18')}<span>Collected 17:04 from 4 apps, read only</span></div>
+
+  ${sec('TO BE AWARE OF', 4)}
+  <div class="awr">
+    ${card('t', 'DUE TOMORROW 16:00', 'schedule', 'Nomsa needs the signed lease by tomorrow, 16:00.', 'gmail')}
+    ${card('a', 'DUE FRI 13 NOV', 'payments', 'INV-2043 from Anele, R8,400, is due next Friday.', 'gmail')}
+    ${card('k', 'MOVED', 'event_repeat', 'Sizwe moved the pitch to Thu 12 Nov, 10:00.', 'cal')}
+  </div>
+
+  <div style="height:8px"></div>
+  ${sec('DUE TODAY', 3)}
+  <div class="grp">
+    ${task('Chase Jaco for the retouched set', 'clickup', 'today 17:00')}
+    ${task('Jaco promised the retouched Umoya set', 'slack', 'today')}
+    ${task('Send the standup notes to Thandeka', 'clickup', 'today')}
+  </div>
+
+  <div style="height:8px"></div>
+  ${sec('OVERDUE', 1)}
+  <div class="grp">${task('Book the Durban workshop flights', 'clickup', '2 days late, was due Wed 4 Nov', { late: 1 })}</div>
+
+  <div style="height:8px"></div>
+  ${sec('TODAY\'S MEETINGS', 1, 'Calendar')}
+  <div class="grp"><div class="row"><div style="width:48px;flex:none;text-align:center"><div class="title-m-em" style="line-height:20px">15:30</div><div class="label-s muted">30 min</div></div><div class="txt"><div class="ttl">Call with Kagiso about Q4</div><div class="meta">${sc('cal')}<span class="t">Google Meet</span></div></div><div class="ib">${ic('chevron_right', 's20')}</div></div></div>
+
+  <div style="height:8px"></div>
+  ${sec('STILL OPEN', 5)}
+  <div class="grp">
+    ${open('Q4 expense sheet for Kagiso', 'clickup', 'Mon 9 Nov')}
+    ${open('Approve the INV-2043 payment', 'clickup', 'Fri 13 Nov')}
+  </div>
+</div>
+<div class="fade" style="height:60px"></div>
+`, '17:09');
+</script></body></html>

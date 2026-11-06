@@ -1,0 +1,55 @@
+<!doctype html><html class="dark"><head><meta charset="utf-8"><link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-b.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script><script>document.documentElement.classList.add("dark")</script>
+<script>
+/* Honest Android lock screen: wallpaper, small clock (notifications present), a stack of real notifications. */
+mount(`
+<div class="lock">
+<div class="lock-wall">${artFill('dunes')}</div>
+<div class="abs" style="top:0;left:0;right:0;height:40px;z-index:91;display:flex;align-items:center;padding:0 24px;gap:8px">
+  <span class="nicon" style="background:var(--primary);color:var(--on-primary);width:18px;height:18px">${ic('photo_library')}</span>
+  <span class="nicon" style="background:var(--sky);color:#fff;width:18px;height:18px">${ic('event')}</span>
+</div>
+
+<div class="abs" style="top:52px;left:0;right:0;text-align:center;color:#fff;z-index:3">
+  <div class="i f" style="font-size:20px;width:20px;height:20px;margin-bottom:6px;opacity:.9">lock</div>
+  <div style="font:400 72px/72px var(--font);letter-spacing:-1px">15:22</div>
+  <div style="font:500 16px/24px var(--font);margin-top:4px;opacity:.95">Fri, 6 November</div>
+</div>
+
+<div class="abs" style="top:218px;left:12px;right:12px;display:flex;flex-direction:column;gap:6px;z-index:5">
+  <!-- the nudge, expanded: this is the shade entry with its actions -->
+  <div class="ncard" style="padding:14px 16px 12px">
+    <div class="nhead">
+      <span class="nicon" style="background:var(--primary);color:var(--on-primary)">${ic('photo_library')}</span>
+      <span style="font-weight:600;color:var(--on-surface)">MemGallery</span><span>&middot;</span><span>Nudges</span><span>&middot;</span><span>now</span>
+      <span style="flex:1"></span>${ic('expand_less', 's20')}
+    </div>
+    <div style="font:600 16px/22px var(--font);margin-top:10px">Signed lease for Nomsa</div>
+    <div style="font:400 14px/20px var(--font);margin-top:2px;color:var(--on-surface-variant)">Send the signed lease to Nomsa is due by 16:00 tomorrow and still open.</div>
+    <div style="font:400 14px/20px var(--font);margin-top:6px;color:var(--on-surface-variant)">Task from ClickUp. Nomsa wrote on Gmail: &ldquo;Signed lease, before the weekend&rdquo;.</div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <span class="nbtn">${ic('snooze')}Snooze</span>
+      <span class="nbtn">${ic('check')}Mark done</span>
+    </div>
+  </div>
+
+  <div class="ncard" style="padding:12px 16px">
+    <div class="nhead">
+      <span class="nicon" style="background:var(--sky);color:#fff">${ic('event')}</span>
+      <span style="font-weight:600;color:var(--on-surface)">Calendar</span><span>&middot;</span><span>15:22</span>
+      <span style="flex:1"></span>${ic('expand_more', 's20')}
+    </div>
+    <div style="font:600 15px/20px var(--font);margin-top:8px">Call with Kagiso about Q4</div>
+    <div style="font:400 14px/20px var(--font);color:var(--on-surface-variant)">15:30 to 16:00 &middot; Google Meet &middot; in 8 min</div>
+  </div>
+
+  <div style="display:flex;justify-content:center;margin-top:8px"><span class="nbtn" style="background:rgba(20,16,40,.45);color:#fff;backdrop-filter:blur(12px);height:40px">Manage</span></div>
+</div>
+
+<div class="abs" style="left:32px;bottom:60px;z-index:5"><div class="lockbtn">${ic('call', 'f')}</div></div>
+<div class="abs" style="right:32px;bottom:60px;z-index:5"><div class="lockbtn">${ic('photo_camera', 'f')}</div></div>
+<div class="abs" style="left:0;right:0;bottom:74px;text-align:center;color:#fff;font:500 13px/18px var(--font);opacity:.85;z-index:5">Swipe up to unlock</div>
+</div>
+`);
+document.querySelector('.phone').classList.add('lock'); document.querySelector('.status > span').textContent = '';
+</script></body></html>

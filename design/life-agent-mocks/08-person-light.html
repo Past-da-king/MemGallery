@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-b.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script>
+<script>
+const SRC = { gmail: ['mail', '--tertiary-container', '--on-tertiary-container', 'Gmail'], cal: ['event', '--sky-container', '--on-sky-container', 'Calendar'], clickup: ['task_alt', '--primary-container', '--on-primary-container', 'ClickUp'], slack: ['tag', '--amber-container', '--on-amber-container', 'Slack'] };
+const sc = k => { const [i, bg, fg, l] = SRC[k]; return `<span class="src" style="background:var(${bg});color:var(${fg})">${ic(i)}${l}</span>`; };
+const mountB = (html, time) => { mount(html); document.querySelector('.status span').textContent = time; };
+const sec = (l, c, r = '') => `<div class="sec"><span class="l">${l}${c !== undefined ? `<span class="c">${c}</span>` : ''}</span>${r ? `<span class="r">${r}</span>` : ''}</div>`;
+const mem = (k, t, d) => `<div class="row" style="min-height:64px;padding-left:16px"><div class="txt"><div class="ttl" style="font-weight:500;font-size:14px;line-height:20px">${t}</div><div class="meta" style="margin-top:4px">${sc(k)}<span class="t">${d}</span></div></div><div class="ib">${ic('chevron_right', 's20')}</div></div>`;
+const contact = (i, v, l, a) => `<div class="row" style="min-height:56px"><div class="shi" style="width:36px;height:36px;border-radius:18px;background:var(--secondary-container);color:var(--on-secondary-container)">${ic(i, 's20')}</div><div class="txt"><div class="ttl" style="font-weight:500">${v}</div><div class="label-s muted" style="font-weight:500">${l}</div></div><div class="ib">${ic(a, 's20')}</div></div>`;
+
+mountB(`
+${blobHeader({ eyebrow: 'PERSON', title: '<span style="font:700 28px/34px var(--font);letter-spacing:-.4px">Nomsa Mahlangu</span>', back: 1, h: 200, nobtn: 1 })}
+<div class="ib abs" style="right:4px;top:42px;color:var(--on-primary-container)">${ic('more_vert')}</div>
+<div class="abs" style="top:116px;left:16px;width:220px;color:var(--on-primary-container)">
+  <div class="title-m">Client, Umoya Lodge</div>
+  <div class="body-s" style="opacity:.8;margin-top:2px">Last memory today, 6 Nov</div>
+  <div style="display:flex;gap:6px;margin-top:10px"><span class="pill tert">${ic('flag')}1 you owe</span><span class="pill" style="background:color-mix(in srgb,var(--on-primary-container) 12%,transparent)">${ic('hourglass_top')}1 waiting</span></div>
+</div>
+<div class="abs shi" style="right:24px;top:100px;width:136px;height:136px;background:var(--amber-container);color:var(--on-amber-container);${clip('cookie9')};z-index:4"><span style="font:700 44px/1 var(--font);letter-spacing:-.5px">NM</span></div>
+
+<div class="abs" style="top:244px;left:0;right:0">
+  ${sec('OPEN COMMITMENTS', 2)}
+  <div class="grp">
+    <div class="row" style="min-height:68px"><div class="tickw"><div class="tick"></div></div><div class="txt"><div class="label-s" style="color:var(--tertiary);letter-spacing:.8px">YOU OWE</div><div class="ttl">Send the signed lease to Nomsa</div><div class="meta">${sc('clickup')}<span class="t">Sat 7 Nov, 16:00 (tomorrow)</span></div></div><div class="ib">${ic('snooze', 's20')}</div></div>
+    <div class="row" style="min-height:68px"><div class="tickw"><div class="shi" style="width:28px;height:28px;border-radius:14px;background:var(--primary-container);color:var(--on-primary-container)">${ic('hourglass_top', 's18 f')}</div></div><div class="txt"><div class="label-s" style="color:var(--primary);letter-spacing:.8px">WAITING ON HER</div><div class="ttl">Her reply about the deposit</div><div class="meta">${sc('gmail')}<span class="t">no reply yet</span></div></div><div class="ib">${ic('notifications_active', 's20')}</div></div>
+  </div>
+
+  <div style="height:8px"></div>
+  ${sec('RECENT MEMORIES', 6, 'See all')}
+  <div class="grp">
+    ${mem('gmail', 'Nomsa is waiting on the signed lease, due Sat 7 Nov 16:00', '6 Nov')}
+    ${mem('slack', 'Jaco promised the retouched Umoya set today', '6 Nov')}
+    ${mem('clickup', 'Task added: send the signed lease to Nomsa', '5 Nov')}
+  </div>
+
+  <div style="height:8px"></div>
+  ${sec('DETAILS')}
+  <div class="grp">
+    ${contact('mail', 'nomsa@umoyalodge.example', 'Email, from Gmail', 'content_copy')}
+    ${contact('call', '+27 31 555 0142', 'Phone', 'content_copy')}
+  </div>
+</div>
+
+<div class="fade" style="height:120px"></div>
+<div class="abs" style="left:16px;right:16px;bottom:36px;height:56px;border-radius:16px;background:var(--tertiary-container);color:var(--on-tertiary-container);box-shadow:var(--e3);display:flex;align-items:center;justify-content:center;gap:12px;z-index:50">${ic('auto_awesome', 'f')}<span class="title-m-em">Ask about Nomsa</span></div>
+`, '17:10');
+</script></body></html>
