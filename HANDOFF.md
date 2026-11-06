@@ -43,9 +43,24 @@ the PC.
      screens must call `LifeAgentControls.ensureScheduled()` on app start. ClickUp, Slack and Calendar response
      shapes are guesses from the docs until one real read each is run.
 
-4. **Helper B (screens and navigation) was still working when this thread stopped.** Check whether it pushed; if not,
-   its work may sit uncommitted in a temp clone on the server. Its split is unchanged: the screens from the mocks,
-   navigation and entry points, chat source rows, and Roborazzi screenshot tests.
+4. **Screens, navigation and entry points: BUILT AND PUSHED** (helper B finished after the first handoff).
+   Commits `2bb7e71`, `213b45e`, `ba8a861`, `bf5bac0`. Full app test run **257 tests, 0 failures**, `assembleDebug`
+   green, Gradle daemon stopped.
+   - Connections (no key, key set, failed connection with Retry, Connect/Disconnect/key/time sheets), Collecting
+     (running, one app failed, finished, idle, no apps), Review deck (drag keep/drop with undo, Approve all sheet,
+     caught up, nothing to review), People and Person (list, empty, no match, not found, snooze sheet), Daily report
+     (five sections, no apps, empty, snooze), Chat numbered source rows, a Connections row at the top of Settings >
+     Advanced and a Daily report card on Home.
+   - Tests: `LifeAgentProofTest` 59 (28 screens and sheets in light and dark plus 3 gesture tests) and
+     `LifeAgentMappersTest` 23. Proof PNGs (824x1830) are in `Downloads\MemGallery\life-agent-ui-proof` on the PC;
+     the last two cosmetic tweaks were not re-rendered, so re-run the proof suite before showing them.
+   - Departures to know: Approve all applies each card's own suggestion one by one rather than `keepAll()`; ticking a
+     task on the report removes the row (the repository filters done tasks); Collecting shows one note per app, not
+     per-item drop reasons; People derives you-owe/owes-you from kept proposals; chat source rows appear for "Ask
+     about a person" only, because the chat ViewModel is not part of this feature yet.
+   - Still owed: cancel from the screen only stops a UI-started run (a WorkManager run needs a cancel hook from
+     `LifeAgentSchedule`/the worker); per-item Ask from review cards and widgets is unproven; no live Composio
+     connection; no emulator pass of the whole loop.
 
 ## What is left (Ayanda's nine, read only)
 1. Settings > Advanced > Connections: the user's own Composio key, Gmail, Google Calendar, ClickUp, Slack, read only.
