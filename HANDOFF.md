@@ -1,7 +1,8 @@
 # HANDOFF: MemGallery Life Agent v1
 
-Written 6 Nov 2026 ~16:35 SAST by the MemGallery project chat (the one that is being replaced by a server chat).
-Branch: **feat/life-agent** (off master 46cba59, v0.4.0). Nothing merged to master, no PR.
+FINAL, 6 Nov 2026 ~17:20 SAST: the build is finished, proven where it can be, and the debug APK plus the proofs are in
+`C:\Users\past9\Downloads\MemGallery\life-agent-build\` on his PC (README.txt beside them). Branch `feat/life-agent`,
+tip pushed, nothing merged to master. Install with `adb install -r` only (keeps his data).
 
 ## Where the build runs
 The impetix server, repo `~/repos/MemGallery`, branch `feat/life-agent`. Editing, Gradle, tests and renders all
@@ -94,3 +95,23 @@ needs his yes.
 ## Untouched
 No app code was committed by this thread. `AppDatabase`, `SettingsRepository`, `AppNavigation`, `ChatScreen` and
 `AndroidManifest.xml` are exactly as v0.4.0 left them.
+
+## Final state (6 Nov 2026 ~17:20)
+All nine of Ayanda's items are built on `feat/life-agent`:
+1. Connections (his own Composio key, four apps, read only). 2. Daily collection on WorkManager at his time. 3. Review
+deck with Approve all and caught up, plus Ask on the card. 4. People list and person page. 5. Tasks from ClickUp and
+calendar. 6. Nudges with Done and Snooze on the notification (`NudgeActionReceiver`), and an `OPEN_ITEM` tap routes to
+the daily report. 7. Daily report screen. 8. Interactive Glance widgets 2x2, 4x2, 4x4 (tick, snooze, keep, drop,
+refresh, Ask), redrawn on any data change and every three hours. 9. Chat answers with numbered sources.
+
+**Proof:** 187 life agent JVM tests, 280 for the whole app, 0 failures. 56 Roborazzi proofs (every screen, light and
+dark) in `app/build/life-agent-proof`, delivered zipped. 10 widget tests (`WidgetProofTest`) assert structure and the
+click actions at all three sizes, using Glance's own unit test harness.
+
+**Not proven, and must be checked on his phone:** the widget as pixels (never rendered on a device), and one live
+Composio read per app (parsers are tested against recorded fixtures only). The live-read list is in
+`docs/life-agent/BUILD-NOTES.md` and in the README delivered with the APK.
+
+**Delivery path that worked (no shell on his PC):** `python3 -m http.server` on 127.0.0.1 plus a `cloudflared` quick
+tunnel, the PC's agent browser downloads into its temp downloads folder, then `files_move` into
+`Downloads\MemGallery\life-agent-build\`. The tunnel and server are stopped afterwards.
