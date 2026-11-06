@@ -44,6 +44,12 @@ class MemGalleryApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var agentSettings: com.example.memgallery.agent.AgentBridgeSettings
 
+    @Inject
+    lateinit var lifeAgentControls: com.example.memgallery.lifeagent.data.LifeAgentControls
+
+    @Inject
+    lateinit var lifeAgentRepository: com.example.memgallery.lifeagent.data.LifeAgentRepository
+
     override fun onCreate() {
         super.onCreate()
         screenshotObserver.start()
@@ -51,6 +57,27 @@ class MemGalleryApplication : Application(), Configuration.Provider {
         enqueueUpdateCheckWorker()
         checkAndStartEdgeGestureService()
         checkAndStartAgentBridge()
+        armLifeAgent()
+    }
+
+    /**
+     * The Life Agent's daily collection is booked from here so it survives a reinstall and a reboot, and the home
+     * screen widget is redrawn whenever the agent's own data changes (a collection, a keep, a tick, a snooze).
+     */
+    private fun armLifeAgent() {
+        lifeAgentRepository.onDataChanged = {
+            com.example.memgallery.lifeagent.widget.LifeAgentWidgetRefresh.enqueue(this@MemGalleryApplication)
+        }
+        applicationScope.launch { runCatching { lifeAgentControls.ensureScheduled() } }
+        val work = PeriodicWorkRequestBuilder<com.example.memgallery.lifeagent.widget.LifeAgentWidgetWorker>(
+            repeatInterval = 3,
+            repeatIntervalTimeUnit = TimeUnit.HOURS,
+        ).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "LifeAgentWidgetRefresh",
+            ExistingPeriodicWorkPolicy.KEEP,
+            work,
+        )
     }
 
     /**

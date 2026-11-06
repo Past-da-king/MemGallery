@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="la_widget_description">What needs you today, from your own apps. Read only.</string>
+    <string name="la_widget_counts_both">%1$d due today · %2$d late</string>
+    <string name="la_widget_counts_late">%1$d late</string>
+    <string name="la_widget_counts_due">%1$d due today</string>
+    <string name="la_widget_counts_review">%1$d to review</string>
+    <string name="la_widget_counts_clear">All clear</string>
+    <string name="la_widget_done">Done</string>
+    <string name="la_widget_refresh">Refresh</string>
+    <string name="la_widget_ask">Ask</string>
+    <string name="la_widget_ask_plain">What needs me today?</string>
+    <string name="la_widget_ask_item">About this task: %1$s. What should I do next?</string>
+    <string name="la_widget_nothing">Nothing needs you</string>
+    <string name="la_widget_nothing_sub">You are caught up. The next collection brings in anything new.</string>
+    <string name="la_widget_section_late">Late</string>
+    <string name="la_widget_section_today">Due today</string>
+    <string name="la_widget_section_meetings">Meetings</string>
+    <string name="la_widget_section_open">Open</string>
+    <string name="la_widget_proposed">%1$s · proposed</string>
+    <string name="la_widget_keep">Keep</string>
+    <string name="la_widget_drop">Drop</string>
+    <string name="la_widget_snooze">Snooze</string>
+    <string name="la_nudge_action_done">Done</string>
+    <string name="la_nudge_action_snooze">Snooze 1 hour</string>
+    <string name="la_nudge_snoozed">Snoozed for an hour</string>
+    <string name="la_nudge_done_toast">Marked done</string>
+</resources>
