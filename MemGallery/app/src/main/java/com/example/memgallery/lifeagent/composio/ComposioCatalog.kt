@@ -47,6 +47,16 @@ object ComposioCatalog {
 
     val READ_TOOLS: Set<String> = setOf(GMAIL_FETCH, CAL_LIST, CLICKUP_WORKSPACES, CLICKUP_TASKS, SLACK_CHANNELS, SLACK_HISTORY)
 
+    // Other endpoints the widened Connections screen needs. All GET except the auth config and the connect link,
+    // which are account setup in his own Composio project, never a write to Gmail, Slack or any other service.
+    const val PATH_TOOLKITS = "/toolkits"
+    const val PATH_TOOLKIT_CATEGORIES = "/toolkits/categories"
+    const val PATH_TOOLS = "/tools"
+    const val PATH_AUTH_CONFIGS = "/auth_configs"
+    const val PATH_CONNECT_LINK = "/connected_accounts/link"
+    const val PATH_SESSION_INFO = "/auth/session/info"
+    const val PATH_PROJECTS = "/org/project/list"
+
     const val MAX_PAGES = 3
     const val MAX_SLACK_CHANNELS = 20
 
@@ -348,4 +358,165 @@ object ComposioCatalog {
     private const val DAY = 24L * 60 * 60 * 1000
     private fun startOfDay(at: Long): Long =
         Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+}
+
+/**
+ * Read only, for ANY toolkit. The four fixture-backed tools above are always read. For everything else the slug is
+ * judged by what it says it does: a write word anywhere in the name refuses it, and it must start (or carry) a read
+ * verb. This is the gate every execution passes through, so a wrong guess can never send, delete or change anything.
+ */
+object ReadToolRules {
+    private val WRITE_WORDS = listOf(
+        "SEND", "CREATE", "UPDATE", "DELETE", "REMOVE", "INSERT", "POST", "PUT", "PATCH", "UPLOAD", "WRITE",
+        "MOVE", "COPY", "ARCHIVE", "MARK", "REPLY", "FORWARD", "INVITE", "CANCEL", "APPROVE", "REJECT",
+        "ASSIGN", "COMMENT", "EDIT", "RENAME", "SHARE", "PUBLISH", "SCHEDULE", "TRIGGER", "ENABLE", "DISABLE",
+        "CLEAR", "REVOKE", "GRANT", "SUBSCRIBE", "EXECUTE", "ADD", "SET", "CLOSE", "MERGE", "CONVERT", "DUPLICATE",
+        "START", "STOP", "RUN", "LAUNCH", "PIN", "STAR", "UNSTAR", "BLOCK", "UNBLOCK", "SUSPEND", "RESTORE",
+    )
+    private val READ_WORDS = listOf(
+        "GET", "LIST", "FETCH", "SEARCH", "READ", "RETRIEVE", "DESCRIBE", "FIND", "QUERY", "LOOKUP", "CHECK",
+        "COUNT", "DOWNLOAD", "EXPORT", "SUMMARY", "INFO", "STATUS", "HISTORY", "VIEW",
+    )
+
+    fun isReadTool(slug: String?): Boolean {
+        val s = slug?.uppercase()?.trim().orEmpty()
+        if (s.isEmpty()) return false
+        if (s in ComposioCatalog.READ_TOOLS) return true
+        val words = s.split("_", "-", ".")
+        if (words.any { w -> WRITE_WORDS.any { w == it || w.startsWith(it) } }) return false
+        return words.any { w -> READ_WORDS.any { w == it || w.startsWith(it) } }
+    }
+}
+
+/**
+ * The generic path: any read tool of any toolkit, turned into candidate items. Composio does not document the shape
+ * inside `data`, so this walks whatever came back, finds the objects, and reads the usual field names tolerantly.
+ * Quality is lower than the four hand-written parsers; it exists so a toolkit nobody wrote a parser for still works.
+ */
+object GenericParser {
+    private const val MAX_ITEMS = 50
+
+    fun items(toolkit: String, toolSlug: String, data: JsonElement?, now: Long): List<RawItem> {
+        if (data == null || data.isJsonNull) return emptyList()
+        val objects = ArrayList<JsonObject>()
+        collect(data, objects, 0)
+        return objects.take(MAX_ITEMS).mapNotNull { o -> toItem(toolkit, toolSlug, o, now) }
+    }
+
+    private fun collect(el: JsonElement, out: MutableList<JsonObject>, depth: Int) {
+        if (depth > 4 || out.size >= MAX_ITEMS) return
+        when {
+            el.isJsonArray -> el.asJsonArray.forEach { collect(it, out, depth + 1) }
+            el.isJsonObject -> {
+                val o = el.asJsonObject
+                if (looksLikeItem(o)) out += o
+                else o.entrySet().forEach { (_, v) -> if (v.isJsonArray || v.isJsonObject) collect(v, out, depth + 1) }
+            }
+        }
+    }
+
+    private fun looksLikeItem(o: JsonObject): Boolean =
+        o.entrySet().any { (k, v) -> v.isJsonPrimitive && k.lowercase() in TITLE_KEYS }
+
+    private fun toItem(toolkit: String, toolSlug: String, o: JsonObject, now: Long): RawItem? {
+        val title = firstText(o, TITLE_KEYS)?.trim()?.take(180)
+        val body = firstText(o, BODY_KEYS)?.trim()?.take(600).orEmpty()
+        if (title.isNullOrBlank() && body.isBlank()) return null
+        val id = firstText(o, ID_KEYS) ?: (title + body).hashCode().toString()
+        val at = firstTime(o, TIME_KEYS) ?: now
+        val start = firstTime(o, listOf("start", "start_time", "startDate", "start_at"))
+        val end = firstTime(o, listOf("end", "end_time", "endDate", "end_at"))
+        val type = when {
+            start != null || toolSlug.contains("CALENDAR", true) || toolSlug.contains("EVENT", true) -> RawType.EVENT
+            toolSlug.contains("TASK", true) || toolSlug.contains("ISSUE", true) || toolSlug.contains("TODO", true) -> RawType.TASK
+            toolSlug.contains("MESSAGE", true) || toolSlug.contains("EMAIL", true) || toolSlug.contains("MAIL", true) -> RawType.MESSAGE
+            else -> RawType.MESSAGE
+        }
+        return RawItem(
+            app = toolkit,
+            sourceId = id,
+            type = type,
+            title = (title ?: body.take(80)).trim(),
+            body = body,
+            author = firstText(o, AUTHOR_KEYS) ?: personName(o.get("from")) ?: personName(o.get("sender")),
+            url = firstText(o, URL_KEYS),
+            occurredAt = at,
+            labels = listOfNotNull(firstText(o, listOf("label", "labels", "tags"))),
+            startAt = start,
+            endAt = end,
+            dueAt = firstTime(o, listOf("due", "due_at", "dueAt", "due_date", "dueDate", "deadline")),
+            status = firstText(o, listOf("status", "state")),
+            location = firstText(o, listOf("location", "place", "venue")),
+            joinUrl = firstText(o, listOf("hangoutLink", "join_url", "joinUrl", "meeting_url", "conference_url")),
+            updatedAt = firstTime(o, listOf("updated_at", "updatedAt", "modified", "last_modified")),
+        )
+    }
+
+    private val TITLE_KEYS = listOf(
+        "subject", "title", "name", "text", "message", "snippet", "summary", "headline", "display_name", "topic",
+    )
+    private val BODY_KEYS = listOf("snippet", "description", "body", "text", "content", "message", "summary", "notes", "preview")
+    private val ID_KEYS = listOf("id", "uid", "key", "slug", "guid", "thread_id", "threadId", "message_id", "messageId")
+    private val AUTHOR_KEYS = listOf("author", "from", "sender", "owner", "creator", "user", "username", "user_name", "email")
+    private val URL_KEYS = listOf("url", "link", "htmlLink", "permalink", "web_url", "webUrl", "href", "html_url")
+    private val TIME_KEYS = listOf(
+        "timestamp", "date", "created_at", "createdAt", "internalDate", "received_at", "sent_at", "time", "updated_at",
+    )
+
+    private fun firstText(o: JsonObject, keys: List<String>): String? {
+        val byLower = o.entrySet().associate { it.key.lowercase() to it.value }
+        for (k in keys) {
+            val v = byLower[k.lowercase()] ?: continue
+            if (v.isJsonPrimitive) {
+                val p = v.asJsonPrimitive
+                if (p.isString && p.asString.isNotBlank()) return p.asString
+                if (p.isNumber) return p.asString
+            }
+            if (v.isJsonObject) personName(v)?.let { return it }
+        }
+        return null
+    }
+
+    private fun personName(el: JsonElement?): String? {
+        val o = el?.takeIf { it.isJsonObject }?.asJsonObject ?: return el?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString
+        val name = o.get("name")?.takeIf { it.isJsonPrimitive }?.asString
+        val email = o.get("email")?.takeIf { it.isJsonPrimitive }?.asString ?: o.get("address")?.takeIf { it.isJsonPrimitive }?.asString
+        return when {
+            !name.isNullOrBlank() && !email.isNullOrBlank() -> "$name <$email>"
+            !name.isNullOrBlank() -> name
+            !email.isNullOrBlank() -> email
+            else -> null
+        }
+    }
+
+    private fun firstTime(o: JsonObject, keys: List<String>): Long? {
+        val byLower = o.entrySet().associate { it.key.lowercase() to it.value }
+        for (k in keys) {
+            val v = byLower[k.lowercase()] ?: continue
+            val t = when {
+                v.isJsonPrimitive && v.asJsonPrimitive.isNumber -> {
+                    val n = v.asLong
+                    when {
+                        n <= 0L -> null
+                        n < 100_000_000_000L -> n * 1000 // seconds
+                        else -> n
+                    }
+                }
+                v.isJsonPrimitive && v.asJsonPrimitive.isString -> parseStamp(v.asString)
+                else -> null
+            }
+            if (t != null && t > 0L) return t
+        }
+        return null
+    }
+
+    private fun parseStamp(s: String): Long? {
+        val t = s.trim()
+        if (t.isEmpty()) return null
+        if (t.all { it.isDigit() }) return t.toLongOrNull()?.let { if (it < 100_000_000_000L) it * 1000 else it }
+        return runCatching { OffsetDateTime.parse(t).toInstant().toEpochMilli() }
+            .recoverCatching { Instant.parse(t).toEpochMilli() }
+            .recoverCatching { LocalDate.parse(t).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() }
+            .getOrNull()
+    }
 }

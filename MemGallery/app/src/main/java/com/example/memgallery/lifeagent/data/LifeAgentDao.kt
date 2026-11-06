@@ -24,6 +24,25 @@ abstract class LifeAgentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun upsertConnection(c: LifeConnectionEntity)
 
+    // toolkits (the Composio catalog cache)
+    @Query("SELECT * FROM life_toolkits ORDER BY name COLLATE NOCASE")
+    abstract fun observeToolkits(): Flow<List<LifeToolkitEntity>>
+
+    @Query("SELECT * FROM life_toolkits")
+    abstract suspend fun getToolkits(): List<LifeToolkitEntity>
+
+    @Query("SELECT * FROM life_toolkits WHERE slug = :slug")
+    abstract suspend fun getToolkit(slug: String): LifeToolkitEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertToolkits(rows: List<LifeToolkitEntity>)
+
+    @Query("UPDATE life_toolkits SET readTools = :readTools WHERE slug = :slug")
+    abstract suspend fun setToolkitReadTools(slug: String, readTools: String?)
+
+    @Query("SELECT MAX(fetchedAt) FROM life_toolkits")
+    abstract suspend fun toolkitCacheStamp(): Long?
+
     // items
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertItems(items: List<LifeItemEntity>): List<Long>

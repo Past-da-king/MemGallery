@@ -23,6 +23,25 @@ import javax.inject.Singleton
 interface ComposioApi {
     suspend fun listConnectedAccounts(): List<ConnectedAccount>
     suspend fun execute(slug: String, accountId: String, userId: String?, arguments: Map<String, Any?>): ToolResult
+
+    /** Every toolkit Composio offers, paged. Defaults keep older fakes compiling. */
+    suspend fun listToolkits(cursor: String? = null, search: String? = null, category: String? = null, limit: Int = 100): ToolkitPage =
+        throw ComposioException(ComposioErrorKind.BAD_RESPONSE, "This connector cannot list toolkits")
+
+    /** The tools of one toolkit, paged. Used to find its read tools. */
+    suspend fun listTools(toolkitSlug: String, cursor: String? = null, limit: Int = 100): ToolPage =
+        throw ComposioException(ComposioErrorKind.BAD_RESPONSE, "This connector cannot list tools")
+
+    /** A link the user opens to connect a toolkit, made against his own Composio project. */
+    suspend fun createConnectLink(toolkitSlug: String, userId: String, callbackUrl: String? = null): ConnectLink =
+        throw ComposioException(ComposioErrorKind.BAD_RESPONSE, "This connector cannot make a connect link")
+
+    /** What Composio says about the stored key, including the real error when it is refused. */
+    suspend fun checkKey(): KeyCheck =
+        throw ComposioException(ComposioErrorKind.BAD_RESPONSE, "This connector cannot check a key")
+
+    /** The projects a personal key can see (empty for a project key). */
+    suspend fun listProjects(): List<ComposioProject> = emptyList()
 }
 
 /**
@@ -37,6 +56,8 @@ class ComposioClient(
     private val http: OkHttpClient,
     private val maxAttempts: Int,
     private val backoff: suspend (attempt: Int) -> Unit,
+    private val keyKindProvider: suspend () -> KeyKind? = { null },
+    private val orgIdProvider: suspend () -> String? = { null },
 ) : ComposioApi {
 
     @Inject
@@ -46,6 +67,8 @@ class ComposioClient(
         http = defaultHttp(),
         maxAttempts = 3,
         backoff = { attempt -> delay(1000L shl (attempt - 1)) },
+        keyKindProvider = { settings.composioKeyKind() },
+        orgIdProvider = { settings.composioOrgId() },
     )
 
     private val gson = Gson()
@@ -78,8 +101,8 @@ class ComposioClient(
     }
 
     override suspend fun execute(slug: String, accountId: String, userId: String?, arguments: Map<String, Any?>): ToolResult {
-        // The read-only guarantee: only the listed read tools can ever be run.
-        if (slug !in ComposioCatalog.READ_TOOLS) {
+        // The read-only guarantee: the four fixture tools, plus any tool whose own name says it only reads.
+        if (!ReadToolRules.isReadTool(slug)) {
             throw ComposioException(ComposioErrorKind.BLOCKED, "Refused: $slug is not a read tool")
         }
         val payload = JsonObject().apply {
@@ -95,10 +118,19 @@ class ComposioClient(
         return ToolResult(ok, o.get("data"), err)
     }
 
-    private suspend fun send(builder: Request.Builder): String {
+    /** Which header this key belongs in. Auto-detected by prefix, and the probe in [checkKey] corrects it. */
+    suspend fun keyKind(): KeyKind {
+        val stored = keyKindProvider()?.takeIf { it != KeyKind.UNKNOWN }
+        return stored ?: KeyKind.of(keyProvider())
+    }
+
+    private suspend fun send(builder: Request.Builder, kind: KeyKind? = null): String {
         val key = keyProvider()?.trim()
         if (key.isNullOrEmpty()) throw ComposioException(ComposioErrorKind.NO_KEY, "Add your Composio key to connect")
-        val request = builder.header(ComposioCatalog.KEY_HEADER, key).header("Accept", "application/json").build()
+        val how = kind ?: keyKind()
+        var b = builder.header(how.header, key).header("Accept", "application/json")
+        if (how == KeyKind.USER) orgIdProvider()?.takeIf { it.isNotBlank() }?.let { b = b.header("x-org-id", it) }
+        val request = b.build()
         var last: ComposioException? = null
         for (attempt in 1..maxAttempts) {
             try {
@@ -122,6 +154,167 @@ class ComposioClient(
             if (attempt < maxAttempts) backoff(attempt)
         }
         throw last ?: ComposioException(ComposioErrorKind.NETWORK, "No connection to Composio")
+    }
+
+    // ---- the widened Connections screen: any toolkit, any read tool, both key kinds ----
+
+    override suspend fun listToolkits(cursor: String?, search: String?, category: String?, limit: Int): ToolkitPage {
+        val url = (baseUrl + ComposioCatalog.PATH_TOOLKITS).toHttpUrl().newBuilder().apply {
+            addQueryParameter("limit", limit.toString())
+            if (!cursor.isNullOrBlank()) addQueryParameter("cursor", cursor)
+            if (!search.isNullOrBlank()) addQueryParameter("search", search)
+            if (!category.isNullOrBlank()) addQueryParameter("category", category)
+        }.build()
+        val o = parseObject(send(Request.Builder().url(url).get()))
+        val items = (o.get("items") as? JsonArray)?.mapNotNull { el ->
+            val t = el.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
+            val slug = t.str("slug") ?: return@mapNotNull null
+            val meta = t.get("meta") as? JsonObject
+            ToolkitSummary(
+                slug = slug,
+                name = t.str("name") ?: meta?.str("name") ?: slug.replaceFirstChar { it.uppercase() },
+                description = meta?.str("description") ?: t.str("description"),
+                logoUrl = meta?.str("logo") ?: t.str("logo"),
+                categories = (meta?.get("categories") as? JsonArray)?.mapNotNull {
+                    (it.takeIf { p -> p.isJsonObject }?.asJsonObject?.str("name")) ?: it.takeIf { p -> p.isJsonPrimitive }?.asString
+                } ?: emptyList(),
+                authSchemes = (t.get("auth_schemes") as? JsonArray)?.mapNotNull { it.takeIf { p -> p.isJsonPrimitive }?.asString } ?: emptyList(),
+                noAuth = t.get("no_auth")?.takeIf { it.isJsonPrimitive }?.asBoolean ?: false,
+                toolkitType = t.str("toolkit_type"),
+            )
+        } ?: emptyList()
+        return ToolkitPage(items, o.str("next_cursor"))
+    }
+
+    override suspend fun listTools(toolkitSlug: String, cursor: String?, limit: Int): ToolPage {
+        val url = (baseUrl + ComposioCatalog.PATH_TOOLS).toHttpUrl().newBuilder().apply {
+            addQueryParameter("toolkit_slug", toolkitSlug)
+            addQueryParameter("limit", limit.toString())
+            addQueryParameter("toolkit_versions", "latest")
+            if (!cursor.isNullOrBlank()) addQueryParameter("cursor", cursor)
+        }.build()
+        val o = parseObject(send(Request.Builder().url(url).get()))
+        val items = (o.get("items") as? JsonArray)?.mapNotNull { el ->
+            val t = el.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
+            val slug = t.str("slug") ?: return@mapNotNull null
+            ToolSpec(slug, t.str("name") ?: slug, t.str("description"))
+        } ?: emptyList()
+        return ToolPage(items, o.str("next_cursor"))
+    }
+
+    /** The project's auth config for a toolkit, made once with Composio-managed auth when there is none. */
+    suspend fun authConfigFor(toolkitSlug: String): String? {
+        val listUrl = (baseUrl + ComposioCatalog.PATH_AUTH_CONFIGS).toHttpUrl().newBuilder()
+            .addQueryParameter("toolkit_slug", toolkitSlug)
+            .addQueryParameter("limit", "1")
+            .build()
+        val existing = parseObject(send(Request.Builder().url(listUrl).get()))
+        (existing.get("items") as? JsonArray)?.firstOrNull()?.let { el ->
+            val o = el.takeIf { it.isJsonObject }?.asJsonObject
+            o?.str("id")?.let { return it }
+        }
+        val payload = JsonObject().apply {
+            add("toolkit", JsonObject().apply { addProperty("slug", toolkitSlug) })
+            add("auth_config", JsonObject().apply {
+                addProperty("type", "use_composio_managed_auth")
+                add("credentials", JsonObject())
+                add("restrict_to_following_tools", JsonArray())
+            })
+        }
+        val created = parseObject(
+            send(Request.Builder().url((baseUrl + ComposioCatalog.PATH_AUTH_CONFIGS).toHttpUrl()).post(payload.toString().toRequestBody(JSON)))
+        )
+        return created.str("id") ?: (created.get("auth_config") as? JsonObject)?.str("id") ?: created.str("nanoid")
+    }
+
+    override suspend fun createConnectLink(toolkitSlug: String, userId: String, callbackUrl: String?): ConnectLink {
+        val authConfigId = authConfigFor(toolkitSlug)
+            ?: throw ComposioException(ComposioErrorKind.BAD_RESPONSE, "Composio has no auth config for $toolkitSlug")
+        val payload = JsonObject().apply {
+            addProperty("auth_config_id", authConfigId)
+            addProperty("user_id", userId)
+            if (!callbackUrl.isNullOrBlank()) addProperty("callback_url", callbackUrl)
+        }
+        val o = parseObject(
+            send(Request.Builder().url((baseUrl + ComposioCatalog.PATH_CONNECT_LINK).toHttpUrl()).post(payload.toString().toRequestBody(JSON)))
+        )
+        val redirect = o.str("redirect_url") ?: o.str("redirectUrl") ?: o.str("url") ?: o.str("link")
+            ?: throw ComposioException(ComposioErrorKind.BAD_RESPONSE, "Composio did not return a connect link")
+        return ConnectLink(redirect, o.str("connected_account_id") ?: o.str("id"))
+    }
+
+    /**
+     * Checks the saved key with Composio and says what happened. A personal key is checked against auth/session/info,
+     * which names the project it lands in; a project key against the toolkits list. A key whose prefix we do not know
+     * is tried both ways. The error is Composio's own status and message, never a silent fail.
+     */
+    override suspend fun checkKey(): KeyCheck {
+        val guessed = keyKind()
+        val order = when (guessed) {
+            KeyKind.USER -> listOf(KeyKind.USER)
+            KeyKind.PROJECT -> listOf(KeyKind.PROJECT)
+            KeyKind.UNKNOWN -> listOf(KeyKind.PROJECT, KeyKind.USER)
+        }
+        var lastError: String? = null
+        var lastStatus: Int? = null
+        for (kind in order) {
+            val (code, text) = sendRaw(
+                if (kind == KeyKind.USER) Request.Builder().url(baseUrl + ComposioCatalog.PATH_SESSION_INFO).get()
+                else Request.Builder().url((baseUrl + ComposioCatalog.PATH_TOOLKITS).toHttpUrl().newBuilder().addQueryParameter("limit", "1").build()).get(),
+                kind,
+            )
+            if (code in 200..299) {
+                val o = runCatching { JsonParser.parseString(text).asJsonObject }.getOrNull()
+                val project = o?.get("project") as? JsonObject
+                val org = o?.get("org") as? JsonObject
+                return KeyCheck(
+                    kind = kind, ok = true,
+                    projectName = project?.str("name"),
+                    projectId = project?.str("nano_id") ?: project?.str("id"),
+                    orgName = org?.str("name"), orgId = org?.str("org_id") ?: org?.str("id"),
+                )
+            }
+            lastStatus = code
+            lastError = errorMessage(text).ifBlank { "Composio refused the key" }
+        }
+        return KeyCheck(
+            kind = guessed, ok = false, httpStatus = lastStatus,
+            error = "Composio answered ${lastStatus ?: "no reply"}: ${lastError ?: "unknown error"}",
+        )
+    }
+
+    override suspend fun listProjects(): List<ComposioProject> {
+        val out = ArrayList<ComposioProject>()
+        var cursor: String? = null
+        repeat(5) {
+            val url = (baseUrl + ComposioCatalog.PATH_PROJECTS).toHttpUrl().newBuilder().apply {
+                addQueryParameter("limit", "100")
+                addQueryParameter("list_all_org_projects", "true")
+                if (cursor != null) addQueryParameter("cursor", cursor!!)
+            }.build()
+            val o = parseObject(send(Request.Builder().url(url).get()))
+            (o.get("data") as? JsonArray)?.forEach { el ->
+                val p = el.takeIf { it.isJsonObject }?.asJsonObject ?: return@forEach
+                val id = p.str("id") ?: return@forEach
+                out += ComposioProject(id, p.str("name") ?: id, p.str("org_id"))
+            }
+            cursor = o.str("next_cursor")
+            if (cursor == null) return out
+        }
+        return out
+    }
+
+    /** One request with its status kept, for the key check. Never logs the key. */
+    private suspend fun sendRaw(builder: Request.Builder, kind: KeyKind): Pair<Int, String> {
+        val key = keyProvider()?.trim()
+        if (key.isNullOrEmpty()) return 0 to """{"error":{"message":"No Composio key is saved"}}"""
+        var b = builder.header(kind.header, key).header("Accept", "application/json")
+        if (kind == KeyKind.USER) orgIdProvider()?.takeIf { it.isNotBlank() }?.let { b = b.header("x-org-id", it) }
+        val request = b.build()
+        return withContext(Dispatchers.IO) {
+            runCatching { http.newCall(request).execute().use { it.code to (it.body?.string() ?: "") } }
+                .getOrElse { 0 to """{"error":{"message":"${it.message ?: "No connection to Composio"}"}}""" }
+        }
     }
 
     private fun errorMessage(text: String): String = try {

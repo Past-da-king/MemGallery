@@ -27,6 +27,7 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         com.example.memgallery.data.local.entity.AgentWebhookEntity::class,
         com.example.memgallery.data.local.entity.AgentAuditEntity::class,
         com.example.memgallery.lifeagent.data.LifeConnectionEntity::class,
+        com.example.memgallery.lifeagent.data.LifeToolkitEntity::class,
         com.example.memgallery.lifeagent.data.LifeItemEntity::class,
         com.example.memgallery.lifeagent.data.LifeProposalEntity::class,
         com.example.memgallery.lifeagent.data.LifePersonEntity::class,
@@ -35,7 +36,7 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         com.example.memgallery.lifeagent.data.LifeRunEntity::class,
         com.example.memgallery.lifeagent.data.LifeLearningEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class, com.example.memgallery.data.local.converters.IntListConverter::class)
@@ -388,4 +389,5 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
     }
+
 }

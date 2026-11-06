@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.work.WorkManager
 import com.example.memgallery.data.local.dao.MemoryDao
 import com.example.memgallery.data.local.database.AppDatabase
+import com.example.memgallery.data.local.database.MIGRATION_19_20
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -42,7 +43,8 @@ object AppModule {
             AppDatabase.MIGRATION_15_16,
             AppDatabase.MIGRATION_16_17,
             AppDatabase.MIGRATION_17_18,
-            AppDatabase.MIGRATION_18_19
+            AppDatabase.MIGRATION_18_19,
+            MIGRATION_19_20
         )
         .build()
     }

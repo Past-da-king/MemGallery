@@ -52,13 +52,23 @@ private fun androidx.compose.ui.platform.UriHandler.openSafely(url: String) {
 @Composable
 fun ConnectionsScreen(navController: NavController, viewModel: ConnectionsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val uri = LocalUriHandler.current
     ConnectionsContent(
         state = state,
         actions = ConnectionsActions(
             onBack = { navController.navigateUp() },
             onSaveKey = viewModel::saveKey,
+            onClearKey = viewModel::clearKey,
+            onTestKey = viewModel::testKey,
+            onQuery = viewModel::setQuery,
+            onCategory = viewModel::selectCategory,
+            onRefresh = { viewModel.refresh(force = true) },
             onConnect = viewModel::connect,
+            onConnectFinished = viewModel::connectFinished,
             onDisconnect = viewModel::disconnect,
+            onChooseProject = viewModel::chooseProject,
+            onDismissProject = viewModel::dismissProjectSheet,
+            onOpenUrl = { uri.openSafely(it) },
             onToggleCollection = viewModel::setEnabled,
             onTime = viewModel::setTime,
             onCollectNow = { viewModel.collectNow(); navController.navigate(LifeRoutes.Collecting) },

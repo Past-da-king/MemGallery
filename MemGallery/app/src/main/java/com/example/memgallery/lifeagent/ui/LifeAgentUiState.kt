@@ -17,27 +17,52 @@ enum class LifeAppId(val id: String) {
 
 // ---- Connections ----
 
-data class ConnectionRowUi(
-    val app: LifeAppId,
-    val connected: Boolean,
-    /** "17:04", "Thu 5 Nov" or null when never pulled. */
+/** One row of the Connections list: any Composio toolkit, connected or not. */
+data class ToolkitRowUi(
+    val slug: String,
+    val name: String,
+    val description: String? = null,
+    val logoUrl: String? = null,
+    val categories: List<String> = emptyList(),
+    val connected: Boolean = false,
     val lastPulled: String? = null,
-    /** The last error of this connection, null when healthy. */
     val error: String? = null,
     val busy: Boolean = false,
+    /** Gmail, Calendar, ClickUp and Slack get their own hand-written parser; the rest use the generic read path. */
+    val known: Boolean = false,
 )
 
 data class ConnectionsUiState(
     val keySet: Boolean = false,
     /** Only the shape of the key (dots plus the last four), never the key itself. */
     val maskedKey: String = "",
-    val rows: List<ConnectionRowUi> = LifeAppId.entries.map { ConnectionRowUi(it, connected = false) },
+    /** "Project key" or "Personal key", once Composio has said which. */
+    val keyKind: String? = null,
+    val projectName: String? = null,
+    val checking: Boolean = false,
+    /** The real answer from Composio, including the status and its own message when it refused the key. */
+    val keyCheckOk: Boolean? = null,
+    val keyCheckMessage: String? = null,
+    val projects: List<ProjectRowUi> = emptyList(),
+    val showProjectSheet: Boolean = false,
+    val query: String = "",
+    val categories: List<String> = emptyList(),
+    val selectedCategory: String? = null,
+    val connected: List<ToolkitRowUi> = emptyList(),
+    val others: List<ToolkitRowUi> = emptyList(),
+    val loading: Boolean = false,
+    val catalogError: String? = null,
+    /** "Finish connecting Gmail in your browser", from a connect link. */
+    val connectMessage: String? = null,
+    val connectUrl: String? = null,
     val keyError: String? = null,
     val keySaving: Boolean = false,
     val collectionEnabled: Boolean = false,
     val hour: Int = 17,
     val minute: Int = 0,
 )
+
+data class ProjectRowUi(val id: String, val name: String, val orgId: String?)
 
 // ---- Collecting ----
 

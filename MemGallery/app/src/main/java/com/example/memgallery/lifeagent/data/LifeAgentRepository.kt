@@ -6,6 +6,11 @@ import com.example.memgallery.lifeagent.collect.CollectionRunner
 import com.example.memgallery.lifeagent.composio.ComposioApi
 import com.example.memgallery.lifeagent.composio.ComposioCatalog
 import com.example.memgallery.lifeagent.composio.ComposioException
+import com.example.memgallery.lifeagent.composio.ComposioProject
+import com.example.memgallery.lifeagent.composio.KeyCheck
+import com.example.memgallery.lifeagent.composio.KeyKind
+import com.example.memgallery.lifeagent.composio.ReadToolRules
+import com.example.memgallery.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -28,6 +33,7 @@ class LifeAgentRepository @Inject constructor(
     private val runner: Provider<CollectionRunner>,
     private val bus: CollectionProgressBus,
     private val composio: ComposioApi,
+    private val settings: SettingsRepository,
 ) {
     internal var clock: () -> Long = { System.currentTimeMillis() }
     internal var zone: ZoneId = ZoneId.systemDefault()
@@ -43,10 +49,12 @@ class LifeAgentRepository @Inject constructor(
     // ---- reads ----
 
     val connections: Flow<List<LifeConnection>> = dao.observeConnections().map { rows ->
-        LifeApp.entries.map { app ->
+        val known = LifeApp.entries.map { app ->
             rows.firstOrNull { it.id == app.id }?.toModel()
                 ?: LifeConnection(app.id, app.label, false, null, 0L, null)
         }
+        // Any other toolkit he connected lives beside the four, never instead of them.
+        known + rows.filter { LifeApp.from(it.id) == null }.map { it.toModel() }
     }
 
     /** Proposals waiting for review (status proposed), newest first. */
@@ -128,42 +136,180 @@ class LifeAgentRepository @Inject constructor(
         )
     }
 
-    // ---- connections ----
+    // ---- connections: any toolkit, not only the four ----
+
+    /** The cached Composio catalog joined with what is connected here. Connected toolkits come first. */
+    val toolkits: Flow<List<LifeToolkit>> = combine(dao.observeToolkits(), dao.observeConnections()) { rows, conns ->
+        val bySlug = conns.associateBy { it.id }
+        rows.map { t ->
+            val c = bySlug[t.slug]
+            LifeToolkit(
+                slug = t.slug,
+                name = t.name,
+                description = t.description,
+                logoUrl = t.logoUrl,
+                categories = t.categories?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
+                noAuth = t.noAuth,
+                connected = c?.connected == true,
+                accountLabel = c?.accountLabel,
+                lastPulledAt = c?.lastPulledAt ?: 0L,
+                lastError = c?.lastError,
+            )
+        }.sortedWith(compareByDescending<LifeToolkit> { it.connected }.thenBy { it.name.lowercase() })
+    }
 
     /**
-     * Looks the app up in the user's own Composio account (a read) and marks it connected with that account's id.
-     * The user links the app inside Composio; nothing is created or changed there. A missing key, a bad key or no
-     * account for this app is kept as lastError and the app stays not connected.
+     * Refreshes the toolkit catalog from Composio (paged) and caches it. A cache younger than a day is used unless
+     * [force] is set or the user is searching, so the screen opens instantly and works with no network.
      */
-    suspend fun connect(app: LifeApp) {
-        val old = dao.getConnection(app.id) ?: LifeConnectionEntity(app.id, app.label, false, null, 0L, null, null, null)
-        val updated = try {
-            val acc = composio.listConnectedAccounts().firstOrNull {
-                it.active && it.toolkit.equals(ComposioCatalog.toolkit(app), ignoreCase = true)
-            } ?: throw ComposioException(
-                com.example.memgallery.lifeagent.composio.ComposioErrorKind.NOT_FOUND,
-                "No ${app.label} account is connected in your Composio project",
+    suspend fun syncToolkits(force: Boolean = false, search: String? = null, category: String? = null): Int {
+        val stamp = dao.toolkitCacheStamp() ?: 0L
+        val fresh = System.currentTimeMillis() - stamp < DAY_MS
+        if (!force && fresh && search.isNullOrBlank() && category.isNullOrBlank()) return dao.getToolkits().size
+        val out = ArrayList<com.example.memgallery.lifeagent.data.LifeToolkitEntity>()
+        var cursor: String? = null
+        var pages = 0
+        while (pages < MAX_TOOLKIT_PAGES) {
+            val page = composio.listToolkits(cursor = cursor, search = search, category = category, limit = 100)
+            out += page.items.map { t ->
+                com.example.memgallery.lifeagent.data.LifeToolkitEntity(
+                    slug = t.slug, name = t.name, description = t.description, logoUrl = t.logoUrl,
+                    categories = t.categories.takeIf { it.isNotEmpty() }?.joinToString(","),
+                    authSchemes = t.authSchemes.takeIf { it.isNotEmpty() }?.joinToString(","),
+                    noAuth = t.noAuth, toolkitType = t.toolkitType,
+                    readTools = dao.getToolkit(t.slug)?.readTools,
+                    fetchedAt = System.currentTimeMillis(),
+                )
+            }
+            cursor = page.nextCursor
+            pages++
+            if (cursor.isNullOrBlank()) break
+        }
+        if (out.isNotEmpty()) dao.upsertToolkits(out)
+        return dao.getToolkits().size
+    }
+
+    /** Pulls the connected accounts from Composio and marks the matching toolkits connected or not. */
+    suspend fun syncConnections(): List<ConnectOutcome> {
+        val accounts = composio.listConnectedAccounts()
+        val active = accounts.filter { it.active }
+        val slugs = (dao.getToolkits().map { it.slug } + active.map { it.toolkit }).distinct()
+        val now = System.currentTimeMillis()
+        for (slug in slugs) {
+            val acc = active.firstOrNull { it.toolkit.equals(slug, ignoreCase = true) }
+            val old = dao.getConnection(slug)
+            val name = dao.getToolkit(slug)?.name ?: LifeApp.from(slug)?.label ?: slug
+            dao.upsertConnection(
+                LifeConnectionEntity(
+                    id = slug,
+                    label = old?.label ?: name,
+                    connected = acc != null,
+                    accountLabel = acc?.label ?: old?.accountLabel,
+                    lastPulledAt = old?.lastPulledAt ?: 0L,
+                    lastError = if (acc == null) old?.lastError else null,
+                    accountId = acc?.id,
+                    userId = acc?.userId,
+                )
             )
-            old.copy(connected = true, lastError = null, accountId = acc.id, userId = acc.userId, accountLabel = acc.label ?: old.accountLabel)
+        }
+        changed()
+        return slugs.map { ConnectOutcome.Connected(dao.getConnection(it)?.accountLabel) }
+    }
+
+    /**
+     * Connects any toolkit. Already connected in his Composio project: marks it here. Not yet: makes a connect link
+     * for him to open, and the screen says "finish in the browser". Nothing is written to the outside app.
+     */
+    suspend fun connectToolkit(slug: String, displayName: String? = null): ConnectOutcome {
+        val name = displayName ?: dao.getToolkit(slug)?.name ?: LifeApp.from(slug)?.label ?: slug
+        val old = dao.getConnection(slug) ?: LifeConnectionEntity(slug, name, false, null, 0L, null, null, null)
+        return try {
+            val acc = composio.listConnectedAccounts().firstOrNull {
+                it.active && it.toolkit.equals(slug, ignoreCase = true)
+            }
+            if (acc != null) {
+                dao.upsertConnection(
+                    old.copy(connected = true, lastError = null, accountId = acc.id, userId = acc.userId, accountLabel = acc.label ?: old.accountLabel)
+                )
+                cacheReadTools(slug)
+                changed()
+                ConnectOutcome.Connected(acc.label ?: old.accountLabel ?: name)
+            } else {
+                val link = composio.createConnectLink(slug, userId = MEMGALLERY_COMPOSIO_USER)
+                ConnectOutcome.Browser(link.redirectUrl)
+            }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            old.copy(connected = false, lastError = (e.message ?: "Could not reach Composio").take(160))
+            val message = (e.message ?: "Could not reach Composio").take(160)
+            dao.upsertConnection(old.copy(connected = false, lastError = message))
+            changed()
+            ConnectOutcome.Failed(message)
         }
-        dao.upsertConnection(updated)
-        changed()
     }
 
-    suspend fun connect(appId: String) { LifeApp.from(appId)?.let { connect(it) } }
-
-    /** Stops pulling from this app. Nothing is changed in the app itself; already collected memories stay. */
-    suspend fun disconnect(app: LifeApp) {
-        val old = dao.getConnection(app.id) ?: return
+    /** Stops pulling from this toolkit. Nothing is changed in the toolkit itself; collected memories stay. */
+    suspend fun disconnectToolkit(slug: String) {
+        val old = dao.getConnection(slug) ?: return
         dao.upsertConnection(old.copy(connected = false, accountId = null, userId = null, lastError = null))
         changed()
     }
 
-    suspend fun disconnect(appId: String) { LifeApp.from(appId)?.let { disconnect(it) } }
+    /** The read tools of a toolkit: the four hand-written ones, or whatever its own catalog says only reads. */
+    suspend fun readTools(slug: String): List<String> {
+        val known = knownReadTools(slug)
+        if (known.isNotEmpty()) return known
+        val cached = dao.getToolkit(slug)?.readTools?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+        if (cached.isNotEmpty()) return cached
+        return cacheReadTools(slug)
+    }
+
+    private fun knownReadTools(slug: String): List<String> = when (LifeApp.from(slug)) {
+        LifeApp.GMAIL -> listOf(ComposioCatalog.GMAIL_FETCH)
+        LifeApp.GCAL -> listOf(ComposioCatalog.CAL_LIST)
+        LifeApp.CLICKUP -> listOf(ComposioCatalog.CLICKUP_WORKSPACES, ComposioCatalog.CLICKUP_TASKS)
+        LifeApp.SLACK -> listOf(ComposioCatalog.SLACK_CHANNELS, ComposioCatalog.SLACK_HISTORY)
+        null -> emptyList()
+    }
+
+    private suspend fun cacheReadTools(slug: String): List<String> {
+        if (knownReadTools(slug).isNotEmpty()) return knownReadTools(slug)
+        return try {
+            val page = composio.listTools(slug, limit = 100)
+            val reads = page.items.map { it.slug }.filter { ReadToolRules.isReadTool(it) }.take(MAX_READ_TOOLS).distinct()
+            dao.setToolkitReadTools(slug, reads.takeIf { it.isNotEmpty() }?.joinToString(","))
+            reads
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /** Checks the stored key with Composio and remembers which kind it is and the project it lands in. */
+    suspend fun checkKey(): KeyCheck {
+        val check = composio.checkKey()
+        if (check.ok) {
+            settings.saveComposioKeyKind(check.kind)
+            if (check.projectId != null || check.projectName != null) {
+                settings.saveComposioProject(check.projectId, check.projectName, check.orgId)
+            }
+        }
+        changed()
+        return check
+    }
+
+    /** The projects a personal key can see, for the picker. */
+    suspend fun projects(): List<ComposioProject> = runCatching { composio.listProjects() }.getOrDefault(emptyList())
+
+    suspend fun chooseProject(project: ComposioProject) {
+        settings.saveComposioProject(project.id, project.name, project.orgId)
+        settings.saveComposioKeyKind(KeyKind.USER)
+        changed()
+    }
+
+    /** Keeps the screenshot deck honest about a connected app with no memories yet. */
+    suspend fun connectionFor(slug: String): LifeConnectionEntity? = dao.getConnection(slug)
 
     // ---- collection ----
 
@@ -259,8 +405,12 @@ class LifeAgentRepository @Inject constructor(
         Instant.ofEpochMilli(at).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
 
     companion object {
-        private const val TAG = "LifeAgentRepo"
         const val DAY_MS = 24L * 60 * 60 * 1000
+        const val MAX_TOOLKIT_PAGES = 8
+        const val MAX_READ_TOOLS = 12
+        /** The user id MemGallery uses inside his own Composio project. Stable, so a reconnect finds the same account. */
+        const val MEMGALLERY_COMPOSIO_USER = "memgallery"
+        private const val TAG = "LifeAgentRepo"
         private val YOU_OWE = setOf(LifeKind.COMMITMENT, LifeKind.DEADLINE, LifeKind.MONEY)
         private val OPEN_KINDS = setOf(LifeKind.COMMITMENT, LifeKind.DEADLINE, LifeKind.MONEY, LifeKind.AWAITING)
         private val CLOSED = setOf("complete", "completed", "closed", "done")

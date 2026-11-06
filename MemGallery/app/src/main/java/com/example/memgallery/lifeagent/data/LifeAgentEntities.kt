@@ -114,3 +114,22 @@ data class LifeLearningEntity(
     val decision: String,
     val decidedAt: Long,
 )
+
+/**
+ * One toolkit of the Composio catalog, cached so Connections opens instantly and works offline. Refreshed from
+ * Composio when the cache is older than a day or the user asks. Never holds a credential.
+ */
+@Entity(tableName = "life_toolkits")
+data class LifeToolkitEntity(
+    @PrimaryKey val slug: String,
+    val name: String,
+    val description: String?,
+    val logoUrl: String?,
+    val categories: String?,   // comma separated, as Composio names them
+    val authSchemes: String?,  // comma separated
+    val noAuth: Boolean,
+    val toolkitType: String?,
+    /** Read tool slugs we found for this toolkit, comma separated. Filled when it is connected. */
+    val readTools: String?,
+    val fetchedAt: Long,
+)

@@ -81,38 +81,6 @@ private fun cleanKey(key: String) = key.trim().lowercase()
 
 // ---- Connections ----
 
-fun mapConnections(
-    conns: List<LifeConnection>,
-    key: String?,
-    enabled: Boolean,
-    hour: Int,
-    minute: Int,
-    busy: Set<LifeAppId>,
-    keyError: String?,
-    keySaving: Boolean,
-    ctx: LifeCtx,
-): ConnectionsUiState {
-    val rows = LifeAppId.entries.map { app ->
-        val c = conns.firstOrNull { it.id == app.id }
-        ConnectionRowUi(
-            app = app,
-            connected = c?.connected == true,
-            lastPulled = c?.lastPulledAt?.takeIf { it > 0L }?.let { ctx.clockOrDay(it) },
-            error = c?.lastError?.takeIf { it.isNotBlank() },
-            busy = app in busy,
-        )
-    }
-    return ConnectionsUiState(
-        keySet = !key.isNullOrBlank(),
-        maskedKey = maskKey(key),
-        rows = rows,
-        keyError = keyError,
-        keySaving = keySaving,
-        collectionEnabled = enabled,
-        hour = hour,
-        minute = minute,
-    )
-}
 
 /** Dots plus the last four characters. Never anything else of the key. */
 fun maskKey(key: String?): String {

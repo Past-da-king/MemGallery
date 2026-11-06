@@ -1,5 +1,8 @@
 package com.example.memgallery.data.repository
 
+import com.example.memgallery.lifeagent.composio.KeyKind
+import kotlinx.coroutines.flow.MutableStateFlow
+
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -716,8 +719,35 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         composioKeyState.value = apiKey.trim()
     }
     suspend fun clearComposioApiKey() {
-        with(encryptedPrefs.edit()) { remove("composio_api_key_secure"); apply() }
+        with(encryptedPrefs.edit()) { remove("composio_api_key_secure"); remove("composio_key_kind"); remove("composio_org_id"); remove("composio_project_name"); apply() }
         composioKeyState.value = null
+        composioKindState.value = null
+        composioOrgState.value = null
+        composioProjectState.value = null
+    }
+
+    // Composio has two key kinds (project ak_, personal uak_) with two headers, and a personal key can land in more
+    // than one project. The kind and the chosen project are remembered beside the key, never in code.
+    private val composioKindState = MutableStateFlow(encryptedPrefs.getString("composio_key_kind", null))
+    private val composioOrgState = MutableStateFlow(encryptedPrefs.getString("composio_org_id", null))
+    private val composioProjectState = MutableStateFlow(encryptedPrefs.getString("composio_project_name", null))
+
+    val composioKeyKindFlow: Flow<String?> = composioKindState
+    val composioProjectNameFlow: Flow<String?> = composioProjectState
+
+    suspend fun composioKeyKind(): KeyKind? = composioKindState.value?.let { KeyKind.valueOf(it) }
+
+    suspend fun saveComposioKeyKind(kind: KeyKind) {
+        with(encryptedPrefs.edit()) { putString("composio_key_kind", kind.name); apply() }
+        composioKindState.value = kind.name
+    }
+
+    suspend fun composioOrgId(): String? = composioOrgState.value
+
+    suspend fun saveComposioProject(projectId: String?, projectName: String?, orgId: String?) {
+        with(encryptedPrefs.edit()) { putString("composio_org_id", orgId); putString("composio_project_name", projectName); apply() }
+        composioOrgState.value = orgId
+        composioProjectState.value = projectName
     }
 
     val lifeAgentEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.LIFE_AGENT_ENABLED] ?: false }
