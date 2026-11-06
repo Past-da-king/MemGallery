@@ -3,6 +3,9 @@ package com.example.memgallery.lifeagent.data
 import android.util.Log
 import com.example.memgallery.lifeagent.collect.CollectionProgressBus
 import com.example.memgallery.lifeagent.collect.CollectionRunner
+import com.example.memgallery.lifeagent.composio.ComposioApi
+import com.example.memgallery.lifeagent.composio.ComposioCatalog
+import com.example.memgallery.lifeagent.composio.ComposioException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -24,6 +27,7 @@ class LifeAgentRepository @Inject constructor(
     private val dao: LifeAgentDao,
     private val runner: Provider<CollectionRunner>,
     private val bus: CollectionProgressBus,
+    private val composio: ComposioApi,
 ) {
     internal var clock: () -> Long = { System.currentTimeMillis() }
     internal var zone: ZoneId = ZoneId.systemDefault()
@@ -126,14 +130,27 @@ class LifeAgentRepository @Inject constructor(
 
     // ---- connections ----
 
-    /** Looks the app up in the user's Composio account and marks it connected. Read only. */
+    /**
+     * Looks the app up in the user's own Composio account (a read) and marks it connected with that account's id.
+     * The user links the app inside Composio; nothing is created or changed there. A missing key, a bad key or no
+     * account for this app is kept as lastError and the app stays not connected.
+     */
     suspend fun connect(app: LifeApp) {
-        Log.i(TAG, "connect ${app.id} (wired in the Composio step)")
-        val old = dao.getConnection(app.id)
-        dao.upsertConnection(
-            (old ?: LifeConnectionEntity(app.id, app.label, false, null, 0L, null, null, null))
-                .copy(connected = true, lastError = null),
-        )
+        val old = dao.getConnection(app.id) ?: LifeConnectionEntity(app.id, app.label, false, null, 0L, null, null, null)
+        val updated = try {
+            val acc = composio.listConnectedAccounts().firstOrNull {
+                it.active && it.toolkit.equals(ComposioCatalog.toolkit(app), ignoreCase = true)
+            } ?: throw ComposioException(
+                com.example.memgallery.lifeagent.composio.ComposioErrorKind.NOT_FOUND,
+                "No ${app.label} account is connected in your Composio project",
+            )
+            old.copy(connected = true, lastError = null, accountId = acc.id, userId = acc.userId, accountLabel = acc.label ?: old.accountLabel)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            old.copy(connected = false, lastError = (e.message ?: "Could not reach Composio").take(160))
+        }
+        dao.upsertConnection(updated)
         changed()
     }
 

@@ -25,6 +25,7 @@ import org.junit.Test
 class LifeAgentRepositoryTest : DbTestBase() {
     private lateinit var repo: LifeAgentRepository
     private var hookCalls = 0
+    private val api = FakeComposio()
 
     @Before fun setUp() {
         val settings = object : LifeAgentSettings {
@@ -32,7 +33,7 @@ class LifeAgentRepositoryTest : DbTestBase() {
             override suspend fun setLastRun(at: Long) {}
         }
         val runner = CollectionRunner(dao, FakeComposio(), settings, null, CollectionProgressBus())
-        repo = LifeAgentRepository(dao, { runner }, CollectionProgressBus()).apply { clock = { Fixtures.NOW }; zone = Fixtures.ZONE }
+        repo = LifeAgentRepository(dao, { runner }, CollectionProgressBus(), api).apply { clock = { Fixtures.NOW }; zone = Fixtures.ZONE }
         repo.onDataChanged = { hookCalls++ }
     }
 
@@ -46,6 +47,23 @@ class LifeAgentRepositoryTest : DbTestBase() {
         dao.upsertConnection(LifeConnectionEntity("slack", "Slack", true, "team", 5L, "oops", "ca", "u"))
         val slack = repo.connections.first().first { it.id == "slack" }
         assertTrue(slack.connected); assertEquals("oops", slack.lastError); assertEquals(5L, slack.lastPulledAt)
+    }
+
+    @Test fun connectFindsTheActiveAccountAndStoresItsIdAndFailsClearlyWhenThereIsNone() = runBlocking {
+        api.accounts = listOf(
+            com.example.memgallery.lifeagent.composio.ConnectedAccount("old", "gmail", "u0", "EXPIRED", null),
+            com.example.memgallery.lifeagent.composio.ConnectedAccount("ca_g", "gmail", "u1", "ACTIVE", "work"),
+        )
+        repo.connect("gmail")
+        val g = dao.getConnection("gmail")!!
+        assertTrue(g.connected); assertEquals("ca_g", g.accountId); assertEquals("u1", g.userId); assertEquals("work", g.accountLabel); assertNull(g.lastError)
+        repo.connect(LifeApp.SLACK)
+        val s = dao.getConnection("slack")!!
+        assertFalse(s.connected); assertEquals("No Slack account is connected in your Composio project", s.lastError)
+        api.listFails = true
+        repo.connect(LifeApp.GMAIL)
+        assertFalse(dao.getConnection("gmail")!!.connected)
+        assertEquals("No connection to Composio", dao.getConnection("gmail")!!.lastError)
     }
 
     @Test fun disconnectStopsPullingButKeepsTheRowAndClearsTheAccount() = runBlocking {
