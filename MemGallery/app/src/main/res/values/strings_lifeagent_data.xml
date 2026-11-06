@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Life Agent data layer: nudge notifications. UI strings live in strings_lifeagent_ui.xml. -->
+    <string name="la_nudge_channel_name">Life Agent nudges</string>
+    <string name="la_nudge_channel_desc">Reminders for things that are due soon or overdue</string>
+    <string name="la_nudge_title_due">Due soon</string>
+    <string name="la_nudge_title_overdue">Overdue</string>
+    <string name="la_nudge_text_due">%1$s is due %2$s and still open</string>
+    <string name="la_nudge_text_overdue">%1$s was due %2$s and is still open</string>
+</resources>

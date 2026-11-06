@@ -126,7 +126,13 @@ abstract class LifeAgentDao {
     @Query("SELECT COUNT(*) FROM life_runs WHERE status = 'running' AND startedAt > :since")
     abstract suspend fun countRunningSince(since: Long): Int
 
+    @Query("DELETE FROM life_meetings WHERE endAt >= :from")
+    abstract suspend fun deleteMeetingsFrom(from: Long)
+
     // learning
+    @Query("SELECT * FROM life_learning")
+    abstract suspend fun getLearning(): List<LifeLearningEntity>
+
     @Insert
     abstract suspend fun insertLearning(l: LifeLearningEntity)
 
