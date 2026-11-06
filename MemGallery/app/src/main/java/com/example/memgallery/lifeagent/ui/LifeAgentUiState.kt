@@ -62,7 +62,7 @@ data class ConnectionsUiState(
     val minute: Int = 0,
 )
 
-data class ProjectRowUi(val id: String, val name: String, val orgId: String?)
+data class ProjectRowUi(val id: String, val name: String, val orgId: String?, val selected: Boolean = false)
 
 // ---- Collecting ----
 

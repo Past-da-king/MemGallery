@@ -379,8 +379,12 @@ object ReadToolRules {
     )
 
     fun isReadTool(slug: String?): Boolean {
-        val s = slug?.uppercase()?.trim().orEmpty()
-        if (s.isEmpty()) return false
+        val raw = slug.orEmpty()
+        if (raw.isEmpty()) return false
+        // Composio slugs are upper case words joined by underscores. Anything else (lower case, spaces, a path or a
+        // query) is not a tool we know, so it is refused rather than guessed at.
+        if (!raw.matches(Regex("^[A-Z][A-Z0-9_]*$"))) return false
+        val s = raw
         if (s in ComposioCatalog.READ_TOOLS) return true
         val words = s.split("_", "-", ".")
         if (words.any { w -> WRITE_WORDS.any { w == it || w.startsWith(it) } }) return false

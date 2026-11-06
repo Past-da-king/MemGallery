@@ -54,21 +54,28 @@ class LifeAgentRepositoryTest : DbTestBase() {
             com.example.memgallery.lifeagent.composio.ConnectedAccount("old", "gmail", "u0", "EXPIRED", null),
             com.example.memgallery.lifeagent.composio.ConnectedAccount("ca_g", "gmail", "u1", "ACTIVE", "work"),
         )
-        repo.connect("gmail")
+        repo.connectToolkit("gmail")
         val g = dao.getConnection("gmail")!!
         assertTrue(g.connected); assertEquals("ca_g", g.accountId); assertEquals("u1", g.userId); assertEquals("work", g.accountLabel); assertNull(g.lastError)
-        repo.connect(LifeApp.SLACK)
+        // Nothing connected in his Composio project: he gets a connect link, or a plain failure when Composio cannot
+        // make one. Either way the row stays not connected and the reason is kept for the screen.
+        val slackOutcome = repo.connectToolkit("slack")
         val s = dao.getConnection("slack")!!
-        assertFalse(s.connected); assertEquals("No Slack account is connected in your Composio project", s.lastError)
+        assertFalse(s.connected)
+        when (slackOutcome) {
+            is com.example.memgallery.lifeagent.data.ConnectOutcome.Browser -> assertTrue(slackOutcome.url.isNotBlank())
+            is com.example.memgallery.lifeagent.data.ConnectOutcome.Failed -> assertEquals(slackOutcome.message, s.lastError)
+            is com.example.memgallery.lifeagent.data.ConnectOutcome.Connected -> error("slack must not read as connected")
+        }
         api.listFails = true
-        repo.connect(LifeApp.GMAIL)
+        repo.connectToolkit("gmail")
         assertFalse(dao.getConnection("gmail")!!.connected)
         assertEquals("No connection to Composio", dao.getConnection("gmail")!!.lastError)
     }
 
     @Test fun disconnectStopsPullingButKeepsTheRowAndClearsTheAccount() = runBlocking {
         dao.upsertConnection(LifeConnectionEntity("gmail", "Gmail", true, null, 9L, "x", "ca", "u"))
-        repo.disconnect(LifeApp.GMAIL)
+        repo.disconnectToolkit("gmail")
         val row = dao.getConnection("gmail")!!
         assertFalse(row.connected); assertNull(row.accountId); assertNull(row.lastError); assertEquals(9L, row.lastPulledAt)
     }

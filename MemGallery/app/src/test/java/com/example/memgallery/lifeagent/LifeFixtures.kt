@@ -8,24 +8,69 @@ import com.example.memgallery.lifeagent.ui.*
  */
 object LifeFixtures {
     // ---- Connections ----
+
+    private fun toolkit(
+        slug: String,
+        name: String,
+        description: String,
+        categories: List<String> = emptyList(),
+        connected: Boolean = false,
+        lastPulled: String? = null,
+        error: String? = null,
+        known: Boolean = false,
+    ) = ToolkitRowUi(
+        slug = slug, name = name, description = description, categories = categories,
+        connected = connected, lastPulled = lastPulled, error = error, known = known,
+        logoUrl = null,
+    )
+
     fun connections(): ConnectionsUiState = ConnectionsUiState(
-        keySet = true, maskedKey = "•".repeat(15) + "3f9a", collectionEnabled = true, hour = 17, minute = 0,
-        rows = listOf(
-            ConnectionRowUi(LifeAppId.GMAIL, true, "17:04"),
-            ConnectionRowUi(LifeAppId.GCAL, true, "17:04"),
-            ConnectionRowUi(LifeAppId.CLICKUP, true, "17:04"),
-            ConnectionRowUi(LifeAppId.SLACK, false),
+        keySet = true, maskedKey = "•••••••••••••••3f9a", keyKind = "Project key",
+        projectName = "Ayanda personal", collectionEnabled = true, hour = 17, minute = 0,
+        connected = listOf(
+            toolkit("gmail", "Gmail", "Read mail, threads and labels", listOf("email"), true, "17:04", known = true),
+            toolkit("googlecalendar", "Google Calendar", "Events and meetings", listOf("calendar"), true, "17:04", known = true),
+            toolkit("clickup", "ClickUp", "Tasks and lists", listOf("task management"), true, "17:04", known = true),
+        ),
+        others = listOf(
+            toolkit("slack", "Slack", "Read channels and messages", listOf("chat")),
+            toolkit("notion", "Notion", "Pages and databases", listOf("productivity")),
+            toolkit("github", "GitHub", "Issues, pull requests and repositories", listOf("developer tools")),
+            toolkit("hubspot", "HubSpot", "Contacts, deals and notes", listOf("crm")),
+        ),
+        categories = listOf("calendar", "chat", "crm", "developer tools", "email", "productivity", "task management"),
+    )
+
+    fun connectionsNoKey() = ConnectionsUiState(
+        keySet = false,
+        others = listOf(
+            toolkit("gmail", "Gmail", "Read mail, threads and labels", listOf("email"), known = true),
+            toolkit("slack", "Slack", "Read channels and messages", listOf("chat")),
+        ),
+        categories = listOf("chat", "email"),
+    )
+
+    fun connectionsFailed() = connections().copy(
+        keyCheckOk = false,
+        keyCheckMessage = "Composio answered 401: Invalid API key. Use a project key that starts with ak_ or a personal key that starts with uak_.",
+        connected = listOf(
+            toolkit("gmail", "Gmail", "Read mail, threads and labels", listOf("email"), false, error = "Composio answered 401: the key was refused", known = true),
+            toolkit("googlecalendar", "Google Calendar", "Events and meetings", listOf("calendar"), true, "17:04", known = true),
+            toolkit("clickup", "ClickUp", "Tasks and lists", listOf("task management"), false, "Thu 5 Nov", error = "Last pull failed: rate limited. Retrying tomorrow.", known = true),
         ),
     )
 
-    fun connectionsNoKey() = ConnectionsUiState()
-
-    fun connectionsFailed() = connections().copy(
-        rows = listOf(
-            ConnectionRowUi(LifeAppId.GMAIL, false, error = "Composio could not reach Gmail. Connect it again."),
-            ConnectionRowUi(LifeAppId.GCAL, true, "17:04"),
-            ConnectionRowUi(LifeAppId.CLICKUP, true, "Thu 5 Nov", error = "Last pull failed: rate limited. Retrying tomorrow."),
-            ConnectionRowUi(LifeAppId.SLACK, false),
+    /** A personal key that can reach more than one project, so the picker is up. */
+    fun connectionsPersonalKey() = connections().copy(
+        keyKind = "Personal key",
+        projectName = "Ayanda personal",
+        keyCheckOk = true,
+        keyCheckMessage = "Composio accepted the key · Ayanda personal · Guavas org",
+        showProjectSheet = true,
+        projects = listOf(
+            ProjectRowUi("proj_9f2a", "Ayanda personal", "org_3b1c", selected = true),
+            ProjectRowUi("proj_7d4e", "Impetix", "org_3b1c"),
+            ProjectRowUi("proj_2a8c", "Guavas client work", "org_55ab"),
         ),
     )
 

@@ -33,7 +33,7 @@ class LifeAgentRepository @Inject constructor(
     private val runner: Provider<CollectionRunner>,
     private val bus: CollectionProgressBus,
     private val composio: ComposioApi,
-    private val settings: SettingsRepository,
+    private val settings: SettingsRepository? = null,
 ) {
     internal var clock: () -> Long = { System.currentTimeMillis() }
     internal var zone: ZoneId = ZoneId.systemDefault()
@@ -290,9 +290,9 @@ class LifeAgentRepository @Inject constructor(
     suspend fun checkKey(): KeyCheck {
         val check = composio.checkKey()
         if (check.ok) {
-            settings.saveComposioKeyKind(check.kind)
+            settings?.saveComposioKeyKind(check.kind)
             if (check.projectId != null || check.projectName != null) {
-                settings.saveComposioProject(check.projectId, check.projectName, check.orgId)
+                settings?.saveComposioProject(check.projectId, check.projectName, check.orgId)
             }
         }
         changed()
@@ -303,8 +303,8 @@ class LifeAgentRepository @Inject constructor(
     suspend fun projects(): List<ComposioProject> = runCatching { composio.listProjects() }.getOrDefault(emptyList())
 
     suspend fun chooseProject(project: ComposioProject) {
-        settings.saveComposioProject(project.id, project.name, project.orgId)
-        settings.saveComposioKeyKind(KeyKind.USER)
+        settings?.saveComposioProject(project.id, project.name, project.orgId)
+        settings?.saveComposioKeyKind(KeyKind.USER)
         changed()
     }
 

@@ -267,7 +267,8 @@
     <string name="la_reason_other">Other noise</string>
     <string name="la_key_too_short">That key looks too short. Paste the whole key.</string>
     <string name="la_settings_connections">Connections</string>
-    <string name="la_known_app">Read by a hand-written parser</string>
+    <string name="la_known_app">Tuned parser</string>
+    <string name="la_tuned_parser">Tuned parser</string>
     <string name="la_last_pulled">Last pulled %1$s</string>
     <string name="la_save">Save</string>
     <string name="la_key_save">Save key</string>

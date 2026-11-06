@@ -42,28 +42,25 @@ class LifeAgentMappersTest {
 
     // ---- Connections ----
 
-    @Test fun connectionsMapsEveryAppAndMasksTheKey() {
-        val conns = listOf(
-            LifeConnection("gmail", "Gmail", true, null, at(6, 17, 4), null),
-            LifeConnection("clickup", "ClickUp", true, null, at(5, 17, 0), "rate limited"),
+    @Test fun connectionsStateKeepsEveryToolkitAndHidesTheKey() {
+        val s = ConnectionsUiState(
+            keySet = true,
+            maskedKey = maskKey("ak_live_abcdef123456"),
+            connected = listOf(ToolkitRowUi("gmail", "Gmail", connected = true, lastPulled = "17:04", known = true)),
+            others = listOf(ToolkitRowUi("notion", "Notion", error = "rate limited")),
         )
-        val s = mapConnections(conns, "ck_live_abcdef123456", true, 17, 0, setOf(LifeAppId.SLACK), null, false, ctx)
-        assertEquals(4, s.rows.size)
         assertTrue(s.keySet)
         assertTrue(s.maskedKey.endsWith("3456"))
         assertFalse("the key must never appear", s.maskedKey.contains("abcdef"))
-        assertEquals("17:04", s.rows.first { it.app == LifeAppId.GMAIL }.lastPulled)
-        assertEquals("Thu 5 Nov", s.rows.first { it.app == LifeAppId.CLICKUP }.lastPulled)
-        assertEquals("rate limited", s.rows.first { it.app == LifeAppId.CLICKUP }.error)
-        assertFalse(s.rows.first { it.app == LifeAppId.GCAL }.connected)
-        assertTrue(s.rows.first { it.app == LifeAppId.SLACK }.busy)
+        assertEquals("17:04", s.connected.single().lastPulled)
+        assertEquals("rate limited", s.others.single().error)
     }
 
     @Test fun connectionsWithNoKeyIsAClearEmptyState() {
-        val s = mapConnections(emptyList(), null, false, 17, 0, emptySet(), null, false, ctx)
+        val s = ConnectionsUiState()
         assertFalse(s.keySet)
         assertEquals("", s.maskedKey)
-        assertTrue(s.rows.none { it.connected })
+        assertTrue(s.connected.isEmpty() && s.others.isEmpty())
     }
 
     @Test fun shortKeysShowOnlyDots() {

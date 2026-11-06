@@ -97,9 +97,10 @@ sealed interface ConnectionsSheet {
 fun ConnectionsContent(
     state: ConnectionsUiState,
     actions: ConnectionsActions,
+    initialSheet: ConnectionsSheet? = null,
     modifier: Modifier = Modifier,
 ) {
-    var sheet by remember { mutableStateOf<ConnectionsSheet?>(null) }
+    var sheet by remember { mutableStateOf(initialSheet) }
     var showKeyInput by remember { mutableStateOf(!state.keySet) }
 
     Column(modifier.fillMaxSize()) {
@@ -345,13 +346,7 @@ private fun ToolkitRowCard(row: ToolkitRowUi, onClick: () -> Unit) {
         ToolkitLogo(row)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(row.name, style = MaterialTheme.typography.titleMedium, color = scheme.onSurface, maxLines = 1)
-                if (row.known) {
-                    Spacer(Modifier.width(6.dp))
-                    Text("· " + stringResource(R.string.la_known_app), style = MaterialTheme.typography.labelSmall, color = scheme.primary)
-                }
-            }
+            Text(row.name, style = MaterialTheme.typography.titleMedium, color = scheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val subtitle = row.error ?: row.lastPulled?.let { stringResource(R.string.la_last_pulled, it) } ?: row.description
             subtitle?.let {
                 Text(
@@ -413,7 +408,11 @@ private fun ToolkitSheet(
                 Column(Modifier.weight(1f)) {
                     SheetTitle(row.name)
                     if (row.known) {
-                        Text(stringResource(R.string.la_known_app), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            stringResource(R.string.la_tuned_parser),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
             }
@@ -497,7 +496,7 @@ private fun ProjectSheet(projects: List<ProjectRowUi>, onPick: (ProjectRowUi) ->
                         Text(p.name, style = MaterialTheme.typography.titleMedium)
                         p.orgId?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary)
+                    if (p.selected) Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(Modifier.height(8.dp))
             }

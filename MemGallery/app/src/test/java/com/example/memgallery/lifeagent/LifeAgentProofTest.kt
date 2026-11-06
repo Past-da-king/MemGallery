@@ -70,10 +70,10 @@ class LifeAgentProofTest {
     @Test fun connectionsNoKeyDark() = shot("connections-nokey", true) { ConnectionsContent(LifeFixtures.connectionsNoKey(), ConnectionsActions()) }
     @Test fun connectionsFailedLight() = shot("connections-failed", false) { ConnectionsContent(LifeFixtures.connectionsFailed(), ConnectionsActions()) }
     @Test fun connectionsFailedDark() = shot("connections-failed", true) { ConnectionsContent(LifeFixtures.connectionsFailed(), ConnectionsActions()) }
-    @Test fun connectSheetLight() = shot("connections-sheet-connect", false, true) { ConnectionsContent(LifeFixtures.connections(), ConnectionsActions(), initialSheet = ConnectionsSheet.Connect(LifeAppId.SLACK)) }
-    @Test fun connectSheetDark() = shot("connections-sheet-connect", true, true) { ConnectionsContent(LifeFixtures.connections(), ConnectionsActions(), initialSheet = ConnectionsSheet.Connect(LifeAppId.SLACK)) }
-    @Test fun disconnectSheetLight() = shot("connections-sheet-disconnect", false, true) { ConnectionsContent(LifeFixtures.connections(), ConnectionsActions(), initialSheet = ConnectionsSheet.Disconnect(LifeAppId.GMAIL)) }
-    @Test fun disconnectSheetDark() = shot("connections-sheet-disconnect", true, true) { ConnectionsContent(LifeFixtures.connections(), ConnectionsActions(), initialSheet = ConnectionsSheet.Disconnect(LifeAppId.GMAIL)) }
+    @Test fun connectionsPersonalKeyLight() = shot("connections-project-sheet", false, true) { ConnectionsContent(LifeFixtures.connectionsPersonalKey(), ConnectionsActions()) }
+    @Test fun connectionsPersonalKeyDark() = shot("connections-project-sheet", true, true) { ConnectionsContent(LifeFixtures.connectionsPersonalKey(), ConnectionsActions()) }
+    @Test fun toolkitSheetLight() = shot("connections-sheet-toolkit", false, true) { ConnectionsContent(LifeFixtures.connections(), ConnectionsActions(), initialSheet = ConnectionsSheet.Toolkit(LifeFixtures.connections().others.first())) }
+    @Test fun toolkitSheetDark() = shot("connections-sheet-toolkit", true, true) { ConnectionsContent(LifeFixtures.connections(), ConnectionsActions(), initialSheet = ConnectionsSheet.Toolkit(LifeFixtures.connections().others.first())) }
     @Test fun keySheetLight() = shot("connections-sheet-key", false, true) { ConnectionsContent(LifeFixtures.connectionsNoKey(), ConnectionsActions(), initialSheet = ConnectionsSheet.Key) }
     @Test fun keySheetDark() = shot("connections-sheet-key", true, true) { ConnectionsContent(LifeFixtures.connectionsNoKey(), ConnectionsActions(), initialSheet = ConnectionsSheet.Key) }
 
