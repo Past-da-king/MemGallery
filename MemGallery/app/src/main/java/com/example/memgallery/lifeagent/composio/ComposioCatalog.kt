@@ -184,8 +184,8 @@ object ComposioCatalog {
             }
         }
         val o = e?.takeIf { it.isJsonObject }?.asJsonObject ?: return JsonObject()
-        val inner = o.get("data")
-        return if (inner != null && inner.isJsonObject && o.entrySet().size <= 3 && !o.has("messages") && !o.has("items") && !o.has("tasks") && !o.has("channels") && !o.has("teams")) {
+        val inner = o.get("data") ?: o.get("response_data")
+        return if (inner != null && inner.isJsonObject && o.entrySet().size <= 3 && !o.has("messages") && !o.has("emails") && !o.has("items") && !o.has("events") && !o.has("tasks") && !o.has("channels") && !o.has("teams") && !o.has("workspaces")) {
             inner.asJsonObject
         } else o
     }
@@ -214,12 +214,14 @@ object ComposioCatalog {
 
     internal fun parseTime(raw: String?): Long? {
         if (raw.isNullOrBlank()) return null
-        val t = raw.trim()
+        // Gmail Date headers can end in a zone comment: "Fri, 6 Nov 2026 09:00:00 +0200 (SAST)".
+        val t = raw.trim().substringBefore(" (").trim()
         if (t.all { it.isDigit() }) {
-            val n = t.toLong()
+            val n = t.toLongOrNull() ?: return null // longer than a Long: not a time
+            if (n <= 0L) return null // ClickUp and Slack write 0 for "none"
             return if (n < 100_000_000_000L) n * 1000 else n
         }
-        if (t.matches(Regex("\\d+\\.\\d+"))) return (t.toDouble() * 1000).toLong() // Slack ts
+        if (t.matches(Regex("\\d+\\.\\d+"))) return t.toDoubleOrNull()?.takeIf { it > 0 }?.let { (it * 1000).toLong() } // Slack ts
         return try { OffsetDateTime.parse(t).toInstant().toEpochMilli() } catch (e: Exception) {
             try { Instant.parse(t).toEpochMilli() } catch (e2: Exception) {
                 try { LocalDate.parse(t).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() } catch (e3: Exception) {
@@ -235,18 +237,42 @@ object ComposioCatalog {
             val m = el.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
             val id = str(m, "messageId", "id") ?: return@mapNotNull null
             val preview = obj(m, "preview")
-            val subject = str(m, "subject") ?: str(preview, "subject") ?: "(no subject)"
+            val headers = gmailHeaders(m)
+            val subject = str(m, "subject") ?: str(preview, "subject") ?: headers["subject"] ?: "(no subject)"
             val body = str(m, "messageText", "snippet") ?: str(preview, "body") ?: ""
-            val labels = (m.get("labelIds") as? JsonArray)?.mapNotNull { l -> l.takeIf { it.isJsonPrimitive }?.asString } ?: emptyList()
+            val labels = (m.get("labelIds") as? JsonArray)?.mapNotNull { l -> l.takeIf { it.isJsonPrimitive }?.asString }.orEmpty() +
+                (if (hasAttachment(m)) listOf("ATTACHMENT") else emptyList())
             val thread = str(m, "threadId") ?: id
             RawItem(
                 app = LifeApp.GMAIL.id, sourceId = id, type = RawType.EMAIL, title = subject, body = body.take(2000),
-                author = str(m, "sender", "from"),
+                author = str(m, "sender", "from") ?: headers["from"],
                 url = "https://mail.google.com/mail/u/0/#all/$thread",
-                occurredAt = parseTime(str(m, "messageTimestamp", "internalDate", "date")) ?: 0L,
+                occurredAt = parseTime(str(m, "messageTimestamp", "internalDate", "date")) ?: parseTime(headers["date"]) ?: 0L,
                 labels = labels,
             )
         }
+    }
+
+    /** Raw Gmail keeps the headers in payload.headers as [{name, value}]; keys come back lower case. */
+    private fun gmailHeaders(m: JsonObject): Map<String, String> {
+        val list = obj(m, "payload")?.get("headers") as? JsonArray ?: return emptyMap()
+        val out = HashMap<String, String>()
+        for (h in list) {
+            val o = h.takeIf { it.isJsonObject }?.asJsonObject ?: continue
+            val n = str(o, "name")?.lowercase() ?: continue
+            val v = str(o, "value") ?: continue
+            out.putIfAbsent(n, v)
+        }
+        return out
+    }
+
+    private fun hasAttachment(m: JsonObject): Boolean {
+        if ((m.get("attachmentList") as? JsonArray)?.size()?.let { it > 0 } == true) return true
+        fun parts(o: JsonObject?): Boolean {
+            val ps = o?.get("parts") as? JsonArray ?: return false
+            return ps.any { p -> p.takeIf { it.isJsonObject }?.asJsonObject?.let { po -> str(po, "filename") != null || parts(po) } == true }
+        }
+        return parts(obj(m, "payload"))
     }
 
     internal fun parseCalendar(data: JsonElement): List<RawItem> {

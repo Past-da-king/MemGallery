@@ -1,0 +1,79 @@
+{
+  "data": {
+    "kind": "calendar#events",
+    "summary": "owner@example.test",
+    "timeZone": "Africa/Johannesburg",
+    "updated": "2026-11-06T09:00:00.000Z",
+    "nextPageToken": null,
+    "items": [
+      {
+        "kind": "calendar#event",
+        "id": "ndlovupitch2026",
+        "status": "confirmed",
+        "htmlLink": "https://www.google.com/calendar/event?eid=bmRsb3Z1cGl0Y2g",
+        "created": "2026-11-01T07:00:00.000Z",
+        "updated": "2026-11-06T09:59:00.000Z",
+        "summary": "Ndlovu pitch",
+        "description": "Walk through the proposal.",
+        "location": "Ndlovu Studio, Umhlanga",
+        "creator": {"email": "sizwe@ndlovu.example"},
+        "organizer": {"email": "sizwe@ndlovu.example", "displayName": "Sizwe Ndlovu"},
+        "start": {"dateTime": "2026-11-12T10:00:00+02:00", "timeZone": "Africa/Johannesburg"},
+        "end": {"dateTime": "2026-11-12T11:00:00+02:00", "timeZone": "Africa/Johannesburg"},
+        "hangoutLink": "https://meet.google.com/abc-defg-hij",
+        "attendees": [
+          {"email": "sizwe@ndlovu.example", "responseStatus": "accepted"},
+          {"email": "owner@example.test", "self": true, "responseStatus": "accepted"},
+          {"email": "thandeka@studio.example", "responseStatus": "needsAction"}
+        ],
+        "eventType": "default"
+      },
+      {
+        "kind": "calendar#event",
+        "id": "momsbirthday2026",
+        "status": "confirmed",
+        "htmlLink": "https://www.google.com/calendar/event?eid=bW9tcw",
+        "created": "2025-11-02T08:00:00.000Z",
+        "updated": "2025-11-02T08:00:00.000Z",
+        "summary": "Mom's birthday",
+        "start": {"date": "2026-11-10"},
+        "end": {"date": "2026-11-11"},
+        "transparency": "transparent"
+      },
+      {
+        "kind": "calendar#event",
+        "id": "weeklystandup_20261109T060000Z",
+        "recurringEventId": "weeklystandup",
+        "originalStartTime": {"dateTime": "2026-11-09T08:00:00+02:00"},
+        "status": "confirmed",
+        "htmlLink": "https://www.google.com/calendar/event?eid=c3RhbmR1cA",
+        "created": "2026-01-05T08:00:00.000Z",
+        "updated": "2026-01-05T08:00:00.000Z",
+        "summary": "Weekly standup",
+        "organizer": {"email": "lead@team.example"},
+        "start": {"dateTime": "2026-11-09T08:00:00+02:00"},
+        "end": {"dateTime": "2026-11-09T08:30:00+02:00"},
+        "recurrence": ["RRULE:FREQ=WEEKLY;BYDAY=MO"],
+        "attendees": [
+          {"email": "lead@team.example"}, {"email": "a@team.example"}, {"email": "b@team.example"},
+          {"email": "c@team.example"}, {"email": "owner@example.test", "self": true}
+        ]
+      },
+      {
+        "kind": "calendar#event",
+        "id": "designreview2026",
+        "status": "cancelled",
+        "htmlLink": "https://www.google.com/calendar/event?eid=ZGVzaWdu",
+        "created": "2026-10-20T08:00:00.000Z",
+        "updated": "2026-11-06T09:30:00.000Z",
+        "summary": "Design review",
+        "start": {"dateTime": "2026-11-11T14:00:00+02:00"},
+        "end": {"dateTime": "2026-11-11T15:00:00+02:00"},
+        "attendees": [{"email": "a@team.example"}, {"email": "owner@example.test", "self": true}]
+      }
+    ]
+  },
+  "error": null,
+  "successful": true,
+  "log_id": "log_cal_0001"
+}

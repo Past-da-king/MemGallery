@@ -1,0 +1,91 @@
+{
+  "data": {
+    "messages": [
+      {
+        "id": "19a4c0de01aa0001",
+        "threadId": "19a4c0de01aa0001",
+        "labelIds": ["UNREAD", "IMPORTANT", "CATEGORY_PERSONAL", "INBOX"],
+        "snippet": "Hi Ayanda, please send the signed lease by Sat 7 Nov 16:00 so we can hand over the keys on Monday.",
+        "internalDate": "1793948400000",
+        "sizeEstimate": 48211,
+        "payload": {
+          "mimeType": "multipart/mixed",
+          "headers": [
+            {"name": "Delivered-To", "value": "owner@example.test"},
+            {"name": "Date", "value": "Fri, 6 Nov 2026 09:00:00 +0200"},
+            {"name": "From", "value": "Nomsa Mahlangu <nomsa@umoya.example>"},
+            {"name": "To", "value": "owner@example.test"},
+            {"name": "Subject", "value": "Signed lease for Unit 4"},
+            {"name": "Message-ID", "value": "<CAK1x@mail.umoya.example>"}
+          ],
+          "parts": [
+            {"partId": "0", "mimeType": "text/plain", "filename": "", "body": {"size": 120, "data": "SGkgQXlhbmRhLA=="}},
+            {"partId": "1", "mimeType": "application/pdf", "filename": "Lease-Unit4.pdf", "body": {"attachmentId": "ANGjdJ_attachment_id_1", "size": 40211}}
+          ]
+        }
+      },
+      {
+        "messageId": "19a4c0de01aa0002",
+        "id": "19a4c0de01aa0002",
+        "threadId": "19a4c0de01aa0099",
+        "labelIds": ["UNREAD", "CATEGORY_UPDATES", "INBOX"],
+        "subject": "Invoice INV-2043 due 13 Nov",
+        "sender": "Anele Jacobs <anele@kloof.example>",
+        "to": "owner@example.test",
+        "messageTimestamp": "2026-11-06T07:30:00Z",
+        "messageText": "Hi, invoice INV-2043 for R8,400 is due 13 Nov. Please pay by Friday 13 Nov and send proof of payment.",
+        "snippet": "Hi, invoice INV-2043 for R8,400 is due 13 Nov.",
+        "internalDate": "1793950200000",
+        "attachmentList": [],
+        "preview": {"subject": "Invoice INV-2043 due 13 Nov", "body": "Hi, invoice INV-2043 for R8,400 is due 13 Nov."},
+        "payload": {"headers": [
+          {"name": "Date", "value": "Fri, 6 Nov 2026 09:30:00 +0200"},
+          {"name": "From", "value": "Anele Jacobs <anele@kloof.example>"},
+          {"name": "Subject", "value": "Invoice INV-2043 due 13 Nov"}
+        ]}
+      },
+      {
+        "id": "19a4c0de01aa0003",
+        "threadId": "19a4c0de01aa0003",
+        "labelIds": ["UNREAD", "CATEGORY_PROMOTIONS", "INBOX"],
+        "snippet": "Shop now: up to 60% off for Black Friday. Free delivery on orders over R500.",
+        "internalDate": "1793952000000",
+        "payload": {"headers": [
+          {"name": "Date", "value": "Fri, 06 Nov 2026 10:00:00 +0200"},
+          {"name": "From", "value": "Takealot Deals <deals@takealot.example>"},
+          {"name": "Subject", "value": "Black Friday: up to 60% off"},
+          {"name": "List-Unsubscribe", "value": "<https://takealot.example/unsub>"}
+        ]}
+      },
+      {
+        "id": "19a4c0de01aa0004",
+        "threadId": "19a4c0de01aa0004",
+        "labelIds": ["CATEGORY_UPDATES", "INBOX"],
+        "snippet": "This week in product design. Unsubscribe or manage your preferences at any time.",
+        "internalDate": "1793952900000",
+        "payload": {"headers": [
+          {"name": "Date", "value": "Fri, 6 Nov 2026 10:15:00 +0200"},
+          {"name": "From", "value": "The Weekly Digest <newsletter@mail.weeklydigest.example>"},
+          {"name": "Subject", "value": "Seven things we liked this week"}
+        ]}
+      },
+      {
+        "messageId": "19a4c0de01aa0005",
+        "id": "19a4c0de01aa0005",
+        "threadId": "19a4c0de01aa0005",
+        "labelIds": ["CATEGORY_UPDATES", "INBOX"],
+        "subject": "Your Friday trip with Uber",
+        "sender": "Uber Receipts <receipts@uber.example>",
+        "messageTimestamp": "2026-11-06T08:30:00Z",
+        "messageText": "Thanks for riding. Total R112.40. Receipt attached.",
+        "internalDate": "1793953800000",
+        "attachmentList": [{"filename": "receipt.pdf", "mimeType": "application/pdf", "attachmentId": "ANGj_2"}]
+      }
+    ],
+    "nextPageToken": null,
+    "resultSizeEstimate": 5
+  },
+  "error": null,
+  "successful": true,
+  "log_id": "log_gmail_0001"
+}
