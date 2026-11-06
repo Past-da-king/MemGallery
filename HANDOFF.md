@@ -19,17 +19,33 @@ the PC.
    version 19 tables and columns, the repository API the UI talks to, the four apps with their Composio read tool
    slugs, the collection rules (noise, proposals, fingerprint dedupe, learning bias), file ownership, and the
    non-negotiables (read only, no key or account in code, works with no key, slide-up sheets only).
-3. **Two helpers were started on the server build** and were still working when this thread stopped. Neither had
-   pushed a commit at 16:35, so their work may sit uncommitted in their temp clones on the server, or may have been
-   lost when the thread ended. First thing to check:
-   - `cd ~/repos/MemGallery && git fetch && git log --oneline origin/feat/life-agent -5`
-   - `cd ~/repos/MemGallery && git status --short` (untracked files from the mocks branch may be lying around;
-     they are already committed on `design/life-agent-mocks`, so they can be cleaned)
-   - look for stray clones such as `~/tmp-gen-*/clone` with uncommitted work, and for Gradle daemons
-     (`./gradlew --stop`).
-   Their split (still the right split): A = data + Composio + collection + WorkManager + nudges + unit tests;
-   B = screens + navigation + chat sources + Roborazzi screenshot tests. The widget set (Glance 2x2, 4x2, 4x4 with
-   tick, snooze, keep/drop, refresh, Ask) was never handed to a helper and is still to do.
+3. **Data, Composio, collection and work layers: BUILT AND PUSHED** (helper A finished after the handoff was first
+   written; this replaces what the earlier draft said). Commits on `feat/life-agent`: `74a4072` (models, entities,
+   DAO, Room v19 migration, repository, settings keys, Composio client and catalog, Hilt module), `35ab1c9` (noise
+   filter, proposal builder, collection runner, workers, schedule, nudges, controls, nudge strings), `57f37c3`
+   (unit tests), `b36bd12` (`connect()` looks the app up in the user's own Composio project and stores its account
+   id). `assembleDebug` builds and **82 unit tests pass** (CollectionRunner 12, ComposioCatalog 13, ComposioClient 10,
+   LifeAgentRepository 13, Migration 2, NoiseFilter 9, NudgeAndSchedule 7, ProposalBuilder 16). `./gradlew --stop`
+   was run. Nothing has been run against a real Composio account yet, so the response parsers are untested on live
+   data.
+   - Read-only is enforced in code: `execute()` refuses any slug outside `READ_TOOLS` before a request, with a test
+     proving five write slugs send nothing.
+   - Works with no key (the run is "skipped"), with no AI provider (rules only), and with any one app missing; one
+     app failing never fails the run.
+   - Departures to keep: `AppModule.kt` has one added line for `MIGRATION_18_19`; `life_connections` carries
+     `accountId` and `userId` (Composio ids, not secrets); ClickUp uses `CLICKUP_GET_AUTHORIZED_TEAMS_WORKSPACES`
+     plus `CLICKUP_GET_FILTERED_TEAM_TASKS`; the key is stored encrypted as `composio_api_key_secure`; key, switch
+     and time live in a new `LifeAgentControls` (reschedules on every change); `keep()` with a date creates a local
+     task `p:<id>`; the widget owner sets `LifeAgentControls`/repository `onDataChanged` to refresh Glance.
+   - Still owed by whoever does the next part: the nudge notification has no snooze or done button because that needs
+     a manifest receiver; it taps into `MainActivity` with action
+     `com.example.memgallery.lifeagent.OPEN_ITEM`, extra `life_agent_item_id`, and navigation must route it. The
+     screens must call `LifeAgentControls.ensureScheduled()` on app start. ClickUp, Slack and Calendar response
+     shapes are guesses from the docs until one real read each is run.
+
+4. **Helper B (screens and navigation) was still working when this thread stopped.** Check whether it pushed; if not,
+   its work may sit uncommitted in a temp clone on the server. Its split is unchanged: the screens from the mocks,
+   navigation and entry points, chat source rows, and Roborazzi screenshot tests.
 
 ## What is left (Ayanda's nine, read only)
 1. Settings > Advanced > Connections: the user's own Composio key, Gmail, Google Calendar, ClickUp, Slack, read only.
