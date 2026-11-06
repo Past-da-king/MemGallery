@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Life Agent screens. Own file: never merged into strings.xml (see docs/life-agent/CONTRACT.md). -->
+<resources>
+    <!-- Apps -->
+    <string name="la_app_gmail">Gmail</string>
+    <string name="la_app_gcal">Google Calendar</string>
+    <string name="la_app_gcal_short">Calendar</string>
+    <string name="la_app_clickup">ClickUp</string>
+    <string name="la_app_slack">Slack</string>
+    <string name="la_app_other">Other</string>
+
+    <!-- Common -->
+    <string name="la_cancel">Cancel</string>
+    <string name="la_close">Close</string>
+    <string name="la_done">Done</string>
+    <string name="la_open">Open</string>
+    <string name="la_copy">Copy</string>
+    <string name="la_snooze">Snooze</string>
+    <string name="la_busy">Working</string>
+    <string name="la_cd_more">More</string>
+    <string name="la_retry">Retry</string>
+    <string name="la_readonly_title">Reads only. Never writes.</string>
+    <string name="la_readonly_body">MemGallery can look at your apps. It can never send, reply, edit, delete or post.</string>
+
+    <!-- Connections -->
+    <string name="la_connections_title">Connections</string>
+    <string name="la_connections_eyebrow">Settings · Advanced</string>
+    <string name="la_key_section">Your Composio key</string>
+    <string name="la_key_label">API key</string>
+    <string name="la_key_private">Encrypted, kept on this phone</string>
+    <string name="la_key_change">Change key</string>
+    <string name="la_nokey_title">Add your Composio key</string>
+    <string name="la_nokey_body">Your key lets MemGallery read your own apps. Nothing is connected until you add it.</string>
+    <string name="la_nokey_add">Add key</string>
+    <string name="la_nokey_add_short">Add key</string>
+    <string name="la_keysheet_title_add">Add your Composio key</string>
+    <string name="la_keysheet_title_change">Change your Composio key</string>
+    <string name="la_keysheet_body">Paste the key from your own Composio account. It is stored encrypted on this phone and never leaves it except to talk to Composio.</string>
+    <string name="la_keysheet_save">Save key</string>
+    <string name="la_apps_section">Apps · %1$d of %2$d connected</string>
+    <string name="la_status_connected_pulled">Connected · last pulled %1$s</string>
+    <string name="la_status_connected_never">Connected · not pulled yet</string>
+    <string name="la_status_not_connected">Not connected</string>
+    <string name="la_status_needs_key">Add a key to connect</string>
+    <string name="la_connect">Connect</string>
+    <string name="la_disconnect">Disconnect</string>
+    <string name="la_connect_sheet_title">Connect %1$s</string>
+    <string name="la_connect_sheet_sub">through your Composio key</string>
+    <string name="la_connect_banner">Read access only. This cannot be changed to write from inside MemGallery.</string>
+    <string name="la_it_will">It will</string>
+    <string name="la_it_never">It will never</string>
+    <string name="la_connect_cta">Connect %1$s, read only</string>
+    <string name="la_connect_foot">Disconnect any time. Kept memories stay.</string>
+    <string name="la_disconnect_title">Disconnect %1$s?</string>
+    <string name="la_disconnect_body">MemGallery stops reading it. Memories you already kept stay.</string>
+    <string name="la_daily_section">Daily collection</string>
+    <string name="la_daily_title">Collect every day</string>
+    <string name="la_daily_body">Pulls what is new, drops the noise, then asks you to review.</string>
+    <string name="la_daily_time">At %1$02d:%2$02d</string>
+    <string name="la_collect_now">Collect now</string>
+    <string name="la_time_title">Collection time</string>
+    <string name="la_time_body">MemGallery collects once a day at this time.</string>
+    <string name="la_time_save">Save time</string>
+
+    <string-array name="la_gmail_will">
+        <item>Read the sender, subject and text of recent mail</item>
+        <item>Notice dates, amounts and people in it</item>
+    </string-array>
+    <string-array name="la_gmail_never">
+        <item>Send, reply to or forward mail</item>
+        <item>Delete, archive or label anything</item>
+    </string-array>
+    <string-array name="la_gcal_will">
+        <item>Read your events and who is invited</item>
+        <item>Notice meetings that moved or are new</item>
+    </string-array>
+    <string-array name="la_gcal_never">
+        <item>Create, move or cancel an event</item>
+        <item>Answer an invite for you</item>
+    </string-array>
+    <string-array name="la_clickup_will">
+        <item>Read your tasks, due dates and lists</item>
+        <item>Match tasks to the memories you keep</item>
+    </string-array>
+    <string-array name="la_clickup_never">
+        <item>Create, edit or complete a task</item>
+        <item>Comment or change who it is assigned to</item>
+    </string-array>
+    <string-array name="la_slack_will">
+        <item>Read recent messages in your channels</item>
+        <item>Notice promises and dates in them</item>
+    </string-array>
+    <string-array name="la_slack_never">
+        <item>Post, reply or react</item>
+        <item>Join, leave or create a channel</item>
+    </string-array>
+
+    <!-- Collecting -->
+    <string name="la_collect_eyebrow">Daily collection</string>
+    <string name="la_collect_title">Collecting</string>
+    <string name="la_collect_title_done">Collected</string>
+    <string name="la_collect_step">Step %1$d of %2$d</string>
+    <string name="la_collect_finished_line">All apps read</string>
+    <string name="la_collect_finished_sub">%1$d proposed memories are ready to review.</string>
+    <string name="la_collect_starting">Getting ready. Started %1$s.</string>
+    <string name="la_reading_gmail">Reading your mail in Gmail. Started %1$s.</string>
+    <string name="la_reading_gcal">Reading your calendar. Started %1$s.</string>
+    <string name="la_reading_clickup">Reading your tasks in ClickUp. Started %1$s.</string>
+    <string name="la_reading_slack">Reading your channels in Slack. Started %1$s.</string>
+    <string name="la_collect_found">%1$d found</string>
+    <string name="la_collect_noise">%1$d noise dropped</string>
+    <string name="la_collect_found_new">Found %1$d new</string>
+    <string name="la_collect_dropped_n">Dropped %1$d noise</string>
+    <string name="la_collect_pulling">Pulling</string>
+    <string name="la_collect_upnext">Up next</string>
+    <string name="la_collect_skipped">Skipped, not connected</string>
+    <string name="la_collect_failed">Could not read</string>
+    <string name="la_collect_read_of">%1$d of %2$d read</string>
+    <string name="la_collect_background">Keep running in background</string>
+    <string name="la_collect_review">Review %1$d</string>
+    <string name="la_collect_cancel_title">Stop this collection?</string>
+    <string name="la_collect_cancel_body">What was already read is kept. The rest is read at the next collection.</string>
+    <string name="la_collect_cancel_yes">Stop</string>
+    <string name="la_collect_cancel_no">Keep going</string>
+    <string name="la_collect_idle_title">Nothing is collecting</string>
+    <string name="la_collect_idle_body">MemGallery collects once a day. You can run it now.</string>
+    <string name="la_collect_idle_noapps_title">No apps connected</string>
+    <string name="la_collect_idle_noapps_body">Connect Gmail, Calendar, ClickUp or Slack and the daily collection has something to read.</string>
+    <string name="la_collect_open_connections">Open Connections</string>
+
+    <!-- Review -->
+    <string name="la_review_title">Review</string>
+    <string name="la_review_approve_all">Approve all</string>
+    <string name="la_review_counter">%1$d of %2$d</string>
+    <string name="la_review_counter_done">%1$d of %2$d</string>
+    <string name="la_review_collected">Collected %1$s · %2$d kept so far</string>
+    <string name="la_review_swipe_drop">Swipe left to drop</string>
+    <string name="la_review_swipe_keep">Swipe right to keep</string>
+    <string name="la_review_keep">Keep</string>
+    <string name="la_review_drop">Drop</string>
+    <string name="la_review_undo">Undo</string>
+    <string name="la_review_suggest_keep">Suggest: keep</string>
+    <string name="la_review_suggest_drop">Suggest: drop</string>
+    <string name="la_review_why">Why it was picked</string>
+    <string name="la_review_date">The date it matters</string>
+    <string name="la_review_matches">Matches task: %1$s</string>
+    <string name="la_review_caught_title">All caught up</string>
+    <string name="la_review_nothing_title">Nothing to review</string>
+    <string name="la_review_nothing_body">When the next collection finds something worth keeping, it waits here for your decision.</string>
+    <string name="la_review_learned">What it learned</string>
+    <string name="la_review_next">Next collection</string>
+    <string name="la_review_next_unset">Not scheduled</string>
+    <plurals name="la_review_caught_body">
+        <item quantity="one">You kept %1$d memory today. Nothing is waiting for your decision.</item>
+        <item quantity="other">You kept %1$d memories today. Nothing is waiting for your decision.</item>
+    </plurals>
+    <plurals name="la_review_learned_body">
+        <item quantity="one">You dropped %1$d item. It will skip that kind sooner next time.</item>
+        <item quantity="other">You dropped %1$d items. It will skip those kinds sooner next time.</item>
+    </plurals>
+    <string name="la_approve_title">Approve all %1$d left?</string>
+    <plurals name="la_approve_body">
+        <item quantity="one">MemGallery applies its own pick to the %1$d memory you have not reviewed yet.</item>
+        <item quantity="other">MemGallery applies its own picks to the %1$d memories you have not reviewed yet.</item>
+    </plurals>
+    <string name="la_approve_keep">Keep</string>
+    <string name="la_approve_drop">Drop</string>
+    <string name="la_approve_more">+%1$d more</string>
+    <string name="la_approve_note">Dropped means MemGallery forgets it. Nothing is changed in your apps.</string>
+    <string name="la_approve_cta">Approve all %1$d</string>
+    <string name="la_approve_first">Review them first</string>
+
+    <!-- People -->
+    <string name="la_people_title">People</string>
+    <plurals name="la_people_eyebrow">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
+    <string name="la_people_search">Search people, roles, companies</string>
+    <string name="la_people_note">Built from your memories. A person appears when a mail, task or note names them.</string>
+    <string name="la_people_recent">Recent</string>
+    <string name="la_people_atoz">A to Z</string>
+    <string name="la_people_open">Open</string>
+    <string name="la_people_sort_cd">Change order</string>
+    <string name="la_people_none_match">Nobody matches that search.</string>
+    <string name="la_people_empty_title">No people yet</string>
+    <string name="la_people_empty_body">People appear once a mail, task or note names them. Connect an app and run a collection.</string>
+    <string name="la_kind_you_owe">You owe</string>
+    <string name="la_kind_owes_you">Owes you</string>
+    <string name="la_kind_meeting">Meeting</string>
+    <string name="la_kind_waiting">Waiting</string>
+
+    <!-- Person -->
+    <string name="la_person_eyebrow">Person</string>
+    <string name="la_person_last">Last memory %1$s</string>
+    <string name="la_person_you_owe_n">%1$d you owe</string>
+    <string name="la_person_waiting_n">%1$d waiting</string>
+    <string name="la_person_commitments">Open commitments</string>
+    <string name="la_person_no_commitments">Nothing open either way.</string>
+    <string name="la_person_memories">Recent memories</string>
+    <string name="la_person_no_memories">No memories mention them yet.</string>
+    <string name="la_person_details">Details</string>
+    <string name="la_person_email_sub">Email, from your apps</string>
+    <string name="la_person_phone_sub">Phone</string>
+    <string name="la_person_ask">Ask about %1$s</string>
+    <string name="la_person_missing_title">Person not found</string>
+    <string name="la_person_missing_body">They are no longer in your memories.</string>
+
+    <!-- Daily report -->
+    <string name="la_report_title">Daily report</string>
+    <string name="la_report_refresh">Collect now</string>
+    <string name="la_report_collected">Collected %1$s</string>
+    <string name="la_report_due_n">%1$d due today</string>
+    <string name="la_report_overdue_n">%1$d overdue</string>
+    <string name="la_report_review_n">%1$d proposed memories to review</string>
+    <string name="la_report_aware">To be aware of</string>
+    <string name="la_report_due">Due today</string>
+    <string name="la_report_overdue">Overdue</string>
+    <string name="la_report_meetings">Today’s meetings</string>
+    <string name="la_report_open">Still open</string>
+    <string name="la_report_ended">ended</string>
+    <string name="la_report_noapps_title">Connect your apps</string>
+    <string name="la_report_noapps_body">The daily report is built from your mail, calendar, tasks and chats. Connect at least one to see it.</string>
+    <string name="la_report_empty_title">Nothing to handle</string>
+    <string name="la_report_empty_body">No deadlines, overdue tasks or meetings today. The next collection updates this.</string>
+    <string name="la_report_entry_title">Daily report</string>
+    <string name="la_report_entry_sub">What to be aware of today</string>
+    <string name="la_report_entry_review">%1$d to review</string>
+
+    <!-- Snooze -->
+    <string name="la_snooze_title">Snooze</string>
+    <string name="la_snooze_hour">In 1 hour</string>
+    <string name="la_snooze_hour_sub">It comes back in the report in an hour</string>
+    <string name="la_snooze_tomorrow">Tomorrow</string>
+    <string name="la_snooze_tomorrow_sub">It comes back tomorrow at 08:00</string>
+
+    <!-- Chat sources -->
+    <string name="la_chat_sources">Sources</string>
+    <string name="la_chat_read_apps">Read %1$d apps</string>
+</resources>
