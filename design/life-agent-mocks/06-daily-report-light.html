@@ -7,28 +7,28 @@ const mountB = (html, time) => { mount(html); document.querySelector('.status sp
 
 const sec = (l, c) => `<div class="sec" style="height:24px"><span class="l">${l}${c !== undefined ? `<span class="c">${c}</span>` : ''}</span></div>`;
 /* aware: a shaped kind icon instead of a tick, the whole row opens the source */
-const aware = (icon, tn, shape, t, src, when) => `<div class="row" style="min-height:52px"><div class="shi" style="width:36px;height:36px;${tone(tn)}${clip(shape)}">${ic(icon, 'f s20')}</div><div class="txt"><div class="ttl" style="font-size:14px">${t}</div><div class="meta" style="margin-top:1px">${sc(src)}<span class="t">${when}</span></div></div><div class="ib" style="width:40px">${ic('arrow_outward', 's20')}</div></div>`;
-const task = (t, src, when, o = {}) => `<div class="row ${o.late ? 'late' : ''}" style="min-height:52px"><div class="tickw"><div class="tick ${o.late ? 'late' : ''}"></div></div><div class="txt"><div class="ttl" style="font-size:14px">${t}</div><div class="meta" style="margin-top:1px">${sc(src)}<span class="t ${o.late ? 'late' : ''}">${when}</span></div></div><div class="ib" style="width:44px">${ic('snooze', 's20')}</div></div>`;
-const oc = (t, i) => `<span class="chip" style="height:32px;padding:0 12px 0 10px;font-size:13px;gap:6px">${ic(i || 'radio_button_unchecked')}${t}</span>`;
+const aware = (icon, tn, shape, t, src, when) => `<div class="row" style="min-height:50px"><div class="shi" style="width:36px;height:36px;${tone(tn)}${clip(shape)}">${ic(icon, 'f s20')}</div><div class="txt"><div class="ttl" style="font-size:14px">${t}</div><div class="meta" style="margin-top:1px">${sc(src)}<span class="t">${when}</span></div></div><div class="ib" style="width:40px">${ic('arrow_outward', 's20')}</div></div>`;
+const task = (t, src, when, o = {}) => `<div class="row ${o.late ? 'late' : ''}" style="min-height:50px"><div class="tickw"><div class="tick ${o.late ? 'late' : ''}"></div></div><div class="txt"><div class="ttl" style="font-size:14px">${t}</div><div class="meta" style="margin-top:1px">${sc(src)}<span class="t ${o.late ? 'late' : ''}">${when}</span></div></div><div class="ib" style="width:44px">${ic('snooze', 's20')}</div></div>`;
+const oc = (t, i) => `<span class="chip" style="height:30px;padding:0 12px 0 10px;font-size:13px;gap:6px">${ic(i || 'radio_button_unchecked')}${t}</span>`;
 
 mountB(`
-${blobHeader({ eyebrow: 'FRIDAY 6 NOVEMBER', title: '<span style="font:700 36px/42px var(--font);letter-spacing:-.8px">Daily report</span>', back: 1, h: 152, icon1: 'history', icon2: 'tune' })}
+${blobHeader({ eyebrow: 'FRIDAY 6 NOVEMBER', title: '<span style="font:700 36px/42px var(--font);letter-spacing:-.8px">Daily report</span>', back: 1, h: 148, icon1: 'history', icon2: 'tune' })}
 <div class="abs" style="top:112px;left:16px;right:16px;display:flex;gap:6px;color:var(--on-primary-container)">
   <span class="pill" style="background:color-mix(in srgb,var(--on-primary-container) 12%,transparent)">${ic('sync')}Collected 17:04</span>
   <span class="pill" style="background:color-mix(in srgb,var(--on-primary-container) 12%,transparent)">3 due today</span>
   <span class="pill err">1 overdue</span>
 </div>
 
-<div class="abs" style="top:160px;left:0;right:0">
+<div class="abs" style="top:154px;left:0;right:0">
   ${sec('TO BE AWARE OF', 4)}
   <div class="grp" style="gap:2px">
-    ${aware('schedule', 't', 'cookie9', 'Signed lease due to Nomsa tomorrow, 16:00', 'gmail', 'Sat 7 Nov')}
+    ${aware('schedule', 't', 'cookie9', 'Nomsa\'s lease is due tomorrow', 'gmail', 'Sat 7 Nov, 16:00')}
     ${aware('payments', 'a', 'clover4', 'INV-2043, R8,400, is due Fri 13 Nov', 'gmail', 'Anele Jacobs')}
-    ${aware('event_repeat', 'k', 'puffy', 'Sizwe moved the pitch to Thu 12 Nov, 10:00', 'cal', 'moved from Wed')}
-    ${aware('shield', 'g', 'gem', 'New Google sign-in from Windows, Durban', 'gmail', 'Thu 21:12')}
+    ${aware('event_repeat', 'k', 'puffy', 'Pitch moved to Thu 12 Nov, 10:00', 'cal', 'Sizwe, was Wed')}
+    ${aware('shield', 'g', 'gem', 'New Google sign-in from Durban', 'gmail', 'Windows, Thu 21:12')}
   </div>
 
-  <div style="height:6px"></div>
+  <div style="height:2px"></div>
   ${sec('DUE TODAY', 3)}
   <div class="grp" style="gap:2px">
     ${task('Chase Jaco for the retouched set', 'clickup', 'today 17:00')}
@@ -36,15 +36,15 @@ ${blobHeader({ eyebrow: 'FRIDAY 6 NOVEMBER', title: '<span style="font:700 36px/
     ${task('Standup notes for Thandeka', 'clickup', 'today')}
   </div>
 
-  <div style="height:4px"></div>
+  <div style="height:0"></div>
   ${sec('OVERDUE', 1)}
   <div class="grp">${task('Book the Durban workshop flights', 'clickup', '2 days late', { late: 1 })}</div>
 
-  <div style="height:4px"></div>
+  <div style="height:0"></div>
   ${sec('TODAY\'S MEETINGS', 1)}
-  <div class="grp"><div class="row" style="min-height:52px"><div style="width:40px;flex:none;text-align:center"><div class="title-m-em" style="line-height:20px;font-size:15px">15:30</div><div class="label-s muted" style="font-weight:500">30 min</div></div><div class="txt"><div class="ttl" style="font-size:14px">Call with Kagiso about Q4</div><div class="meta" style="margin-top:1px">${sc('cal')}<span class="t">Google Meet</span></div></div><div class="ib" style="width:44px">${ic('chevron_right', 's20')}</div></div></div>
+  <div class="grp"><div class="row" style="min-height:50px"><div style="width:40px;flex:none;text-align:center"><div class="title-m-em" style="line-height:20px;font-size:15px">15:30</div><div class="label-s muted" style="font-weight:500">30 min</div></div><div class="txt"><div class="ttl" style="font-size:14px">Call with Kagiso about Q4</div><div class="meta" style="margin-top:1px">${sc('cal')}<span class="t">Google Meet</span></div></div><div class="ib" style="width:44px">${ic('chevron_right', 's20')}</div></div></div>
 
-  <div style="height:4px"></div>
+  <div style="height:0"></div>
   ${sec('STILL OPEN', 5)}
   <div style="display:flex;flex-wrap:wrap;gap:6px 6px;padding:0 16px">
     ${oc('Q4 expense sheet')}${oc('Approve INV-2043')}${oc('Chase Jaco')}${oc('Book the flights')}${oc('Sign the lease')}

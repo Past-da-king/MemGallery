@@ -55,7 +55,7 @@ html.dark .row.late { background: color-mix(in srgb, var(--error-container) 50%,
 .awc .go { width: 32px; height: 32px; border-radius: 16px; display: grid; place-items: center; background: color-mix(in srgb, currentColor 12%, transparent); margin: -4px -6px -4px 0; }
 
 /* people */
-.pr { display: flex; gap: 12px; align-items: center; padding: 8px 16px 8px 12px; min-height: 72px; }
+.pr { display: flex; gap: 12px; align-items: center; padding: 6px 16px 6px 12px; min-height: 70px; }
 .pr .nm { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .pr .nm .d { font: 500 12px/16px var(--font); color: var(--on-surface-variant); flex: none; }
 .pr .rl { font: 400 13px/18px var(--font); color: var(--on-surface-variant); }
