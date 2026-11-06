@@ -1,0 +1,58 @@
+<!doctype html><html lang="en" data-sheet><head><meta charset="utf-8"><title>connections-sheet</title>
+<link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-a.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script>
+<script>
+if (document.documentElement.hasAttribute('data-force-dark')) document.documentElement.classList.add('dark');
+const SHEET = document.documentElement.hasAttribute('data-sheet');
+const M = h => { mount(h); document.querySelector('.status span').textContent = '17:04'; };
+
+const app = (icon, tn, shape, name, sub, on, pos) => `<div class="row ${pos}">
+  <div class="appico" style="${tone(tn)}${clip(shape)}">${ic(icon, 'f')}</div>
+  <div class="tx"><div class="title-m-em">${name}</div><div class="body-s muted" style="margin-top:2px"><span class="sdot ${on ? '' : 'off'}"></span>${sub}</div></div>
+  ${on ? `<div class="ib">${ic('more_vert')}</div>` : `<span class="btn tonal">Connect</span>`}</div>`;
+
+const screen = `
+${blobHeader({ eyebrow: 'SETTINGS · ADVANCED', title: 'Connections', h: 160, back: 1, nobtn: 1, small: 1 })}
+<div class="abs" style="top:184px;left:16px;right:16px">
+  <div style="display:flex;gap:16px;align-items:center;padding:16px;border-radius:20px;background:var(--success-container);color:var(--on-success-container)">
+    <div style="width:48px;height:48px;flex:none;display:grid;place-items:center;background:var(--success);color:var(--surface);${clip('cookie9')}">${ic('visibility', 'f')}</div>
+    <div><div class="title-m-em">Reads only. Never writes.</div><div class="body-s" style="opacity:.85;margin-top:2px">MemGallery can look at your apps. It can never send, reply, edit, delete or post.</div></div>
+  </div>
+
+  <div class="sa-label">YOUR COMPOSIO KEY</div>
+  <div style="border-radius:20px;background:var(--surface-container);padding:12px 12px 12px 12px">
+    <div class="field"><div style="flex:1;min-width:0"><div class="label-s fl">API key</div><div class="fv" style="margin-top:2px">•••••••••••••••3f9a</div></div><div class="ib">${ic('visibility_off')}</div></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding-left:4px"><div class="body-s muted" style="flex:1;display:flex;gap:6px;align-items:center">${ic('lock', 's18')}<span>Encrypted, kept on this phone</span></div><span class="btn tonal">${ic('key', 'f')}Change key</span></div>
+  </div>
+
+  <div class="sa-label">APPS · 4 OF 5 CONNECTED</div>
+  <div style="display:flex;flex-direction:column;gap:2px">
+    ${app('mail', 't', 'cookie9', 'Gmail', 'Connected · last pulled 17:04', 1, 'f')}
+    ${app('calendar_month', 'k', 'clover4', 'Google Calendar', 'Connected · last pulled 17:04', 1, 'm')}
+    ${app('task_alt', 'p', 'softburst', 'ClickUp', 'Connected · last pulled 17:04', 1, 'm')}
+    ${app('forum', 'g', 'puffy', 'Slack', 'Connected · last pulled 17:04', 1, 'm')}
+    ${app('cloud', 'a', 'gem', 'Google Drive', 'Not connected', 0, 'l')}
+  </div>
+</div>`;
+
+const perm = (ok, t) => `<div class="perm"><div class="pi ${ok ? 'ok' : 'no'}">${ic(ok ? 'check' : 'close')}</div><div class="body-m" style="flex:1">${t}</div></div>`;
+const sheet = `<div class="scrim"></div>
+<div class="sheet" style="padding-bottom:48px">
+  <div class="grab"></div>
+  <div style="display:flex;gap:16px;align-items:center">
+    <div class="appico" style="width:56px;height:56px;${tone('a')}${clip('gem')}">${ic('cloud', 'f s32')}</div>
+    <div><div class="headline-s-em">Connect Google Drive</div><div class="body-m muted">through your Composio key</div></div>
+  </div>
+  <div style="margin-top:20px;padding:16px;border-radius:20px;background:var(--success-container);color:var(--on-success-container);display:flex;gap:12px;align-items:center">${ic('visibility', 'f')}<div class="title-s" style="font-weight:600">Read access only. This cannot be changed to write from inside MemGallery.</div></div>
+  <div class="rlabel" style="margin:20px 4px 4px">IT WILL</div>
+  ${perm(1, 'Read file names and what changed this week')}
+  ${perm(1, 'Read the text of docs you edited recently')}
+  <div class="rlabel" style="margin:12px 4px 4px">IT WILL NEVER</div>
+  ${perm(0, 'Edit, create, move or delete a file')}
+  ${perm(0, 'Share a file or change who can see it')}
+  <div class="btn filled lg" style="width:100%;margin-top:20px">${ic('link', 'b')}Connect Drive, read only</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span class="btn text">Cancel</span><span class="body-s muted" style="padding-right:8px">Disconnect any time. Kept memories stay.</span></div>
+</div>`;
+
+M(screen + (SHEET ? sheet : ''));
+</script></body></html>

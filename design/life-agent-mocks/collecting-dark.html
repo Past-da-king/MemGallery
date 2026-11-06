@@ -1,0 +1,79 @@
+<!doctype html><html lang="en" class="dark" data-force-dark><head><meta charset="utf-8"><title>collecting</title>
+<link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-a.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script>
+<script>
+if (document.documentElement.hasAttribute('data-force-dark')) document.documentElement.classList.add('dark');
+const M = h => { mount(h); document.querySelector('.status span').textContent = '17:04'; };
+
+// wavy progress (M3 Expressive LinearWavyProgressIndicator): wave in primary up to pct, flat track after
+const wavy = (pct, w = 348) => {
+  const amp = 4, len = 24, y = 8, x1 = w * pct;
+  let d = `M0 ${y}`;
+  for (let x = 0; x < x1; x += 2) d += ` L${x} ${(y + amp * Math.sin(x / len * Math.PI)).toFixed(2)}`;
+  return `<svg width="${w}" height="16" viewBox="0 0 ${w} 16" style="display:block"><line x1="${x1 + 6}" y1="${y}" x2="${w}" y2="${y}" stroke="var(--on-primary-container)" stroke-opacity=".22" stroke-width="4" stroke-linecap="round"/><path d="${d}" fill="none" stroke="var(--primary)" stroke-width="5" stroke-linecap="round"/></svg>`;
+};
+const drop = t => `<div class="drop">${ic('remove_circle_outline')}<span>${t}</span></div>`;
+const ico = (icon, tn, shape) => `<div class="appico sm" style="${tone(tn)}${clip(shape)}">${ic(icon, 'f')}</div>`;
+const done = () => `<div class="st done">${ic('check')}</div>`;
+
+M(`
+${blobHeader({ eyebrow: '17:00 DAILY COLLECTION', title: 'Collecting', h: 252, back: 0, nobtn: 1, small: 1 })}
+<div class="abs" style="top:122px;left:16px;right:16px;color:var(--on-primary-container)">
+  <div style="display:flex;align-items:baseline;justify-content:space-between">
+    <div class="headline-s-em">Step 3 of 4</div><div class="label-l" style="opacity:.8">about a minute left</div></div>
+  <div class="body-m" style="opacity:.85;margin-top:2px">Reading your tasks in ClickUp. Started 17:00.</div>
+  <div style="margin-top:14px">${wavy(.62)}</div>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <span class="badge" style="height:28px;background:color-mix(in srgb,var(--on-primary-container) 10%,transparent)">${ic('inbox')}41 found</span>
+    <span class="badge" style="height:28px;background:var(--tertiary-container);color:var(--on-tertiary-container)">${ic('filter_alt')}14 noise dropped</span>
+  </div>
+</div>
+
+<div class="abs" style="top:268px;left:16px;right:16px;display:flex;flex-direction:column;gap:8px">
+  <div class="step">
+    ${done()}
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;height:28px">${ico('mail', 't', 'cookie9')}<span class="title-m-em" style="flex:1">Gmail</span><span class="label-m" style="color:var(--success)">Found 34 new</span></div>
+      <div class="label-m muted" style="margin:6px 0 4px">Dropped 12 noise</div>
+      ${drop('Takealot Black Friday: a promotion')}
+      ${drop('Vodacom bill: a receipt, nothing to do')}
+    </div>
+  </div>
+
+  <div class="step">
+    ${done()}
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;height:28px">${ico('calendar_month', 'k', 'clover4')}<span class="title-m-em" style="flex:1">Google Calendar</span><span class="label-m" style="color:var(--success)">Found 4 new</span></div>
+      <div class="label-m muted" style="margin:6px 0 4px">Dropped 2 repeats</div>
+      ${drop('Studio standup: repeats, already known')}
+    </div>
+  </div>
+
+  <div class="step active">
+    <div class="st" style="background:var(--primary);color:var(--on-primary)">${ic('sync')}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;height:28px">${ico('task_alt', 'p', 'softburst').replace('appico sm', 'appico sm').replace(tone('p'), 'background:var(--primary);color:var(--on-primary);')}<span class="title-m-em" style="flex:1">ClickUp</span><span class="label-m">Pulling</span></div>
+      <div class="body-s" style="opacity:.8;margin-top:6px">12 of 18 tasks read</div>
+      <div class="track s" style="margin-top:8px"><i style="width:66%"></i></div>
+      <div style="margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--surface) 55%,transparent);display:flex;gap:8px;align-items:center">${ic('auto_awesome', 'f s18')}<span class="body-s" style="flex:1">Reading “Q4 expense sheet for Kagiso”</span></div>
+    </div>
+  </div>
+
+  <div class="step wait">
+    <div class="st wait"></div>
+    <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:36px">${ico('forum', 'g', 'puffy')}<span class="title-m-em" style="flex:1">Slack</span><span class="label-m muted">Up next</span></div>
+  </div>
+
+  <div class="step wait" style="opacity:.75">
+    <div class="st skip">${ic('remove')}</div>
+    <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:36px">${ico('cloud', 'a', 'gem')}<span class="title-m-em" style="flex:1">Google Drive</span><span class="label-m muted">Skipped, not connected</span></div>
+  </div>
+</div>
+
+<div class="fade" style="height:140px"></div>
+<div class="abs" style="left:16px;right:16px;bottom:36px;display:flex;gap:8px;z-index:50">
+  <div class="btn lg outlined" style="flex:none;padding:0 20px;font-size:15px">Cancel</div>
+  <div class="btn lg filled" style="flex:1;padding:0 12px;font-size:15px">Keep running in background</div>
+</div>
+`);
+</script></body></html>

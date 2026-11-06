@@ -1,0 +1,45 @@
+<!doctype html><html lang="en" class="dark" data-force-dark><head><meta charset="utf-8"><title>caught-up</title>
+<link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-a.css"></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script>
+<script>
+if (document.documentElement.hasAttribute('data-force-dark')) document.documentElement.classList.add('dark');
+const M = h => { mount(h); document.querySelector('.status span').textContent = '17:04'; };
+
+const learned = (n, label, tn, shape, icon) => `<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:0 16px 0 12px">
+  <div style="width:40px;height:40px;flex:none;display:grid;place-items:center;${tone(tn)}${clip(shape)}">${ic(icon, 'f s20')}</div>
+  <span class="title-m" style="flex:1">${label}</span><span class="title-l-em">${n}</span></div>`;
+
+M(`
+<div class="abs" style="top:40px;left:4px;right:4px;height:64px;display:flex;align-items:center"><div class="ib">${ic('close')}</div><div class="title-l-em" style="flex:1">Review</div><div class="body-s muted" style="padding-right:12px">11 of 11</div></div>
+
+<div class="abs" style="top:112px;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center">
+  <div style="position:relative;width:216px;height:216px">
+    <div class="abs" style="inset:0;background:var(--primary-container);transform:rotate(12deg);${clip('cookie9')}"></div>
+    <div class="abs" style="left:52px;top:52px;width:112px;height:112px;background:var(--tertiary-container);transform:rotate(-14deg);${clip('clover4')}"></div>
+    <div class="abs" style="left:72px;top:72px;width:72px;height:72px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;${clip('sunny')}">${ic('done_all', 'b s40')}</div>
+    <div class="abs" style="right:-4px;top:8px;width:42px;height:42px;background:var(--success-container);${clip('puffy')}"></div>
+    <div class="abs" style="left:-6px;bottom:20px;width:32px;height:32px;background:var(--sky-container);${clip('gem')}"></div>
+    <div class="abs" style="right:12px;bottom:-2px;width:28px;height:28px;background:var(--amber-container);${clip('flower')}"></div>
+  </div>
+  <div class="headline-l-em" style="margin-top:24px">All caught up</div>
+  <div class="body-l muted" style="margin-top:8px;max-width:300px">You kept <b style="color:var(--on-surface);font-weight:700">7 memories</b> today. Nothing is waiting for your decision.</div>
+</div>
+
+<div class="abs" style="top:458px;left:16px;right:16px">
+  <div class="sa-label first" style="display:flex;align-items:center;gap:8px">${ic('auto_awesome', 'f s20')}<span style="flex:1">What it learned</span></div>
+  <div style="border-radius:28px;background:var(--surface-container);padding:8px 0">
+    <div class="body-m" style="padding:8px 16px 8px">You dropped <b style="font-weight:700">6 newsletters</b> and <b style="font-weight:700">2 receipts</b>. It will skip that kind sooner tomorrow.</div>
+    <div style="height:1px;background:var(--outline-variant);margin:4px 16px;opacity:.7"></div>
+    ${learned('6', 'Newsletters', 's', 'softburst', 'newspaper')}
+    ${learned('3', 'Promotions', 't', 'puffy', 'sell')}
+    ${learned('2', 'Receipts', 'k', 'clover4', 'receipt_long')}
+    ${learned('1', 'Social alerts', 'a', 'flower', 'notifications')}
+  </div>
+</div>
+
+<div class="abs" style="left:16px;right:16px;bottom:40px;display:flex;gap:8px;align-items:center">
+  <div style="flex:1;height:56px;border-radius:28px;background:var(--surface-container-high);display:flex;align-items:center;gap:12px;padding:0 16px">${ic('schedule', 'f')}<div><div class="label-s muted" style="line-height:14px">NEXT COLLECTION</div><div class="title-s" style="font-weight:600;line-height:18px">Tomorrow, Sat 7 Nov · 17:00</div></div></div>
+  <div class="btn lg filled" style="padding:0 20px">Done</div>
+</div>
+`);
+</script></body></html>

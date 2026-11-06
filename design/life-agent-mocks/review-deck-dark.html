@@ -1,0 +1,100 @@
+<!doctype html><html lang="en" class="dark" data-force-dark><head><meta charset="utf-8"><title>review-deck</title>
+<link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css"><link rel="stylesheet" href="_kit/components.css"><link rel="stylesheet" href="screens-a.css">
+<style>html.dark .topcard { background: var(--surface-container-high) !important; }</style></head><body>
+<script src="_kit/kit.js"></script><script src="_kit/kit2.js"></script>
+<script>
+if (document.documentElement.hasAttribute('data-force-dark')) document.documentElement.classList.add('dark');
+const APPROVE = document.documentElement.hasAttribute('data-approve');
+const M = h => { mount(h); document.querySelector('.status span').textContent = '17:04'; };
+
+const segs = Array.from({ length: 11 }, (_, i) => `<i class="${i < 3 ? 'd' : i === 3 ? 'c' : ''}"></i>`).join('');
+
+const topbar = `
+<div class="abs" style="top:40px;left:4px;right:12px;height:64px;display:flex;align-items:center;gap:4px">
+  <div class="ib">${ic('close')}</div>
+  <div class="title-l-em" style="flex:1">Review</div>
+  <span class="btn ${APPROVE ? 'filled' : 'tonal'}" style="height:40px">${ic('done_all', 'b')}Approve all</span>
+</div>
+<div class="abs" style="top:108px;left:16px;right:16px">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;height:24px"><span class="title-m-em">4 of 11</span><span class="body-s muted">Collected 17:04 · 3 kept so far</span></div>
+  <div class="seg-count" style="margin-top:8px">${segs}</div>
+</div>`;
+
+// peeking cards behind the top one: same radius language, tonal colours, a faint shape each
+const peek = (l, t, rot, bg, shape, shapeBg) => `<div class="dcard" style="left:${l}px;right:${l}px;top:${t}px;height:540px;transform:rotate(${rot}deg);background:var(${bg})">
+  <div class="abs" style="right:-30px;top:-30px;width:150px;height:150px;background:var(${shapeBg});opacity:.7;${clip(shape)}"></div></div>`;
+
+const card = `<div class="dcard topcard" style="left:16px;right:16px;top:152px;height:540px;background:var(--surface-container-lowest);box-shadow:var(--e4)">
+  <div class="abs" style="right:-70px;top:-70px;width:170px;height:170px;background:var(--success-container);opacity:.8;transform:rotate(14deg);${clip('cookie9')}"></div>
+  <div style="position:relative;padding:20px 20px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:40px">
+      <span class="chip" style="${tone('g')}border:0;height:40px;padding:0 16px 0 6px;border-radius:20px;gap:8px;font-weight:600"><span class="appico sm" style="width:28px;height:28px;background:var(--success);color:var(--surface);${clip('puffy')}">${ic('forum', 'f')}</span>Slack</span>
+      <span class="badge" style="height:28px;border-radius:14px;padding:0 12px 0 8px;background:var(--surface);color:var(--on-surface)">${ic('auto_awesome', 'f')}Suggest: keep</span>
+    </div>
+    <div class="headline-m-em" style="margin-top:20px;font-size:30px;line-height:36px">Jaco Steyn promised the retouched Umoya set today.<sup class="label-m" style="color:var(--primary);margin-left:4px;vertical-align:8px">[1]</sup></div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:20px">
+      <div style="width:44px;height:44px;flex:none;display:grid;place-items:center;background:var(--success-container);color:var(--on-success-container);font:700 16px/20px var(--font);${clip('cookie9')}">JS</div>
+      <div><div class="title-m-em">Jaco Steyn</div><div class="body-s muted">Freelance photographer · owes you</div></div>
+    </div>
+
+    <div style="height:1px;background:var(--outline-variant);margin:20px 0"></div>
+    <div class="rlabel">WHY IT WAS PICKED</div>
+    <div class="body-l" style="margin-top:4px;font-size:15px;line-height:22px">A commitment owed to you, with a date on it.</div>
+
+    <div class="rlabel" style="margin-top:16px">THE DATE IT MATTERS</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+      <span style="width:32px;height:32px;border-radius:10px;display:grid;place-items:center;${tone('t')}">${ic('event', 'f s20')}</span>
+      <span class="title-m-em">Today, Fri 6 Nov · 17:00</span>
+      <span class="badge" style="background:var(--tertiary-container);color:var(--on-tertiary-container);margin-left:auto">DUE TODAY</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:14px;height:36px;padding:0 12px 0 8px;border-radius:12px;background:var(--surface-container-highest);width:fit-content;max-width:100%">${ic('task_alt', 'f s20')}<span class="label-l" style="white-space:nowrap">Matches task: Chase Jaco for the set</span></div>
+  </div>
+  <div class="abs" style="left:12px;right:12px;bottom:12px;height:56px;border-radius:20px;background:var(--surface-container);display:flex;align-items:center;gap:12px;padding:0 8px 0 12px">
+    <span style="width:28px;height:28px;border-radius:14px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;font:700 12px/16px var(--font)">1</span>
+    <div style="flex:1;min-width:0"><div class="label-l" style="line-height:18px">Slack · #studio</div><div class="body-s muted" style="line-height:14px">Jaco Steyn, today</div></div>
+    <div class="ib" style="width:40px">${ic('open_in_new', 's20')}</div>
+  </div>
+</div>`;
+
+const deck = `
+${peek(38, 192, -2, '--tertiary-container', 'clover4', '--tertiary')}
+${peek(26, 172, 1.6, '--secondary-container', 'flower', '--secondary')}
+${card}`;
+
+const controls = `
+<div class="abs" style="top:742px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;color:var(--on-surface-variant)" >
+  <span class="label-m" style="display:flex;align-items:center;gap:6px">${ic('arrow_back', 's18')}Swipe left to drop</span>
+  <span class="label-m" style="display:flex;align-items:center;gap:6px">Swipe right to keep${ic('arrow_forward', 's18')}</span>
+</div>
+<div class="abs" style="left:16px;right:16px;bottom:40px;display:flex;gap:8px;align-items:center">
+  <div class="btn lg" style="flex:1;background:var(--error-container);color:var(--on-error-container)">${ic('close', 'b')}Drop</div>
+  <div class="ib surf" style="width:56px;height:56px;flex:none;--r:28px">${ic('undo')}</div>
+  <div class="btn lg filled" style="flex:1">${ic('check', 'b')}Keep</div>
+</div>`;
+
+const tl = (icon, col, t) => `<div class="tl"><span class="i" style="color:${col}">${icon}</span><span style="overflow:hidden;text-overflow:ellipsis">${t}</span></div>`;
+const sheet = `<div class="scrim"></div>
+<div class="sheet" style="padding-bottom:44px">
+  <div class="grab"></div>
+  <div class="headline-s-em">Approve all 8 left?</div>
+  <div class="body-m muted" style="margin-top:4px">MemGallery applies its own picks to the 8 memories you have not reviewed yet.</div>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <div class="tally" style="background:var(--success-container);color:var(--on-success-container)">
+      <div style="display:flex;align-items:center;justify-content:space-between"><span class="label-m">KEEP</span>${ic('check_circle', 'f')}</div>
+      <div class="big">4</div>
+      <div style="margin-top:8px">${tl('check', 'currentColor', 'Jaco’s retouched set')}${tl('check', 'currentColor', 'New sign-in alert')}${tl('check', 'currentColor', 'Priya’s silence')}${tl('check', 'currentColor', 'Q4 sheet for Kagiso')}</div>
+    </div>
+    <div class="tally" style="background:var(--surface-container-high)">
+      <div style="display:flex;align-items:center;justify-content:space-between"><span class="label-m muted">DROP</span><span style="color:var(--on-surface-variant)">${ic('delete_sweep', 'f')}</span></div>
+      <div class="big">4</div>
+      <div style="margin-top:8px;color:var(--on-surface-variant)">${tl('remove', 'currentColor', 'Takealot Black Friday')}${tl('remove', 'currentColor', 'Vodacom bill')}${tl('remove', 'currentColor', 'Instagram followers')}${tl('remove', 'currentColor', 'Uber receipt R86')}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;margin:16px 4px 0" class="body-s muted">${ic('visibility', 's20')}<span>Dropped means MemGallery forgets it. Nothing is changed in your apps.</span></div>
+  <div class="btn filled lg" style="width:100%;margin-top:20px">${ic('done_all', 'b')}Approve all 8</div>
+  <div class="btn tonal lg" style="width:100%;margin-top:8px">${ic('swipe')}Review them first</div>
+</div>`;
+
+M(topbar + deck + (APPROVE ? '' : controls) + (APPROVE ? controls : '') + (APPROVE ? sheet : ''));
+</script></body></html>
