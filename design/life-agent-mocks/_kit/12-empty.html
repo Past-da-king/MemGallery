@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+mount(`
+${blobHeader({eyebrow:'THURSDAY, 5 NOV',title:'My Day',tiles:[['0','EVENTS'],['0','TO-DO'],['0','DONE']],h:236,icon1:'calendar_month',icon2:'add'})}
+<div class="abs" style="top:284px;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center">
+  <div style="position:relative;width:232px;height:232px">
+    <div class="abs" style="inset:0;background:var(--primary-container);transform:rotate(12deg);${clip('cookie9')}"></div>
+    <div class="abs" style="left:56px;top:56px;width:120px;height:120px;background:var(--tertiary-container);transform:rotate(-14deg);${clip('clover4')}"></div>
+    <div class="abs" style="left:78px;top:78px;width:76px;height:76px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;${clip('sunny')}">${ic('task_alt','f s40')}</div>
+    <div class="abs" style="right:-6px;top:6px;width:44px;height:44px;background:var(--success-container);${clip('puffy')}"></div>
+    <div class="abs" style="left:-8px;bottom:22px;width:32px;height:32px;background:var(--sky-container);${clip('gem')}"></div>
+    <div class="abs" style="right:10px;bottom:-4px;width:28px;height:28px;background:var(--amber-container);${clip('flower')}"></div>
+  </div>
+  <div class="headline-m-em" style="margin-top:32px">No tasks yet</div>
+  <div class="body-l muted" style="margin-top:8px;max-width:272px">Capture a memory to generate tasks!</div>
+  <div style="display:flex;gap:8px;margin-top:28px"><div class="btn filled">${ic('photo_camera','f')}Capture a memory</div></div>
+  <div class="btn text" style="margin-top:8px">Add a task yourself</div>
+</div>
+${toolbar('task','add')}`);
+</script></body></html>

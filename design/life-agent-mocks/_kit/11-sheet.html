@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const opt = (name, count, cl, art, sel, icon) => `<div style="display:flex;align-items:center;gap:16px;padding:8px 16px 8px 12px;min-height:72px;border-radius:${sel ? 24 : 12}px;background:${sel ? 'var(--primary-container)' : 'var(--surface-container)'};color:${sel ? 'var(--on-primary-container)' : 'inherit'}">
+<div class="shp" style="width:56px;height:56px;${cl};flex:none;${art ? '' : 'background:var(--surface-container-highest);display:grid;place-items:center'}">${art ? artFill(art) : ic(icon, 'f s24')}</div>
+<div style="flex:1"><div class="title-m-em">${name}</div><div class="body-s" style="opacity:.75">${count} memories</div></div>
+<div style="width:24px;height:24px;border-radius:12px;display:grid;place-items:center;${sel ? 'background:var(--primary);color:var(--on-primary)' : 'border:2px solid var(--outline)'}">${sel ? ic('check', 'b s18') : ''}</div></div>`;
+mount(`
+<div class="abs" style="top:40px;left:0;right:0;height:64px;display:flex;align-items:center;padding:0 8px 0 4px;background:var(--secondary-container);color:var(--on-secondary-container)"><div class="ib">${ic('close')}</div><div class="title-l" style="flex:1">3 selected</div><div class="ib">${ic('create_new_folder')}</div><div class="ib">${ic('delete')}</div></div>
+<div class="abs" style="top:116px;left:0;right:0"><div class="grid-2"><div class="col">${imgTile('wifi',{ratio:'4/5',sel:1,r:28})}${imgTile('coast',{ratio:'4/3'})}</div><div class="col">${imgTile('ticket',{ratio:'1/1',sel:1,r:28})}${imgTile('recipe',{ratio:'4/5',sel:1,r:28})}</div></div></div>
+<div class="scrim"></div>
+<div class="sheet" style="padding-bottom:44px">
+  <div class="grab"></div>
+  <div class="headline-s-em">Add to Collection</div>
+  <div class="body-m muted" style="margin:4px 0 16px">3 memories will join the collection you pick</div>
+  <div style="display:flex;flex-direction:column;gap:4px">${opt('Travel','38',clip('cookie9'),'coast',1)}${opt('Recipes','24',clip('arch'),'recipe',0)}${opt('Home ideas','17',clip('clover4'),'city',0)}</div>
+  <div style="display:flex;align-items:center;gap:16px;height:64px;padding:0 16px;margin-top:8px;border-radius:12px;border:1.5px dashed var(--outline)" class="title-m-em"><div style="width:40px;height:40px;border-radius:50%;background:var(--tertiary-container);color:var(--on-tertiary-container);display:grid;place-items:center">${ic('add','b')}</div><span style="color:var(--tertiary)">Create New Collection</span></div>
+  <div class="btn filled lg" style="width:100%;margin-top:20px">Add 3 to Travel</div>
+</div>
+`);
+</script></body></html>

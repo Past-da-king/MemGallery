@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const li = (icon, t, s, trail, pos, tn = 'p') => `<div style="display:flex;align-items:center;gap:16px;padding:12px 16px;min-height:72px;background:var(--surface-container);border-radius:${pos === 'f' ? '20px 20px 4px 4px' : pos === 'l' ? '4px 4px 20px 20px' : pos === 'o' ? '28px' : '6px'}">
+<div style="width:40px;height:40px;display:grid;place-items:center;flex:none;${tone(tn)};border-radius:12px">${ic(icon, 'f')}</div><div style="flex:1;min-width:0"><div class="title-m-em">${t}</div>${s ? `<div class="body-s muted">${s}</div>` : ''}</div>${trail || ''}</div>`;
+const sw = on => `<div class="switch ${on ? 'on' : ''}">${on ? ic('check') : ''}</div>`;
+mount(`
+${blobHeader({eyebrow:'MEMGALLERY 0.3.4',title:'Settings',h:160,back:1,nobtn:1,small:1})}
+<div class="abs" style="top:184px;left:16px;right:16px">
+  <div style="border-radius:20px;background:var(--primary-container);color:var(--on-primary-container);padding:20px;position:relative;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:8px" class="label-m">${ic('smartphone','f s20')}RUNNING ON THIS PHONE</div>
+    <div class="headline-s-em" style="margin-top:8px;max-width:240px">Local · Gemma 3</div>
+    <div class="body-m" style="opacity:.8;margin-top:4px;max-width:260px">Model loaded. Nothing is sent anywhere while it is on.</div>
+  </div>
+  <div class="label-l muted" style="margin:20px 8px 8px">AI PROVIDER</div>
+  <div class="seg tonal"><div class="s">Gemini</div><div class="s">Groq</div><div class="s on">${ic('check','b')}Local</div><div class="s">Custom</div></div>
+
+  <div class="label-l muted" style="margin:20px 8px 8px">APPEARANCE</div>
+  <div style="display:flex;flex-direction:column;gap:2px">
+    <div style="padding:16px;border-radius:20px 20px 4px 4px;background:var(--surface-container)"><div class="title-m-em" style="margin-bottom:12px">Theme Mode</div><div class="seg tonal"><div class="s">${ic('light_mode')}Light</div><div class="s on">${ic('check','b')}System</div><div class="s">${ic('dark_mode')}Dark</div></div></div>
+    ${li('palette','Dynamic Color','Use system wallpaper colors',sw(1),'m','t')}
+    ${li('contrast','AMOLED Mode','Pure black background in dark mode',sw(0),'l','s')}
+  </div>
+  <div class="label-l muted" style="margin:20px 8px 8px">FEATURES</div>
+  <div style="display:flex;flex-direction:column;gap:2px">
+    ${li('screenshot_region','Auto-index Screenshots','Process new screenshots automatically',sw(1),'f','k')}
+    ${li('task_alt','Task Manager','Show the Tasks page',sw(1),'l','g')}
+  </div>
+</div>
+<div class="fade" style="height:70px"></div>
+`);
+</script></body></html>

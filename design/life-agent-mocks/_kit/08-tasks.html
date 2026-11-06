@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const ev = (time, dur, title, where, tn, src) => `<div style="display:flex;gap:12px;align-items:stretch"><div style="width:56px;padding-top:12px;text-align:right" class="label-m muted">${time}<div style="font-weight:500;opacity:.8">${dur}</div></div>
+<div style="flex:1;border-radius:20px;padding:12px 16px 12px 16px;${tone(tn)};display:flex;align-items:center;gap:12px"><div style="flex:1;min-width:0"><div class="title-m-em">${title}</div><div class="body-s" style="opacity:.8;display:flex;gap:4px;align-items:center">${ic('location_on','f s18').replace('s18','')}${where}</div></div><div class="shp" style="width:40px;height:40px;border-radius:12px;flex:none">${artFill(src)}</div></div></div>`;
+const todo = (t, sub, done, src, extra = '') => `<div style="display:flex;align-items:center;gap:16px;padding:0 16px;min-height:72px;background:var(--surface-container-low);border-radius:6px;${extra}">
+<div style="width:28px;height:28px;border-radius:${done ? '14px' : '9px'};flex:none;${done ? 'background:var(--primary);color:var(--on-primary);display:grid;place-items:center' : 'border:2px solid var(--outline)'}">${done ? ic('check', 'b s20') : ''}</div>
+<div style="flex:1;min-width:0"><div class="title-m ${done ? 'muted' : ''}" style="${done ? 'text-decoration:line-through;' : 'font-weight:600'}">${t}</div><div class="body-s muted">${sub}</div></div>${src ? `<div class="shp" style="width:40px;height:40px;${src[1]};flex:none">${artFill(src[0])}</div>` : ''}</div>`;
+const day = (d, n, on, today) => `<div style="flex:1;height:72px;border-radius:${on ? 28 : 16}px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;${on ? 'background:var(--primary);color:var(--on-primary)' : 'color:var(--on-surface-variant)'}"><span class="label-s" style="opacity:.8">${d}</span><span class="title-m-em">${n}</span>${today && !on ? '<span class="dot" style="width:4px;height:4px;color:var(--primary)"></span>' : ''}</div>`;
+mount(`
+${blobHeader({eyebrow:'THURSDAY, 5 NOV',title:'My Day',tiles:[['2','EVENTS'],['3','TO-DO'],['1','DONE']],h:236,icon1:'calendar_month',icon2:'add',float:`<div class="seg tonal"><div class="s on">${ic('check','b')}My Day</div><div class="s">Tomorrow</div><div class="s">Upcoming</div></div>`})}
+<div class="abs" style="top:298px;left:16px;right:16px">
+  <div style="display:flex;align-items:center;gap:12px;height:64px;padding:0 8px 0 12px;border-radius:24px;background:var(--tertiary-container);color:var(--on-tertiary-container)">
+    <div style="width:40px;height:40px;background:color-mix(in srgb,var(--on-tertiary-container) 14%,transparent);display:grid;place-items:center;${clip('cookie9')}">${ic('auto_awesome','f')}</div>
+    <div style="flex:1"><div class="title-m-em">3 new tasks to review</div><div class="body-s" style="opacity:.8">Found in your memories</div></div><span class="btn text" style="color:inherit">Review</span></div>
+  <div class="label-l muted" style="margin:20px 4px 8px">EVENTS</div>
+  <div style="display:flex;flex-direction:column;gap:8px">${ev('08:42','2h 38m','Train to Lisbon','Porto Campanhã · platform 4','p','ticket')}${ev('13:00','1h','Lunch at Blue Door Café','8 min walk','g','map')}</div>
+  <div class="label-l muted" style="margin:20px 4px 8px">TO-DO</div>
+  <div style="display:flex;flex-direction:column;gap:2px;position:relative">
+    <div style="position:relative;border-radius:20px 20px 4px 4px;overflow:hidden;background:var(--success-container)">
+      <div style="position:absolute;left:20px;top:0;bottom:0;display:flex;align-items:center;gap:8px;color:var(--on-success-container)" class="label-l">${ic('check_circle','f')}Done</div>
+      <div style="transform:translateX(104px)">${todo('Print the boarding pass','From your ticket · due today',false,['ticket','border-radius:12px'],'border-radius:28px 0 0 6px;box-shadow:var(--e3)')}</div></div>
+    ${todo('Buy gift for Saturday','Gift ideas note · repeats WEEKLY',false,null)}
+    ${todo('Water the plants','Plant care · done 08:10',true,null,'border-radius:4px 4px 20px 20px')}
+  </div>
+</div>
+${toolbar('task','add')}`);
+</script></body></html>

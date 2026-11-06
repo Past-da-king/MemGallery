@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+mount(`
+<div class="abs" style="top:0;left:0;right:0;height:352px;background:var(--primary-container);border-radius:0 0 40px 40px;overflow:hidden">
+  <div class="abs" style="left:-70px;top:150px;width:240px;height:240px;background:color-mix(in srgb,var(--primary) 14%,transparent);${clip('cookie9')}"></div>
+  <div class="abs" style="right:-60px;top:46px;width:170px;height:170px;background:color-mix(in srgb,var(--tertiary) 22%,transparent);${clip('clover4')}"></div>
+</div>
+<div class="abs" style="top:44px;left:8px;right:8px;display:flex;justify-content:space-between;z-index:5"><div class="ib surf" style="--r:50%">${ic('arrow_back')}</div><div style="display:flex"><div class="ib surf" style="--r:50%">${ic('share')}</div><div class="ib surf" style="--r:50%">${ic('more_vert')}</div></div></div>
+<div class="abs shp" style="left:86px;top:84px;width:240px;height:252px;${clip('arch')}">${artFill('ticket','inset:auto;left:0;top:-70px;width:240px;height:516px;background:#0f2b4d')}</div>
+<div class="abs label-m" style="right:16px;top:304px;height:28px;padding:0 12px;border-radius:12px;background:rgba(20,16,40,.6);color:#fff;display:flex;align-items:center;gap:4px;backdrop-filter:blur(8px)">${ic('photo_library','f s18')}1 of 2</div>
+
+<div class="abs" style="top:368px;left:0;right:0;padding:0 16px">
+  <div class="headline-m-em">Night train to Porto</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:8px" class="body-m muted">${ic('screenshot_region','s20')}Screenshot<span class="dot" style="width:4px;height:4px"></span>Yesterday, 18:12</div>
+  <div class="seg tonal" style="margin-top:16px"><div class="s">${ic('content_copy')}Copy text</div><div class="s">${ic('folder_open')}Collect</div><div class="s">${ic('ios_share')}Share</div></div>
+</div>
+<div class="abs" style="top:496px;left:16px;right:16px;border-radius:20px;background:var(--tertiary-container);color:var(--on-tertiary-container);padding:16px 16px 18px">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">${ic('auto_awesome','f')}<span class="title-s" style="flex:1">AI Summary</span><span class="badge" style="background:color-mix(in srgb,var(--on-tertiary-container) 12%,transparent)">${ic('smartphone','f')}ON-DEVICE</span></div>
+  <div class="body-l">Porto Campanhã to Lisbon Oriente on Fri 6 Nov. Departs 08:42, platform 4, coach 6, seat 14A.</div>
+</div>
+<div class="abs" style="top:640px;left:16px;right:16px;border-radius:20px;background:var(--surface-container);padding:16px">
+  <div class="title-s muted" style="margin-bottom:12px">Suggested Actions</div>
+  <div style="display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:16px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center">${ic('event','f')}</div><div style="flex:1"><div class="title-m-em">Train to Lisbon</div><div class="body-s muted">Fri 6 Nov · 08:42</div></div></div>
+  <div style="margin-top:12px" class="split tert"><div class="a">${ic('event_available')}Add event</div><div class="b">${ic('arrow_drop_down')}</div></div>
+</div>
+<div class="fade"></div>
+<div class="ftb"><div class="bar"><div class="ti">${ic('edit')}</div><div class="ti">${ic('create_new_folder')}</div><div class="ti">${ic('text_snippet')}</div><div class="ti">${ic('delete')}</div></div><div class="fab">${ic('notification_add','b')}</div></div>
+`);
+</script></body></html>

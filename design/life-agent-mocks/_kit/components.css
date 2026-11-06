@@ -1,0 +1,150 @@
+/* MemGallery v4 : components. Uses tokens.css only. 4dp grid, 16dp margins. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 412px; height: 915px; overflow: hidden; background: var(--surface); }
+body { font-family: var(--font); color: var(--on-surface); -webkit-font-smoothing: antialiased; }
+.phone { position: relative; width: 412px; height: 915px; overflow: hidden; background: var(--surface); }
+.abs { position: absolute !important; }
+
+/* icons */
+.i { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; font-size: 24px; line-height: 1; width: 24px; height: 24px;
+  display: inline-block; letter-spacing: normal; text-transform: none; white-space: nowrap; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 24; flex: none; overflow: hidden; }
+.i.f { font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24; }
+.i.b { font-variation-settings: 'FILL' 0, 'wght' 600, 'opsz' 24; }
+.i.s20 { font-size: 20px; width: 20px; height: 20px; }
+.i.s18 { font-size: 18px; width: 18px; height: 18px; }
+.i.s32 { font-size: 32px; width: 32px; height: 32px; }
+.i.s40 { font-size: 40px; width: 40px; height: 40px; }
+
+/* type: M3 scale, "em" = expressive emphasized (heavier, tighter) */
+.display-s-em { font: 700 36px/42px var(--font); letter-spacing: -.8px; }
+.display-m-em { font: 700 45px/50px var(--font); letter-spacing: -1.2px; }
+.display-l-em { font: 700 57px/60px var(--font); letter-spacing: -1.8px; }
+.headline-l-em { font: 700 32px/38px var(--font); letter-spacing: -.6px; }
+.headline-m-em { font: 700 28px/34px var(--font); letter-spacing: -.4px; }
+.headline-s-em { font: 600 24px/30px var(--font); letter-spacing: -.2px; }
+.title-l { font: 500 22px/28px var(--font); }
+.title-l-em { font: 650 22px/28px var(--font); letter-spacing: -.1px; }
+.title-m { font: 500 16px/24px var(--font); letter-spacing: .1px; }
+.title-m-em { font: 650 16px/22px var(--font); }
+.title-s { font: 500 14px/20px var(--font); letter-spacing: .1px; }
+.body-l { font: 400 16px/24px var(--font); letter-spacing: .2px; }
+.body-m { font: 400 14px/20px var(--font); letter-spacing: .15px; }
+.body-s { font: 400 12px/16px var(--font); letter-spacing: .3px; }
+.label-l { font: 600 14px/20px var(--font); letter-spacing: .1px; }
+.label-m { font: 600 12px/16px var(--font); letter-spacing: .4px; }
+.label-s { font: 600 11px/16px var(--font); letter-spacing: .5px; }
+.muted { color: var(--on-surface-variant); }
+
+/* system bars */
+.status { position: absolute; top: 0; left: 0; right: 0; height: 40px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; z-index: 90; color: var(--on-surface); font: 600 14px/20px var(--font); }
+.status .r { display: flex; gap: 6px; align-items: center; }
+.status .i { font-size: 18px; width: 18px; height: 18px; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 20; }
+.gesture { position: absolute; bottom: 8px; left: 50%; margin-left: -54px; width: 108px; height: 4px; border-radius: 2px; background: var(--on-surface); opacity: .85; z-index: 95; }
+
+/* icon button: 48dp target, 40dp visual */
+.ib { width: 48px; height: 48px; position: relative; display: grid; place-items: center; color: var(--on-surface-variant); flex: none; }
+.ib::before { content: ''; position: absolute; inset: 4px; border-radius: var(--r, 50%); background: var(--bg, transparent); }
+.ib > .i { position: relative; }
+.ib.tonal { --bg: var(--secondary-container); color: var(--on-secondary-container); }
+.ib.filled { --bg: var(--primary); color: var(--on-primary); }
+.ib.surf { --bg: var(--surface-container-high); color: var(--on-surface); }
+.ib.scrim { --bg: rgba(20, 16, 40, .45); color: #fff; }
+.ib.tert { --bg: var(--tertiary-container); color: var(--on-tertiary-container); }
+
+/* chips */
+.chip { height: 36px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--outline-variant); display: inline-flex; align-items: center; gap: 8px; font: 500 14px/20px var(--font); color: var(--on-surface-variant); background: transparent; flex: none; white-space: nowrap; }
+.chip.sel { background: var(--secondary-container); border-color: transparent; color: var(--on-secondary-container); border-radius: 18px; padding-left: 12px; }
+.chip.tag { height: 32px; padding: 0 12px; border-radius: 10px; background: var(--surface-container-highest); border-color: transparent; font-size: 13px; color: var(--on-surface); }
+.chip .i { font-size: 18px; width: 18px; height: 18px; }
+
+/* buttons */
+.btn { height: 48px; padding: 0 24px; border-radius: 24px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px/20px var(--font); letter-spacing: .1px; flex: none; white-space: nowrap; }
+.btn.filled { background: var(--primary); color: var(--on-primary); }
+.btn.tonal { background: var(--secondary-container); color: var(--on-secondary-container); }
+.btn.tert { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+.btn.outlined { border: 1px solid var(--outline); color: var(--primary); }
+.btn.text { color: var(--primary); padding: 0 12px; }
+.btn.lg { height: 56px; border-radius: 28px; font-size: 16px; padding: 0 28px; }
+.btn .i { font-size: 20px; width: 20px; height: 20px; }
+
+/* connected button group */
+.seg { display: flex; gap: 2px; width: 100%; }
+.seg .s { flex: 1; height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--surface-container-high); color: var(--on-surface-variant); border-radius: 8px; font: 600 14px/20px var(--font); }
+.seg .s:first-child { border-radius: 24px 8px 8px 24px; }
+.seg .s:last-child { border-radius: 8px 24px 24px 8px; }
+.seg .s.on { background: var(--primary); color: var(--on-primary); border-radius: 24px; }
+.seg .s .i { font-size: 18px; width: 18px; height: 18px; }
+.seg.tonal .s { background: var(--secondary-container); color: var(--on-secondary-container); }
+.seg.tonal .s.on { background: var(--secondary); color: var(--on-secondary); }
+.seg.fit { width: auto; }
+.seg.fit .s { flex: none; padding: 0 20px; }
+
+/* split button */
+.split { display: flex; gap: 2px; }
+.split .a { height: 48px; padding: 0 20px 0 18px; display: flex; align-items: center; gap: 8px; border-radius: 24px 6px 6px 24px; background: var(--primary); color: var(--on-primary); font: 600 15px/20px var(--font); }
+.split .b { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 6px 24px 24px 6px; background: var(--primary); color: var(--on-primary); }
+.split.tert .a, .split.tert .b { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+
+/* floating toolbar + fab */
+.ftb { position: absolute; left: 16px; right: 16px; bottom: 36px; display: flex; gap: 12px; align-items: center; z-index: 50; }
+.ftb .bar { flex: 1; height: 64px; border-radius: 32px; background: var(--surface-container-high); box-shadow: var(--e3); display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
+.ftb .ti { height: 48px; min-width: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; color: var(--on-surface-variant); font: 600 14px/20px var(--font); }
+.ftb .ti.on { background: var(--primary); color: var(--on-primary); padding: 0 20px 0 16px; }
+.fab { width: 64px; height: 64px; border-radius: 22px; display: grid; place-items: center; background: var(--tertiary-container); color: var(--on-tertiary-container); box-shadow: var(--e3); flex: none; }
+.fab .i { font-size: 28px; width: 28px; height: 28px; }
+.fade { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; background: linear-gradient(to bottom, transparent, var(--surface) 62%); z-index: 40; pointer-events: none; }
+
+/* cards / lists */
+.card { border-radius: 28px; background: var(--surface-container); }
+.shp { overflow: hidden; position: relative; }
+.shp svg, .tile svg { display: block; width: 100%; height: 100%; }
+.tile { position: relative; overflow: hidden; width: 100%; }
+.sec-h { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 40px; }
+.dot { width: 8px; height: 8px; border-radius: 4px; background: currentColor; }
+.badge { height: 24px; padding: 0 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; font: 600 11px/16px var(--font); letter-spacing: .4px; }
+.badge .i { font-size: 14px; width: 14px; height: 14px; }
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 60; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface-container-low); border-radius: 28px 28px 0 0; z-index: 70; padding: 0 16px 36px; box-shadow: 0 -4px 24px rgba(0,0,0,.18); }
+.sheet .grab { width: 32px; height: 4px; border-radius: 2px; background: var(--outline); opacity: .6; margin: 12px auto 16px; }
+.switch { width: 52px; height: 32px; border-radius: 16px; background: var(--surface-container-highest); border: 2px solid var(--outline); position: relative; flex: none; }
+.switch::after { content: ''; position: absolute; left: 6px; top: 6px; width: 16px; height: 16px; border-radius: 8px; background: var(--outline); }
+.switch.on { background: var(--primary); border-color: var(--primary); }
+.switch.on::after { left: 24px; top: 2px; width: 24px; height: 24px; border-radius: 12px; background: var(--on-primary); }
+.switch.on .i { position: absolute; left: 28px; top: 6px; font-size: 16px; width: 16px; height: 16px; color: var(--primary); z-index: 2; font-variation-settings: 'FILL' 0, 'wght' 700, 'opsz' 20; }
+.grid-2 { display: flex; gap: 8px; padding: 0 16px; }
+.col { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* ---- v4.1: floating nav (Agent-app style) + connected filter group ---- */
+.ftb { left: 0; right: 0; bottom: 32px; justify-content: center; gap: 8px; }
+.ftb .bar { flex: none; height: 64px; border-radius: 32px; background: var(--primary-container); gap: 4px; padding: 0 8px; justify-content: center; box-shadow: var(--e3); }
+.ftb .ti { width: 48px; height: 48px; padding: 0; border-radius: 24px; color: var(--on-primary-container); }
+.ftb .ti.on { width: 64px; padding: 0; background: var(--on-primary-container); color: var(--primary-container); }
+.ftb .ti .i { font-variation-settings: 'FILL' 0, 'wght' 500, 'opsz' 24; }
+.ftb .ti.on .i { font-variation-settings: 'FILL' 1, 'wght' 500, 'opsz' 24; }
+.fab { width: 64px; height: 64px; border-radius: 20px; background: var(--primary); color: var(--on-primary); }
+.fab .i { font-variation-settings: 'FILL' 0, 'wght' 600, 'opsz' 28; }
+.fg { display: flex; gap: 2px; }
+.fg .fi { height: 48px; min-width: 48px; padding: 0 12px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--surface-container-high); color: var(--on-surface-variant); border-radius: 8px; font: 600 14px/20px var(--font); white-space: nowrap; }
+.fg .fi:first-child { border-radius: 24px 8px 8px 24px; }
+.fg .fi:last-child { border-radius: 8px 24px 24px 8px; }
+.fg .fi.on { background: var(--secondary-container); color: var(--on-secondary-container); border-radius: 24px; padding: 0 18px 0 14px; }
+.fg .fi .i { font-size: 22px; width: 22px; height: 22px; }
+
+/* ---- v4.2: aligned to m3-expressive-standard.md (button sizes S 40 / M 56, FAB 56, corners on the scale) ---- */
+.btn { height: 40px; padding: 0 16px; border-radius: 20px; font-size: 14px; }
+.btn.lg { height: 56px; padding: 0 24px; border-radius: 28px; font-size: 16px; }
+.seg .s { height: 40px; }
+.seg .s:first-child { border-radius: 20px 8px 8px 20px; }
+.seg .s:last-child { border-radius: 8px 20px 20px 8px; }
+.seg .s.on { border-radius: 20px; }
+.split .a { height: 40px; padding: 0 16px; border-radius: 20px 4px 4px 20px; font-size: 14px; }
+.split .b { width: 44px; height: 40px; border-radius: 4px 20px 20px 4px; }
+.fg .fi { height: 40px; min-width: 48px; padding: 0 12px; }
+.fg .fi:first-child { border-radius: 20px 8px 8px 20px; }
+.fg .fi:last-child { border-radius: 8px 20px 20px 8px; }
+.fg .fi.on { border-radius: 20px; padding: 0 16px 0 12px; }
+.fab { width: 56px; height: 56px; border-radius: 16px; }
+.fab .i { font-size: 24px; width: 24px; height: 24px; }
+.ftb .ti.on { width: auto; padding: 0 20px 0 16px; gap: 8px; font: 600 14px/20px var(--font); }
+.chip.tag { border-radius: 8px; }

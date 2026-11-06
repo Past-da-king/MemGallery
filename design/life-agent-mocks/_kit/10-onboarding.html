@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const blob = (x, y, w, shape, inner, bg, rot = 0, extra = '') => `<div class="abs" style="left:${x}px;top:${y}px;width:${w}px;height:${w}px;${clip(shape)};background:${bg};transform:rotate(${rot}deg);overflow:hidden;${extra}">${inner}</div>`;
+mount(`
+<div class="abs" style="top:40px;right:8px;height:56px;display:flex;align-items:center"><span class="btn text">Skip</span></div>
+<div class="abs" style="top:84px;left:0;right:0;height:400px">
+  ${blob(176,26,176,'cookie9',artFill('dunes'),'var(--primary-container)',8)}
+  ${blob(26,56,148,'clover4',artFill('plant'),'var(--tertiary-container)',-8)}
+  ${blob(36,208,168,'softburst',artFill('latte'),'var(--secondary-container)',0)}
+  ${blob(210,214,136,'flower','<div style="position:absolute;inset:0;display:grid;place-items:center;color:var(--on-tertiary-container)">'+ic('mic','f s40')+'</div>','var(--tertiary-container)',0)}
+  ${blob(318,150,70,'gem','<div style="position:absolute;inset:0;display:grid;place-items:center;color:var(--on-primary)">'+ic('link','b s32')+'</div>','var(--primary)',0)}
+  ${blob(128,152,84,'sunny','<div style="position:absolute;inset:0;display:grid;place-items:center;color:var(--on-success-container)">'+ic('task_alt','f s32')+'</div>','var(--success-container)',0,'z-index:3;border:0')}
+  ${blob(330,22,48,'puffy','','var(--sky-container)',0)}
+</div>
+<div class="abs" style="top:510px;left:24px;right:24px">
+  <div class="label-m" style="color:var(--primary);letter-spacing:1.4px">YOUR SECOND BRAIN</div>
+  <div class="display-m-em" style="margin-top:8px">Capture.<br>Process.<br><span style="color:var(--primary)">Recall.</span></div>
+  <div style="display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:36px;padding:0 14px 0 10px;border-radius:12px;background:var(--surface-container-high)" class="label-l">${ic('lock','f s20')}Stays on your device by default</div>
+</div>
+<div class="abs" style="left:24px;right:24px;bottom:36px;display:flex;flex-direction:column;gap:20px;align-items:center">
+  <div style="display:flex;gap:6px"><span style="width:28px;height:8px;border-radius:4px;background:var(--primary)"></span><span style="width:8px;height:8px;border-radius:4px;background:var(--outline-variant)"></span><span style="width:8px;height:8px;border-radius:4px;background:var(--outline-variant)"></span><span style="width:8px;height:8px;border-radius:4px;background:var(--outline-variant)"></span></div>
+  <div class="btn filled lg" style="width:100%;height:64px;border-radius:32px;font-size:18px;gap:12px">Get Started${ic('arrow_forward','b')}</div>
+</div>
+`);
+</script></body></html>

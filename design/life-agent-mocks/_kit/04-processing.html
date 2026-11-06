@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+function wavy(w, pct, amp = 3, wl = 20) { const end = w * pct; let d = 'M2 8'; for (let x = 2; x <= end; x += 1) d += ` L${x} ${8 + Math.sin((x / wl) * 2 * Math.PI) * amp}`;
+  return `<svg width="${w}" height="16" viewBox="0 0 ${w} 16"><line x1="${end + 8}" y1="8" x2="${w - 4}" y2="8" stroke="var(--primary-container)" stroke-width="4" stroke-linecap="round"/><path d="${d}" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round"/><circle cx="${w - 3}" cy="8" r="2" fill="var(--primary)"/></svg>`; }
+const step = (st, t, s) => { const done = st === 'd', cur = st === 'c'; return `<div style="display:flex;align-items:center;gap:16px;height:52px;padding:0 16px;border-radius:${cur ? 20 : 12}px;background:${cur ? 'var(--surface-container-high)' : 'transparent'}">
+<div style="width:32px;height:32px;border-radius:${done ? '50%' : cur ? '10px' : '50%'};display:grid;place-items:center;${done ? 'background:var(--success-container);color:var(--on-success-container)' : cur ? 'background:var(--primary);color:var(--on-primary)' : 'border:2px solid var(--outline-variant);color:var(--outline)'}">${done ? ic('check', 'b s20') : cur ? ic('progress_activity', 's20 b') : ''}</div>
+<div style="flex:1"><div class="title-m ${st === 'p' ? 'muted' : ''}" style="${st === 'p' ? 'opacity:.7' : 'font-weight:600'}">${t}</div>${s ? `<div class="body-s muted">${s}</div>` : ''}</div></div>`; };
+mount(`
+<div class="abs" style="top:40px;left:4px;right:16px;height:56px;display:flex;align-items:center"><div class="ib">${ic('close')}</div><div class="title-l" style="flex:1">New Memory Captured</div></div>
+
+<div class="abs" style="top:100px;left:0;right:0;height:232px;display:flex;justify-content:center">
+  <div class="abs" style="left:40px;top:24px;width:128px;height:128px;background:var(--tertiary-container);opacity:.7;${clip('flower')}"></div>
+  <div class="abs" style="right:44px;top:104px;width:112px;height:112px;background:var(--primary-container);${clip('cookie9')}"></div>
+  <div class="shp abs" style="top:0;width:150px;height:224px;border-radius:28px;transform:rotate(-4deg);box-shadow:var(--e4);left:131px;background:#fff">${artFill('wifi')}
+    <div class="abs" style="left:0;right:0;top:104px;height:44px;background:linear-gradient(transparent,color-mix(in srgb,var(--primary) 55%,transparent),transparent)"></div>
+    <div class="abs" style="left:0;right:0;top:125px;height:2px;background:var(--primary);box-shadow:0 0 12px var(--primary)"></div></div>
+  <div class="abs" style="left:127px;top:8px;width:20px;height:20px;border-top:3px solid var(--primary);border-left:3px solid var(--primary);border-radius:8px 0 0 0;transform:rotate(-4deg)"></div>
+  <div class="abs" style="right:127px;bottom:8px;width:20px;height:20px;border-bottom:3px solid var(--primary);border-right:3px solid var(--primary);border-radius:0 0 8px 0;transform:rotate(-4deg)"></div>
+</div>
+
+<div class="abs" style="top:344px;left:24px;right:24px;display:flex;align-items:center;gap:16px">
+  <div style="position:relative;width:48px;height:48px;flex:none"><div class="abs" style="inset:0;background:var(--primary-container);${clip('sunny')}"></div><div class="abs" style="inset:10px;background:var(--primary);transform:rotate(24deg);${clip('cookie7')}"></div></div>
+  <div><div class="headline-s-em">Reading your screenshot</div><div class="body-m muted">Everything stays on this phone</div></div>
+</div>
+<div class="abs" style="top:424px;left:24px;right:24px">${wavy(364, .62)}<div style="display:flex;justify-content:space-between;margin-top:4px" class="label-m muted"><span>Step 2 of 5</span><span style="color:var(--primary)">62%</span></div></div>
+<div class="abs" style="top:476px;left:24px;display:flex;gap:8px;align-items:center"><span class="chip tag" style="background:var(--secondary-container);color:var(--on-secondary-container)">${ic('smartphone','f')}Local · Gemma 3</span><span class="chip tag">${ic('sell')}wifi</span><span class="chip tag">${ic('sell')}password</span></div>
+
+<div class="abs" style="top:524px;left:8px;right:8px">
+  ${step('d','Text read','14 lines found')}${step('c','Describing the image','Network name and password detected')}${step('p','Adding tags')}${step('p','Writing a summary')}${step('p','Looking for tasks and events')}
+</div>
+<div class="abs" style="left:16px;right:16px;bottom:36px;display:flex;gap:12px"><div class="btn outlined lg" style="flex:1">Keep in background</div><div class="btn filled lg" style="flex:1">${ic('check')}Save now</div></div>
+`);
+</script></body></html>

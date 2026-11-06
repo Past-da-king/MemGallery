@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const item = (icon, label, bg, fg, o = {}) => `<div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 24px 0 18px;border-radius:${o.pressed ? 16 : 28}px;background:${bg};color:${fg};box-shadow:var(--e3);${o.pressed ? 'transform:scale(.96);transform-origin:right center;outline:6px solid color-mix(in srgb,' + fg + ' 14%,transparent);' : ''}" class="title-m-em">${ic(icon, 'f')}${label}</div>`;
+mount(`
+<div class="abs" style="inset:0">
+  ${homeHeader()}
+  <div class="abs" style="top:366px;left:16px">${filters('all')}</div>
+  <div class="abs" style="top:440px;left:0;right:0"><div class="grid-2"><div class="col">${imgTile('wifi',{ratio:'4/5'})}</div><div class="col">${imgTile('latte',{ratio:'1/1'})}</div></div></div>
+  ${toolbar('mem','add')}
+</div>
+<div class="scrim" style="backdrop-filter:blur(10px);background:color-mix(in srgb,var(--surface) 62%,transparent)"></div>
+<div class="abs" style="right:16px;bottom:116px;z-index:80;display:flex;flex-direction:column;align-items:flex-end;gap:12px">
+  ${item('link','Save bookmark','var(--secondary-container)','var(--on-secondary-container)')}
+  ${item('mic','Record audio','var(--sky-container)','var(--on-sky-container)')}
+  ${item('photo_camera','Take photo','var(--tertiary-container)','var(--on-tertiary-container)',{pressed:1})}
+  ${item('add_photo_alternate','Upload image','var(--primary-container)','var(--on-primary-container)')}
+  ${item('edit_note','Text note','var(--surface-container-highest)','var(--on-surface)')}
+</div>
+<div class="abs" style="right:16px;bottom:36px;z-index:85;width:56px;height:56px;border-radius:28px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;box-shadow:var(--e4)">${ic('close','s32 b')}</div>
+`);
+</script></body></html>

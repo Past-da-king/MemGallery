@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const Tl = (name, w, h, o = {}) => `<div class="shp" style="width:${w}px;height:${h}px;flex:none;${o.clip ? clip(o.clip) : `border-radius:${o.r ?? 24}px`};${o.style || ""}">${artFill(name)}</div>`;
+const dayH = (top, right) => `<div class="abs" style="top:${top}px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:baseline"><span class="title-l-em">Today</span><span class="label-m muted">${right}</span></div>`;
+mount(`
+${homeHeader()}
+<div class="abs" style="top:366px;left:16px">${filters('all')}</div>
+<div class="abs" style="top:430px;left:16px;display:flex;gap:8px">
+  <div class="shp" style="width:308px;height:236px;${clip('arch')};flex:none">${artFill('dunes')}
+    <div class="abs" style="inset:auto 0 0 0;height:120px;background:linear-gradient(transparent,rgba(12,8,32,.78))"></div>
+    <div class="abs" style="left:20px;top:18px;width:44px;height:44px;background:var(--tertiary-container);color:var(--on-tertiary-container);display:grid;place-items:center;${clip('cookie9')}">${ic('auto_awesome','f')}</div>
+    <div class="abs" style="left:16px;right:16px;bottom:16px;color:#fff"><div class="label-m" style="opacity:.85;letter-spacing:1px">FEATURED · IMAGE</div><div class="headline-s-em" style="margin-top:2px">Dune sunset</div></div>
+  </div>
+  <div class="shp" style="width:96px;height:236px;border-radius:48px;flex:none">${artFill('plant')}</div>
+</div>
+${dayH(682,'7 MEMORIES')}
+<div class="abs" style="top:726px;left:16px;right:16px;display:flex;gap:4px">
+  <div style="display:flex;flex-direction:column;gap:4px">${Tl('latte',186,186,{clip:'cookie9'})}</div>
+  <div style="display:flex;flex-direction:column;gap:4px;width:186px">${audioTile('Packing list','0:42','k',{r:28,style:'height:140px;padding:14px'})}</div>
+</div>
+${toolbar('mem','add')}`);
+</script></body></html>

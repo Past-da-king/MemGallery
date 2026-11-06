@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const src = (n, name, cl, label, rot = 0) => `<div style="width:176px;flex:none"><div class="shp" style="height:176px;${cl};background:var(--surface-container-high);position:relative">${artFill(name)}</div><div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span style="width:20px;height:20px;border-radius:8px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center" class="label-s">${n}</span><span class="label-m muted" style="white-space:nowrap">${label}</span></div></div>`;
+mount(`
+<div class="abs" style="top:40px;left:4px;right:4px;height:64px;display:flex;align-items:center"><div class="ib">${ic('history')}</div><div style="flex:1;text-align:center" class="title-m-em">Trip planning<div class="label-s muted" style="font-weight:500">Local · Gemma 3</div></div><div class="ib">${ic('edit_square')}</div></div>
+
+<div class="abs" style="top:112px;left:16px;right:16px;display:flex;flex-direction:column;gap:20px">
+  <div style="align-self:flex-end;max-width:292px;padding:14px 20px;background:var(--primary);color:var(--on-primary);border-radius:28px 28px 8px 28px" class="body-l">What time is my train on Friday, and which platform?</div>
+
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="width:32px;height:32px;background:var(--tertiary-container);color:var(--on-tertiary-container);display:grid;place-items:center;${clip('cookie9')}">${ic('auto_awesome','f s20')}</div>
+      <span class="chip tag" style="background:var(--surface-container-high);height:28px;font-size:12px">${ic('search','s18')}Searched 3 memories</span></div>
+    <div class="body-l" style="font-size:17px;line-height:26px">Your train leaves <b style="font-weight:700">Porto Campanhã at 08:42 on Friday 6 Nov</b> from <b style="font-weight:700">platform 4</b>. You are in coach 6, seat 14A, and it arrives in Lisbon at 11:20.<sup class="label-s" style="color:var(--primary)"> [1]</sup></div>
+    <div class="body-l" style="font-size:17px;line-height:26px;margin-top:12px">The café you saved is an 8 minute walk from the station and is open until 18:00.<sup class="label-s" style="color:var(--primary)"> [2]</sup></div>
+    <div style="display:flex;gap:12px;margin:20px -16px 0;padding:0 16px;overflow:hidden">
+      ${src(1,'ticket',clip('arch'),'Train ticket')}${src(2,'map',clip('cookie9'),'Blue Door Café')}</div>
+    <div style="display:flex;gap:4px;margin-top:16px;margin-left:-12px"><div class="ib">${ic('content_copy','s20')}</div><div class="ib">${ic('thumb_up','s20')}</div><span class="btn tonal" style="height:40px;margin-left:8px">${ic('note_add')}Save as note</span></div>
+  </div>
+</div>
+
+<div class="abs" style="left:0;right:0;bottom:112px;display:flex;gap:8px;padding:0 16px;overflow:hidden">${chip('Add the train to my tasks',{icon:'task_alt'})}${chip('Route to the café',{icon:'directions_walk'})}</div>
+<div class="abs" style="left:16px;right:16px;bottom:36px;height:64px;border-radius:32px;background:var(--surface-container-high);display:flex;align-items:center;padding:0 8px 0 4px;box-shadow:var(--e1);gap:0">
+  <div class="ib">${ic('add_circle')}</div><span class="body-l muted" style="flex:1">Ask your memories…</span><div class="ib">${ic('mic')}</div>
+  <div style="width:48px;height:48px;border-radius:24px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center">${ic('arrow_upward','b')}</div></div>
+`);
+</script></body></html>

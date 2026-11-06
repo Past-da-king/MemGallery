@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const mini = (n, cl, w = 56) => `<div class="shp" style="width:${w}px;height:${w}px;${cl};flex:none">${artFill(n)}</div>`;
+const ccard = (t, name, count, tn, covers, o = {}) => `<div style="border-radius:28px;padding:16px;${tone(tn)};height:${o.h || 176}px;position:relative;overflow:hidden">
+${covers}
+<div style="position:absolute;left:16px;bottom:14px;right:16px"><div class="title-l-em">${name}</div><div class="body-s" style="opacity:.8">${count} memories</div></div></div>`;
+mount(`
+${homeHeader()}
+<div class="abs" style="top:366px;left:16px">${filters('collections')}</div>
+<div class="abs" style="top:430px;left:16px;right:16px">
+  <div style="border-radius:28px;background:var(--primary-container);color:var(--on-primary-container);height:176px;position:relative;overflow:hidden">
+    <div class="abs" style="right:20px;top:20px;display:flex;gap:-12px">
+      <div style="width:104px;height:104px;margin-right:-24px;position:relative;z-index:3;border:4px solid var(--primary-container);${clip('cookie9')}">${mini('coast','',104).replace('flex:none','')}</div>
+      <div style="width:84px;height:84px;margin-top:36px;position:relative;z-index:2;${clip('arch')}">${mini('dunes','',84)}</div>
+    </div>
+    <div class="abs" style="left:20px;top:20px"><span class="badge" style="background:color-mix(in srgb,var(--on-primary-container) 12%,transparent)">${ic('auto_awesome','f')}AUTO-SORTED</span></div>
+    <div class="abs" style="left:20px;bottom:18px;right:20px"><div class="headline-m-em">Travel</div><div class="body-m" style="opacity:.8;margin-top:2px">Tickets, maps and places for trips · 38 memories</div></div>
+  </div>
+  <div class="grid-2" style="padding:0;margin-top:8px">
+    <div class="col">${ccard(0,'Recipes','24','t','<div class="abs shp" style="left:16px;top:16px;width:64px;height:64px;'+clip('arch')+'">'+artFill('recipe')+'</div>',{sh:'flower'})}${ccard(0,'Plants','9','g','<div class="abs shp" style="left:16px;top:16px;width:64px;height:64px;'+clip('puffy')+'">'+artFill('plant')+'</div>',{h:152,sh:'sunny'})}</div>
+    <div class="col">${ccard(0,'Reading list','61','k','<div class="abs" style="left:16px;top:16px;width:64px;height:64px;background:color-mix(in srgb,currentColor 16%,transparent);display:grid;place-items:center;'+clip('gem')+'">'+ic('bookmark','f s32')+'</div>',{h:152,sh:'cookie7'})}${ccard(0,'Home ideas','17','a','<div class="abs shp" style="left:16px;top:16px;width:64px;height:64px;'+clip('clover4')+'">'+artFill('city')+'</div>',{sh:'softburst'})}</div>
+  </div>
+</div>
+${toolbar('mem','create_new_folder')}`);
+</script></body></html>

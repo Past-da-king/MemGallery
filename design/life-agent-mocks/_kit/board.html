@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><style>
+html,body{margin:0;width:1680px;height:2860px;font-family:'Google Sans Flex',sans-serif}
+body{padding:56px 48px}
+.dark body,body.d{background:#0b0b10;color:#e5e1e9}
+body.l{background:#ece8f4;color:#1b1b21}
+h1{font:700 44px/1 'Google Sans Flex';letter-spacing:-1px;margin:0 0 6px}
+p{margin:0 0 32px;font:400 18px/1.4 'Google Sans Flex';opacity:.7}
+.g{display:grid;grid-template-columns:repeat(4,360px);gap:40px 24px}
+.c img{width:360px;height:auto;border-radius:36px;display:block;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.c span{display:block;margin:12px 6px 0;font:600 16px 'Google Sans Flex'}
+.c small{display:block;margin:2px 6px 0;font:400 13px 'Google Sans Flex';opacity:.65}
+</style></head><body>
+<script>
+const th=location.search.includes('dark')?'dark':'light';document.body.className=th=='dark'?'d':'l';
+const L=[['01-home','Memories (home)','Blob header, stats and activity, floating nav, shape carousel'],['02-detail','Memory detail','Arch-cropped hero, AI summary, suggested actions'],['03-capture','Add memory','FAB menu, pressed item morph'],['04-processing','Processing','Morphing loader, wavy progress, live steps'],['05-search','Search','Search view, chips, match highlights'],['06-ask','Ask','Chat with cited sources'],['07-collections','Collections','Shape-led cards, auto-sorted'],['08-tasks','Tasks','Segmented days, swipe state, review banner'],['09-settings','Settings','Grouped lists, connected buttons, switches'],['10-onboarding','Onboarding','Shape hero, on-device promise'],['11-sheet','Bottom sheet','Add to collection'],['12-empty','Empty state','No tasks yet']];
+document.body.innerHTML=`<h1>MemGallery · Material 3 Expressive · ${th}</h1><p>v0.3.4 redesign, 12 screens, phone 412 x 915 dp</p><div class="g">`+L.map(([f,t,s])=>`<div class="c"><img src="../${f}-${th}.png"><span>${t}</span><small>${s}</small></div>`).join('')+'</div>';
+</script></body></html>

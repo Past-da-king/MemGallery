@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css"></head><body>
+<script src="kit.js"></script><script src="kit2.js"></script>
+<script>
+const Tl = (name, w, h, o = {}) => `<div class="shp" style="width:${w}px;height:${h}px;flex:none;${o.clip ? clip(o.clip) : `border-radius:${o.r ?? 24}px`};${o.style || ""}">${artFill(name)}</div>`;
+const dayH = (top, right) => `<div class="abs" style="top:${top}px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:baseline"><span class="title-l-em">Today</span><span class="label-m muted">${right}</span></div>`;
+mount(`
+${homeHeader()}
+<div class="abs" style="top:366px;left:16px">${filters('all')}</div>
+<div class="abs" style="top:430px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:baseline"><span class="title-l-em">Recent</span><span class="label-l" style="color:var(--primary)">See all</span></div>
+<div class="abs" style="top:470px;left:16px;display:flex;gap:8px;align-items:flex-end">
+  ${Tl('dunes',168,196,{clip:'arch'})}${Tl('peaks',128,196,{r:64})}${Tl('latte',128,128,{clip:'cookie9'})}${Tl('city',96,196,{r:28})}
+</div>
+${dayH(684,'7 MEMORIES')}
+<div class="abs" style="top:728px;left:16px;right:16px;display:flex;gap:4px">
+  <div style="display:flex;flex-direction:column;gap:4px">${Tl('wifi',186,200,{r:12})}</div><div style="display:flex;flex-direction:column;gap:4px">${noteTile('Gift ideas','Ceramic mug set, linen napkins','t',{r:20,style:'width:186px'})}</div>
+</div>
+${toolbar('mem','add')}`);
+</script></body></html>

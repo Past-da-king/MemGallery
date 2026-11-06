@@ -1,0 +1,98 @@
+/* MemGallery v4 : Material 3 Expressive tokens
+   Seed: wallpaper-style violet-indigo (hue 268), tertiary rose, harmonised success + bookmark colours.
+   One file, light + dark. Dark is switched with <html class="dark">. */
+
+:root {
+  --primary: #5b46cf;
+  --on-primary: #ffffff;
+  --primary-container: #e5dfff;
+  --on-primary-container: #1c0e6c;
+  --secondary: #5d5b7d;
+  --on-secondary: #ffffff;
+  --secondary-container: #e2dff9;
+  --on-secondary-container: #1a1936;
+  --tertiary: #a03a60;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #ffd9e4;
+  --on-tertiary-container: #3d0020;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error-container: #410002;
+  --success: #1f6b44;
+  --success-container: #c2f0d2;
+  --on-success-container: #00210f;
+  --sky: #0b6a88;
+  --sky-container: #c4eaf9;
+  --on-sky-container: #001f2b;
+  --amber-container: #ffe2a8;
+  --on-amber-container: #2b1d00;
+
+  --surface: #fcf8ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f6f2fb;
+  --surface-container: #f0ecf6;
+  --surface-container-high: #eae6f0;
+  --surface-container-highest: #e4e0ea;
+  --on-surface: #1b1b21;
+  --on-surface-variant: #47464f;
+  --outline: #78767f;
+  --outline-variant: #c9c5d0;
+  --scrim: rgba(20, 16, 40, .42);
+  --inverse-surface: #303036;
+  --inverse-on-surface: #f3eff7;
+
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-lg-inc: 20px;
+  --r-xl: 28px; --r-xl-inc: 32px; --r-xxl: 48px; --r-full: 999px;
+
+  --e1: 0 1px 2px rgba(30, 20, 70, .10), 0 1px 3px 1px rgba(30, 20, 70, .06);
+  --e3: 0 4px 8px 3px rgba(30, 20, 70, .10), 0 1px 3px rgba(30, 20, 70, .16);
+  --e4: 0 6px 12px 4px rgba(30, 20, 70, .12), 0 2px 4px rgba(30, 20, 70, .16);
+
+  --font: 'Google Sans Flex', 'Roboto Flex', system-ui, sans-serif;
+  --spring-fast-spatial: .35s cubic-bezier(.2, 1.4, .4, 1);
+  --spring-fast-effects: .15s cubic-bezier(.3, 0, .7, 1);
+}
+
+html.dark {
+  --primary: #c9c1ff;
+  --on-primary: #2c1a9a;
+  --primary-container: #3f3596;
+  --on-primary-container: #e5dfff;
+  --secondary: #c7c3e2;
+  --on-secondary: #2f2e4d;
+  --secondary-container: #454464;
+  --on-secondary-container: #e2dff9;
+  --tertiary: #ffb1c8;
+  --on-tertiary: #5e1135;
+  --tertiary-container: #7f2650;
+  --on-tertiary-container: #ffd9e4;
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+  --success: #86d8a5;
+  --success-container: #0b5231;
+  --on-success-container: #c2f0d2;
+  --sky: #7fd0ee;
+  --sky-container: #004d66;
+  --on-sky-container: #c4eaf9;
+  --amber-container: #5c4300;
+  --on-amber-container: #ffe2a8;
+
+  --surface: #131318;
+  --surface-container-lowest: #0e0e13;
+  --surface-container-low: #1b1b21;
+  --surface-container: #1f1f25;
+  --surface-container-high: #2a292f;
+  --surface-container-highest: #35343a;
+  --on-surface: #e5e1e9;
+  --on-surface-variant: #c9c5d0;
+  --outline: #928f99;
+  --outline-variant: #47464f;
+  --scrim: rgba(0, 0, 0, .55);
+  --inverse-surface: #e5e1e9;
+  --inverse-on-surface: #303036;
+
+  --e1: 0 1px 2px rgba(0, 0, 0, .4);
+  --e3: 0 4px 10px 2px rgba(0, 0, 0, .35), 0 1px 3px rgba(0, 0, 0, .5);
+  --e4: 0 6px 14px 4px rgba(0, 0, 0, .4), 0 2px 4px rgba(0, 0, 0, .5);
+}
