@@ -268,3 +268,14 @@ html.dark .strip .cap { text-shadow: 0 1px 4px rgb(0 0 0 / .6); }
 .wl-scroll .in { padding-right: 10px; }
 .wl-div { height: 1px; margin: 4px 8px 0; background: var(--outline-variant); flex: none; opacity: .7; }
 .wl-card { margin-top: 4px; }
+/* v4 */
+.wl-h { height: 44px; }
+.wl-scroll { height: 214px; }
+.wl-card { height: 62px; }
+.wl-card .acts .bt.keep { width: 80px; }
+.wl-card .acts .bt.drop { width: 64px; }
+.wl-card .acts .bt.drop > i { min-width: 56px; }
+.strip .gc { width: 44px; padding: 9px 8px; }
+.cf { padding: 0 12px 0 8px; font-size: 14px; }
+.strip .trail { width: 14px; }
+.snack { gap: 6px; }
