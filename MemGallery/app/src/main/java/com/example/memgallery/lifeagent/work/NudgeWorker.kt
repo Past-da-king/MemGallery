@@ -98,6 +98,32 @@ class NudgeWorker @AssistedInject constructor(
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         .setCategory(NotificationCompat.CATEGORY_REMINDER)
         .setAutoCancel(true)
+        .addAction(
+            0,
+            ctx.getString(R.string.la_nudge_action_done),
+            PendingIntent.getBroadcast(
+                ctx, n.key.hashCode() * 31 + 1,
+                Intent(ctx, NudgeActionReceiver::class.java).apply {
+                    action = ACTION_DONE
+                    putExtra(EXTRA_ITEM_ID, n.taskId)
+                    putExtra(EXTRA_NOTIFICATION_ID, n.key.hashCode())
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            ),
+        )
+        .addAction(
+            0,
+            ctx.getString(R.string.la_nudge_action_snooze),
+            PendingIntent.getBroadcast(
+                ctx, n.key.hashCode() * 31 + 2,
+                Intent(ctx, NudgeActionReceiver::class.java).apply {
+                    action = ACTION_SNOOZE
+                    putExtra(EXTRA_ITEM_ID, n.taskId)
+                    putExtra(EXTRA_NOTIFICATION_ID, n.key.hashCode())
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            ),
+        )
         .setContentIntent(
             PendingIntent.getActivity(
                 ctx, n.key.hashCode(),
@@ -126,6 +152,9 @@ class NudgeWorker @AssistedInject constructor(
         const val CHANNEL = "life_agent_nudges"
         const val ACTION_OPEN_ITEM = "com.example.memgallery.lifeagent.OPEN_ITEM"
         const val EXTRA_ITEM_ID = "life_agent_item_id"
+        const val EXTRA_NOTIFICATION_ID = "life_agent_notification_id"
+        const val ACTION_DONE = "com.example.memgallery.lifeagent.NUDGE_DONE"
+        const val ACTION_SNOOZE = "com.example.memgallery.lifeagent.NUDGE_SNOOZE"
         private const val PREFS = "life_agent_nudges"
         private const val KEY_SENT = "sent"
         private const val MAX_PER_RUN = 5

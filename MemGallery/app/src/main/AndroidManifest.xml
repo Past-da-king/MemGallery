@@ -206,6 +206,21 @@
                 android:resource="@xml/capture_bar_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".lifeagent.widget.LifeAgentWidgetReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/life_agent_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".lifeagent.work.NudgeActionReceiver"
+            android:exported="false" />
+
 
 
         <provider

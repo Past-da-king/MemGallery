@@ -31,7 +31,13 @@ class MainActivity : ComponentActivity() {
         // Extract shared data and shortcuts immediately
         val sharedData = extractSharedData(intent)
         val shortcutAction = intent.getStringExtra("shortcut_action")
-        val navigateToRoute = intent.getStringExtra("navigate_to")
+        val fromNudge = intent?.action == com.example.memgallery.lifeagent.work.NudgeWorker.ACTION_OPEN_ITEM
+        val navigateToRoute = when {
+            fromNudge -> com.example.memgallery.lifeagent.ui.LifeRoutes.Report
+            else -> intent.getStringExtra(EXTRA_NAVIGATE_TO)
+        }
+        // A nudge tap is one shot: clearing the action keeps a rotation from opening the report again.
+        if (fromNudge) intent?.action = null
 
         setContent {
             val isOnboardingCompleted by settingsRepository.isOnboardingCompletedFlow.collectAsState(initial = true)
@@ -127,6 +133,11 @@ class MainActivity : ComponentActivity() {
         }
         
         return result
+    }
+
+    companion object {
+        /** Which screen to open, e.g. "life_report" or "life_review". Used by widget taps and nudges. */
+        const val EXTRA_NAVIGATE_TO = "navigate_to"
     }
 
     data class SharedData(
