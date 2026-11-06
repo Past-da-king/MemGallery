@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_kit/fonts.css"><link rel="stylesheet" href="_kit/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 44px 40px 40px; background: var(--surface); color: var(--on-surface); font-family: var(--font); }
+  head, .hd { display: block; }
+  .hd { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 30px; }
+  .kicker { font: 700 13px/16px var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--primary); }
+  h1 { margin: 6px 0 0; font-size: 46px; line-height: 52px; font-weight: 700; letter-spacing: -.02em; }
+  .sub { font-size: 15px; line-height: 22px; color: var(--on-surface-variant); text-align: right; max-width: 460px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 26px 22px; }
+  .cell { display: flex; flex-direction: column; gap: 10px; }
+  .cap { display: flex; align-items: baseline; gap: 8px; }
+  .n { font: 700 12px/16px var(--font); color: var(--primary); min-width: 20px; }
+  .t { font: 600 13px/17px var(--font); }
+  .k { font: 500 11px/15px var(--font); color: var(--on-surface-variant); }
+  img { width: 100%; border-radius: 20px; display: block; box-shadow: 0 10px 26px rgba(20,16,40,.16), 0 2px 6px rgba(20,16,40,.10); }
+  html.dark img { box-shadow: 0 10px 26px rgba(0,0,0,.5), 0 0 0 1px var(--outline-variant); }
+  .foot { margin-top: 28px; font: 500 12px/18px var(--font); color: var(--on-surface-variant); }
+</style></head><body>
+<div class="hd">
+  <div><div class="kicker">MemGallery · Life Agent</div><h1>Connected apps, one review a day</h1></div>
+  <div class="sub">Design mocks, 6 Nov 2026. Material 3 Expressive, 412 x 915 dp. Read only in v1. The report also lives on the home screen as an interactive widget.</div>
+</div>
+<div class="grid" id="g"></div>
+<div class="foot">Fictional sample data. Same seven people, eleven proposed memories and five open tasks across every screen.</div>
+<script>
+const shots = [
+  ["01","Connections","Settings > Advanced, own key"],
+  ["02","Connect a drive","Slide-up sheet, read only"],
+  ["03","Collecting","17:00 run, step by step"],
+  ["04","Review","Swipe cards, why it was picked"],
+  ["05","Approve all","Slide-up confirmation"],
+  ["06","Caught up","Empty state, what it learned"],
+  ["07","Daily report","In-app full view"],
+  ["08","People","Built from your memories"],
+  ["09","Nomsa Mahlangu","One page per person"],
+  ["10","Nudge","Lock screen, snooze or done"],
+  ["11","Chat","What do I handle this week"],
+  ["12","Widget 2x2","Count and the top one"],
+  ["13","Widget 4x2","Three to be aware of, next meeting"],
+  ["14","Widget 4x4","Full report, keep or drop"],
+  ["15","Widget taps","Before and after a tap"]
+];
+const dark = document.documentElement.classList.contains("dark");
+const theme = dark ? "dark" : "light";
+document.getElementById("g").innerHTML = shots.map(([n,t,k]) =>
+  `<div class="cell"><div class="cap"><span class="n">${n}</span><span class="t">${t}</span></div><img src="png/${n === "01" ? "connections" : n === "02" ? "connections-sheet" : n === "03" ? "collecting" : n === "04" ? "review-deck" : n === "05" ? "approve-all" : n === "06" ? "caught-up" : n === "07" ? "daily-report" : n === "08" ? "people" : n === "09" ? "person" : n === "10" ? "nudge" : n === "11" ? "chat-week" : n === "12" ? "11-widget-small" : n === "13" ? "12-widget-medium" : n === "14" ? "13-widget-large" : "14-widget-taps"}-${theme}.png"><span class="k">${k}</span></div>`
+).join("");
+</script></body></html>
