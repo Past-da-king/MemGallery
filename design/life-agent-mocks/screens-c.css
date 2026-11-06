@@ -279,3 +279,6 @@ html.dark .strip .cap { text-shadow: 0 1px 4px rgb(0 0 0 / .6); }
 .cf { padding: 0 12px 0 8px; font-size: 14px; }
 .strip .trail { width: 14px; }
 .snack { gap: 6px; }
+/* v5: snackbar action contrast in both themes */
+.snack span.u { color: var(--primary-container); }
+html.dark .snack span.u { color: var(--on-primary); }
