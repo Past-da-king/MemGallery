@@ -311,7 +311,7 @@ class ProposalBuilder(private val ai: ProposalAi? = null) {
         private val ASK = Regex("(please (send|sign|confirm|review|reply|pay|approve|share|submit|check)|can you|could you|would you|need you to|kindly|waiting (on|for) you|require[sd]? (your|you)|action required|asking for|\\bremind)")
         private val AWAITING = Regex("(i'?ll (send|get|share|have|do|come back)|i will (send|get|share)|will send (you )?|promised|should have (it|them) (to you )?|by tomorrow i|on my way with)")
         private val DECISION = Regex("(we('ve| have)? (decided|agreed)|\\bapproved\\b|go ahead|signed off|sign-off|confirmed that)")
-        private val MEETING = Regex("(meeting|\\bcall\\b|reschedul|moved to|invite|appointment|catch-?up|workshop)")
+        private val MEETING = Regex("(meeting|\\bcall\\b|reschedul|moved to|invite|appointment|catch-?up)")
         private val DOCUMENT = Regex("\\b(lease|contract|agreement|proposal|quote|quotation|certificate|statement|nda|policy|permit|passport|licen[cs]e)\\b")
         private val THING = Regex("\\b(lease|contract|agreement|refund|deposit|quotation|quote|nda)\\b")
     }
