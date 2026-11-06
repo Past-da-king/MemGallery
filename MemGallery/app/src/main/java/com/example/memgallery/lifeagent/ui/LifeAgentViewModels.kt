@@ -163,7 +163,8 @@ class ConnectionsViewModel @Inject constructor(
             keySet = !p.key.isNullOrBlank(),
             maskedKey = maskKey(p.key),
             keyKind = p.kind?.let { runCatching { com.example.memgallery.lifeagent.composio.KeyKind.valueOf(it) }.getOrNull() }
-                ?.let { if (it == com.example.memgallery.lifeagent.composio.KeyKind.USER) context.getString(R.string.la_key_kind_user) else context.getString(R.string.la_key_kind_project) },
+                ?.takeIf { it != com.example.memgallery.lifeagent.composio.KeyKind.UNKNOWN }
+                ?.label,
             projectName = p.project,
             checking = t.check.first,
             keyCheckOk = t.check.second,
@@ -242,11 +243,21 @@ class ConnectionsViewModel @Inject constructor(
                 checkMessage.value = if (check.ok) {
                     buildString {
                         append(context.getString(R.string.la_key_ok))
+                        append(" · ")
+                        append(check.kind.label)
+                        check.header?.let { append(" ("); append(it); append(")") }
                         check.projectName?.let { append(" · "); append(it) }
                         check.orgName?.let { append(" · "); append(it) }
                     }
                 } else {
-                    check.error
+                    buildString {
+                        check.attempts.ifEmpty { listOfNotNull(check.error) }.forEachIndexed { index, line ->
+                            if (index > 0) append("\n")
+                            append(line)
+                        }
+                        append("\n")
+                        append(context.getString(R.string.la_key_hint))
+                    }
                 }
                 if (check.ok) {
                     refresh(force = true)

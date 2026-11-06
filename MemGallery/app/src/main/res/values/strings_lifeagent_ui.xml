@@ -272,6 +272,8 @@
     <string name="la_last_pulled">Last pulled %1$s</string>
     <string name="la_save">Save</string>
     <string name="la_key_save">Save key</string>
+    <string name="la_key_hint">Use a project API key from composio.dev > Settings > Project Settings > API Keys</string>
+    <string name="la_key_kind_org">Org key</string>
     <string name="la_key_kind_project">Project key</string>
     <string name="la_key_kind_user">Personal key</string>
     <string name="la_key_ok">Composio accepted the key</string>

@@ -56,6 +56,7 @@ object ComposioCatalog {
     const val PATH_CONNECT_LINK = "/connected_accounts/link"
     const val PATH_SESSION_INFO = "/auth/session/info"
     const val PATH_PROJECTS = "/org/project/list"
+    const val PATH_ORG_PROJECTS = "/org/owner/project/list"
 
     const val MAX_PAGES = 3
     const val MAX_SLACK_CHANNELS = 20

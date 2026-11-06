@@ -127,7 +127,7 @@ class ComposioClient(
     private suspend fun send(builder: Request.Builder, kind: KeyKind? = null): String {
         val key = keyProvider()?.trim()
         if (key.isNullOrEmpty()) throw ComposioException(ComposioErrorKind.NO_KEY, "Add your Composio key to connect")
-        val how = kind ?: keyKind()
+        val how = (kind ?: keyKind()).takeIf { it != KeyKind.UNKNOWN } ?: KeyKind.PROJECT
         var b = builder.header(how.header, key).header("Accept", "application/json")
         if (how == KeyKind.USER) orgIdProvider()?.takeIf { it.isNotBlank() }?.let { b = b.header("x-org-id", it) }
         val request = b.build()
@@ -248,19 +248,27 @@ class ComposioClient(
      * which names the project it lands in; a project key against the toolkits list. A key whose prefix we do not know
      * is tried both ways. The error is Composio's own status and message, never a silent fail.
      */
+    /**
+     * Finds out which header the key belongs in by trying it, never by guessing from the prefix. In order: the kind
+     * that worked last time, then project (x-api-key), personal (x-user-api-key, with the org header when one is
+     * stored), organisation (x-org-api-key). The first that answers is kept and saved by the repository. When none
+     * answers, every header's own status and message is returned so the screen can show the real reason.
+     */
     override suspend fun checkKey(): KeyCheck {
-        val guessed = keyKind()
-        val order = when (guessed) {
-            KeyKind.USER -> listOf(KeyKind.USER)
-            KeyKind.PROJECT -> listOf(KeyKind.PROJECT)
-            KeyKind.UNKNOWN -> listOf(KeyKind.PROJECT, KeyKind.USER)
-        }
-        var lastError: String? = null
-        var lastStatus: Int? = null
+        val stored = keyKindProvider()?.takeIf { it != KeyKind.UNKNOWN }
+        val order = (listOfNotNull(stored) + KeyKind.PROBE_ORDER).distinct()
+        val attempts = ArrayList<String>()
         for (kind in order) {
             val (code, text) = sendRaw(
-                if (kind == KeyKind.USER) Request.Builder().url(baseUrl + ComposioCatalog.PATH_SESSION_INFO).get()
-                else Request.Builder().url((baseUrl + ComposioCatalog.PATH_TOOLKITS).toHttpUrl().newBuilder().addQueryParameter("limit", "1").build()).get(),
+                when (kind) {
+                    KeyKind.USER -> Request.Builder().url(baseUrl + ComposioCatalog.PATH_SESSION_INFO).get()
+                    KeyKind.ORG -> Request.Builder()
+                        .url((baseUrl + ComposioCatalog.PATH_ORG_PROJECTS).toHttpUrl().newBuilder().addQueryParameter("limit", "1").build())
+                        .get()
+                    else -> Request.Builder()
+                        .url((baseUrl + ComposioCatalog.PATH_TOOLKITS).toHttpUrl().newBuilder().addQueryParameter("limit", "1").build())
+                        .get()
+                },
                 kind,
             )
             if (code in 200..299) {
@@ -268,18 +276,22 @@ class ComposioClient(
                 val project = o?.get("project") as? JsonObject
                 val org = o?.get("org") as? JsonObject
                 return KeyCheck(
-                    kind = kind, ok = true,
+                    kind = kind, ok = true, header = kind.header, attempts = attempts.toList(),
                     projectName = project?.str("name"),
                     projectId = project?.str("nano_id") ?: project?.str("id"),
                     orgName = org?.str("name"), orgId = org?.str("org_id") ?: org?.str("id"),
                 )
             }
-            lastStatus = code
-            lastError = errorMessage(text).ifBlank { "Composio refused the key" }
+            val message = errorMessage(text).ifBlank { "refused" }
+            attempts += "${kind.header} $code: $message"
         }
         return KeyCheck(
-            kind = guessed, ok = false, httpStatus = lastStatus,
-            error = "Composio answered ${lastStatus ?: "no reply"}: ${lastError ?: "unknown error"}",
+            kind = stored ?: KeyKind.UNKNOWN,
+            ok = false,
+            header = null,
+            attempts = attempts.toList(),
+            httpStatus = attempts.firstOrNull()?.substringAfter(' ')?.substringBefore(':')?.toIntOrNull(),
+            error = attempts.joinToString(" · "),
         )
     }
 
