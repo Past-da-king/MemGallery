@@ -202,6 +202,7 @@ class ComposioConnectClient(
         val text = (result.get("content") as? JsonArray)?.firstOrNull()
             ?.let { it as? JsonObject }?.str("text")
         val parsed = text?.let { runCatching { JsonParser.parseString(it) as? JsonObject }.getOrNull() }
+        LifeAgentLog.add("tool $name answered ${if (parsed == null) "with nothing usable" else "ok"}")
         val isError = result.get("isError")?.takeIf { it.isJsonPrimitive }?.asBoolean == true
         if (parsed == null) {
             throw ComposioException(
@@ -215,40 +216,37 @@ class ComposioConnectClient(
     // ---- ComposioApi, over MCP ----
 
     /** Connected accounts, read from the connection statuses each search returns, then confirmed per toolkit. */
+    /**
+     * Connected accounts, exactly as Composio holds them for this consumer account. Only toolkits a search already
+     * reports as connected are asked for their accounts, because `list` on a toolkit with nothing connected starts a
+     * pending auth attempt instead of answering.
+     */
     override suspend fun listConnectedAccounts(): List<ConnectedAccount> {
-        val connectedSlugs = connectedSlugs()
-        if (connectedSlugs.isEmpty()) return emptyList()
+        val slugs = connectedSlugs()
+        if (slugs.isEmpty()) {
+            LifeAgentLog.add("connections: none reported as active")
+            return emptyList()
+        }
         val out = ArrayList<ConnectedAccount>()
-        for (slug in connectedSlugs) {
-            val data = dataOf(
-                callTool(
-                    "COMPOSIO_MANAGE_CONNECTIONS",
-                    JsonObject().apply {
-                        add("toolkits", JsonArray().apply {
-                            add(JsonObject().apply { addProperty("name", slug); addProperty("action", "list") })
-                        })
-                    },
-                ),
-            )
-            val results = data?.get("results") as? JsonObject
-            val entry = results?.get(slug) as? JsonObject
-            val accounts = entry?.get("accounts") as? JsonArray
-            if (accounts == null || accounts.isEmpty) {
-                out += ConnectedAccount(slug, slug, null, entry?.str("status") ?: "ACTIVE", null)
-                continue
-            }
+        for (slug in slugs) {
+            val data = dataOf(callTool("COMPOSIO_MANAGE_CONNECTIONS", manageArgs(listOf(Triple(slug, "list", null)))))
+            val entry = (data?.get("results") as? JsonObject)?.get(slug) as? JsonObject ?: continue
+            val accounts = entry.get("accounts") as? JsonArray ?: continue
             accounts.forEach { el ->
                 val a = el as? JsonObject ?: return@forEach
-                val id = a.str("id") ?: a.str("account_id") ?: return@forEach
+                val id = a.str("id") ?: return@forEach
+                val status = a.str("status") ?: "active"
+                val info = a.get("user_info") as? JsonObject
                 out += ConnectedAccount(
                     id = id,
                     toolkit = a.str("toolkit") ?: slug,
-                    userId = a.str("user_id"),
-                    status = a.str("status") ?: "ACTIVE",
-                    label = a.str("alias") ?: a.str("name"),
+                    userId = a.str("user_id") ?: info?.str("id"),
+                    status = status,
+                    label = a.str("alias") ?: info?.str("email") ?: info?.str("name"),
                 )
             }
         }
+        LifeAgentLog.add("connections: ${out.size} active account(s) over ${slugs.size} toolkit(s): ${out.map { it.toolkit }.distinct()}")
         return out
     }
 
@@ -273,12 +271,27 @@ class ComposioConnectClient(
         val first = (data?.get("results") as? JsonArray)?.firstOrNull() as? JsonObject
             ?: return ToolResult(false, null, "Composio Connect returned no result")
         val err = first.str("error")
-        if (err != null) return ToolResult(false, null, err.take(200))
+        if (err != null) {
+            LifeAgentLog.error("read $slug failed: ${err.take(120)}")
+            return ToolResult(false, null, err.take(200))
+        }
         val response = (first.get("response") as? JsonObject) ?: (first.get("data") as? JsonObject)
         val ok = response?.get("successful")?.takeIf { it.isJsonPrimitive }?.asBoolean ?: true
-        val payload = response?.get("data") ?: first.get("response") ?: first.get("data")
+        // Large answers come back as data_preview, not data; both are read.
+        val payload = response?.get("data") ?: response?.get("data_preview")
+            ?: first.get("response") ?: first.get("data")
         val error = response?.str("error")
+        LifeAgentLog.add("read $slug ${if (ok && error == null) "ok" else "failed"} items=${countItems(payload)}")
         return ToolResult(ok && error == null, payload, error)
+    }
+
+    /** The recipes for the apps that need real arguments; null means this client has no special reader. */
+    override suspend fun pull(toolkit: String, accountId: String, since: Long): List<RawItem>? = when (toolkit.lowercase()) {
+        "clickup" -> clickupItems(accountId, since)
+        "slack" -> slackItems(accountId, since)
+        "gmail" -> gmailItems(accountId, since)
+        "googlecalendar", "google_calendar" -> calendarItems(accountId, since)
+        else -> null
     }
 
     /**
@@ -355,7 +368,155 @@ class ComposioConnectClient(
     /** Consumer keys have no project picker. */
     override suspend fun listProjects(): List<ComposioProject> = emptyList()
 
+    // ---- real reads per app (the shapes measured live, see docs/life-agent/RESEARCH.md) ----
+
+    /** ClickUp: workspaces first, then tasks per workspace; the team id is required, which is what broke it before. */
+    private suspend fun clickupItems(accountId: String, since: Long): List<RawItem> {
+        val out = ArrayList<RawItem>()
+        val teams = (read("CLICKUP_GET_AUTHORIZED_TEAMS_WORKSPACES", accountId, emptyMap())?.get("teams") as? JsonArray)
+            ?: return out
+        for (teamEl in teams) {
+            val team = teamEl as? JsonObject ?: continue
+            val teamId = team.str("id") ?: continue
+            val data = read(
+                "CLICKUP_GET_FILTERED_TEAM_TASKS", accountId,
+                mapOf("team_Id" to teamId, "page" to 0),
+            ) ?: continue
+            val tasks = data.get("tasks") as? JsonArray ?: continue
+            for (taskEl in tasks) {
+                val t = taskEl as? JsonObject ?: continue
+                val updated = t.str("date_updated")?.toLongOrNull() ?: 0L
+                if (updated in 1 until since) continue
+                val id = t.str("id") ?: continue
+                val assignee = (t.get("assignees") as? JsonArray)?.firstOrNull() as? JsonObject
+                out += RawItem(
+                    app = "clickup",
+                    sourceId = id,
+                    type = RawType.TASK,
+                    title = t.str("name") ?: "(untitled task)",
+                    body = t.str("description") ?: t.str("text_content") ?: "",
+                    author = assignee?.str("username") ?: assignee?.str("email"),
+                    url = t.str("url"),
+                    occurredAt = if (updated > 0) updated else System.currentTimeMillis(),
+                    dueAt = t.str("due_date")?.toLongOrNull(),
+                    status = (t.get("status") as? JsonObject)?.str("status") ?: t.str("status"),
+                    listName = (t.get("list") as? JsonObject)?.str("name"),
+                    updatedAt = updated,
+                )
+            }
+        }
+        LifeAgentLog.add("clickup: ${out.size} task(s) since the last run")
+        return out
+    }
+
+    /** Slack: the channels he can see, then the newest messages in a few of them. A channel id is required. */
+    private suspend fun slackItems(accountId: String, since: Long): List<RawItem> {
+        val out = ArrayList<RawItem>()
+        val data = read(
+            "SLACK_LIST_CONVERSATIONS", accountId,
+            mapOf("types" to "public_channel,private_channel", "limit" to 40),
+        ) ?: return out
+        val channels = data.get("channels") as? JsonArray ?: return out
+        val usable = channels.mapNotNull { it as? JsonObject }
+            .filter { it.str("id") != null && (it.get("is_archived")?.takeIf { p -> p.isJsonPrimitive }?.asBoolean != true) }
+            .take(6)
+        for (channel in usable) {
+            val id = channel.str("id") ?: continue
+            val name = channel.str("name")
+            val history = read(
+                "SLACK_FETCH_CONVERSATION_HISTORY", accountId,
+                mapOf("channel" to id, "limit" to 20),
+            ) ?: continue
+            val messages = history.get("messages") as? JsonArray ?: continue
+            for (msgEl in messages) {
+                val m = msgEl as? JsonObject ?: continue
+                val ts = m.str("ts")?.toDoubleOrNull()?.let { (it * 1000).toLong() } ?: 0L
+                if (ts in 1 until since) continue
+                val text = m.str("text") ?: continue
+                out += RawItem(
+                    app = "slack",
+                    sourceId = "${id}_${m.str("ts")}",
+                    type = RawType.MESSAGE,
+                    title = text.take(90).replace("\n", " "),
+                    body = text,
+                    author = m.str("user") ?: m.str("username"),
+                    url = null,
+                    occurredAt = if (ts > 0) ts else System.currentTimeMillis(),
+                    listName = name,
+                    isBot = m.str("bot_id") != null || m.str("subtype") == "bot_message",
+                )
+            }
+        }
+        LifeAgentLog.add("slack: ${out.size} message(s) from ${usable.size} channel(s)")
+        return out
+    }
+
+    private suspend fun gmailItems(accountId: String, since: Long): List<RawItem> {
+        val data = read("GMAIL_FETCH_EMAILS", accountId, mapOf("max_results" to 25, "query" to "newer_than:7d")) ?: return emptyList()
+        val items = GenericParser.items("gmail", "GMAIL_FETCH_EMAILS", data, since)
+        LifeAgentLog.add("gmail: ${items.size} message(s)")
+        return items
+    }
+
+    private suspend fun calendarItems(accountId: String, since: Long): List<RawItem> {
+        val timeMin = java.time.Instant.ofEpochMilli(since).toString()
+        val data = read(
+            "GOOGLECALENDAR_EVENTS_LIST", accountId,
+            mapOf("timeMin" to timeMin, "maxResults" to 25, "singleEvents" to true, "orderBy" to "startTime"),
+        ) ?: return emptyList()
+        val items = GenericParser.items("googlecalendar", "GOOGLECALENDAR_EVENTS_LIST", data, since)
+        LifeAgentLog.add("calendar: ${items.size} event(s)")
+        return items
+    }
+
+    /** One tool call whose data comes back whole or as a preview. Null when it failed. */
+    private suspend fun read(slug: String, accountId: String, args: Map<String, Any?>): JsonObject? {
+        val result = execute(slug, accountId, null, args)
+        if (!result.successful) {
+            LifeAgentLog.error("$slug: ${result.error?.take(120) ?: "failed"}")
+            return null
+        }
+        return result.data as? JsonObject
+    }
+
+    /** Polls one toolkit after he comes back from the browser, so the app can say connected without another tap. */
+    override suspend fun awaitActive(toolkitSlug: String, timeoutMs: Long): Boolean {
+        val step = 3_000L
+        var waited = 0L
+        while (waited <= timeoutMs) {
+            val data = runCatching {
+                dataOf(callTool("COMPOSIO_MANAGE_CONNECTIONS", manageArgs(listOf(Triple(toolkitSlug, "list", null)))))
+            }.getOrNull()
+            val entry = (data?.get("results") as? JsonObject)?.get(toolkitSlug) as? JsonObject
+            val status = entry?.str("status")?.lowercase()
+            val accounts = entry?.get("accounts") as? JsonArray
+            if (status == "active" && accounts != null && accounts.size() > 0) return true
+            kotlinx.coroutines.delay(step)
+            waited += step
+        }
+        return false
+    }
+
     // ---- helpers ----
+
+    private fun manageArgs(items: List<Triple<String, String, String?>>): JsonObject = JsonObject().apply {
+        add("toolkits", JsonArray().apply {
+            items.forEach { (name, action, _) ->
+                add(JsonObject().apply {
+                    addProperty("name", name)
+                    addProperty("action", action)
+                })
+            }
+        })
+    }
+
+    /** How many items a payload holds, for the log line only. */
+    private fun countItems(payload: JsonElement?): Int {
+        val el = payload ?: return 0
+        if (el.isJsonArray) return el.asJsonArray.size()
+        val o = el as? JsonObject ?: return 0
+        return o.entrySet().firstOrNull { it.value.isJsonArray }?.value?.asJsonArray?.size() ?: 0
+    }
 
     /** One search, and the toolkits it names. */
     private suspend fun discover(useCase: String? = null): List<ToolkitSummary> {
@@ -368,7 +529,7 @@ class ComposioConnectClient(
     /** The toolkits Composio says have an active connection, from a few ordinary searches. */
     private suspend fun connectedSlugs(): List<String> {
         val out = LinkedHashSet<String>()
-        for (q in SEED_QUERIES.take(3)) {
+        for (q in APP_SEED_QUERIES + SEED_QUERIES.take(3)) {
             val data = search(q) ?: continue
             (data.get("toolkit_connection_statuses") as? JsonArray)?.forEach { el ->
                 val o = el as? JsonObject ?: return@forEach
@@ -470,6 +631,14 @@ class ComposioConnectClient(
             "read my reminders",
         )
         private const val MAX_CATALOG = 120
+
+        /** One query per app people actually connect, so its connection status is always seen. */
+        val APP_SEED_QUERIES = listOf(
+            "read my gmail emails",
+            "read my google calendar events",
+            "read my clickup tasks",
+            "read my slack messages",
+        )
 
         fun defaultHttp(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)

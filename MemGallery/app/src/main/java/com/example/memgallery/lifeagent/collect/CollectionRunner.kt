@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.lifeagent.composio.ComposioApi
 import com.example.memgallery.lifeagent.composio.ComposioCatalog
+import com.example.memgallery.lifeagent.composio.LifeAgentLog
 import com.example.memgallery.lifeagent.composio.ComposioErrorKind
 import com.example.memgallery.lifeagent.composio.ComposioException
 import com.example.memgallery.lifeagent.composio.GenericParser
@@ -130,7 +131,10 @@ class CollectionRunner(
                         val first = conn.lastPulledAt <= 0L
                         val since = if (first) started - 7 * DAY else conn.lastPulledAt
                         val sinceArg = if (known == LifeApp.CLICKUP && first) 0L else since
-                        val raw = ComposioCatalog.pull(api, known, accountId, userId, sinceArg, started)
+                        // A door that knows this app's real arguments (Connect/consumer) reads it directly.
+                        val direct = api.pull(toolkitSlug, accountId, sinceArg)
+                        val raw = direct ?: ComposioCatalog.pull(api, known, accountId, userId, sinceArg, started)
+                        LifeAgentLog.add("collect $label: ${raw.size} item(s) from ${if (direct != null) "its own read tools" else "the catalog reader"}")
                         process(known.id, label, raw, since, ctx, filter, builder, seenProposalFps, started, noise)
                     } else {
                         // Any other connected toolkit: its own read tools, through the generic parser.

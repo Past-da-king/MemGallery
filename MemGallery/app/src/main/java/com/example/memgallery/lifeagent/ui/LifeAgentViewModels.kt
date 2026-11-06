@@ -198,7 +198,9 @@ class ConnectionsViewModel @Inject constructor(
             catalogError.value = null
             try {
                 repo.syncToolkits(force = force)
-                if (force) runCatching { repo.syncConnections() }
+                // Every open asks the key what is connected, so an app he connected in Composio shows up as connected
+                // without him doing anything here.
+                runCatching { repo.syncConnections() }
             } catch (e: Exception) {
                 catalogError.value = (e.message ?: context.getString(R.string.la_catalog_failed)).take(180)
             } finally {
@@ -297,6 +299,15 @@ class ConnectionsViewModel @Inject constructor(
                     is com.example.memgallery.lifeagent.data.ConnectOutcome.Browser -> {
                         connectUrl.value = outcome.url
                         connectMessage.value = context.getString(R.string.la_finish_in_browser, row.name)
+                        // He goes to the browser and comes back; wait for Composio to confirm, then say so ourselves.
+                        val active = repo.waitForConnection(row.slug, timeoutMs = 120_000)
+                        if (active) {
+                            connectMessage.value = context.getString(R.string.la_connected_named, row.name)
+                            connectUrl.value = null
+                            runCatching { repo.syncConnections() }
+                        } else {
+                            connectMessage.value = context.getString(R.string.la_still_pending, row.name)
+                        }
                     }
                     is com.example.memgallery.lifeagent.data.ConnectOutcome.Failed ->
                         connectMessage.value = outcome.message

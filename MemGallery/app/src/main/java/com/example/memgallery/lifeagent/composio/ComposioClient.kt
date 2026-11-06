@@ -42,6 +42,15 @@ interface ComposioApi {
 
     /** The projects a personal key can see (empty for a project key). */
     suspend fun listProjects(): List<ComposioProject> = emptyList()
+
+    /**
+     * A real read of one app with the arguments that app needs, for the door that knows them (Connect/consumer).
+     * Null means this client has no recipe and the caller should use the catalog's own pull.
+     */
+    suspend fun pull(toolkit: String, accountId: String, since: Long): List<RawItem>? = null
+
+    /** Waits for a connection link to finish, on the door that can tell (Connect). False means not yet. */
+    suspend fun awaitActive(toolkit: String, timeoutMs: Long = 0): Boolean = false
 }
 
 /**
@@ -131,12 +140,14 @@ class ComposioClient(
         var b = builder.header(how.header, key).header("Accept", "application/json")
         if (how == KeyKind.USER) orgIdProvider()?.takeIf { it.isNotBlank() }?.let { b = b.header("x-org-id", it) }
         val request = b.build()
+        LifeAgentLog.add("rest ${request.method} ${request.url.encodedPath} with ${LifeAgentLog.maskKey(key)} in ${how.header}")
         var last: ComposioException? = null
         for (attempt in 1..maxAttempts) {
             try {
                 val (code, text) = withContext(Dispatchers.IO) {
                     http.newCall(request).execute().use { it.code to (it.body?.string() ?: "") }
                 }
+                LifeAgentLog.add("rest ${request.method} ${request.url.encodedPath} -> $code")
                 when {
                     code in 200..299 -> return text
                     code == 401 || code == 403 -> throw ComposioException(ComposioErrorKind.AUTH, "Composio did not accept the key ($code)")

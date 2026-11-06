@@ -53,7 +53,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import com.example.memgallery.R
 import com.example.memgallery.ui.design.MemShape
 import com.example.memgallery.ui.design.MemTextField
@@ -370,15 +372,32 @@ private fun ToolkitRowCard(row: ToolkitRowUi, onClick: () -> Unit) {
 }
 
 @Composable
+private fun LogoLetter(name: String, scheme: androidx.compose.material3.ColorScheme) {
+    Text(
+        name.take(1).uppercase(),
+        style = MaterialTheme.typography.titleMedium,
+        color = scheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 private fun ToolkitLogo(row: ToolkitRowUi) {
     val scheme = MaterialTheme.colorScheme
     Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(scheme.surfaceContainerHigh), contentAlignment = Alignment.Center) {
         if (!row.logoUrl.isNullOrBlank()) {
-            AsyncImage(
+            SubcomposeAsyncImage(
                 model = row.logoUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(26.dp),
+                content = {
+                    val state = painter.state
+                    if (state is AsyncImagePainter.State.Error) {
+                        LogoLetter(row.name, scheme)
+                    } else {
+                        SubcomposeAsyncImageContent()
+                    }
+                },
             )
         } else {
             Text(

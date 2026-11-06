@@ -137,10 +137,9 @@ class ComposioConnectTest {
 
     @Test fun connectedAccountsComeFromTheToolkitStatusesThenTheAccountList() = runBlocking {
         handshake()
-        // discover() searches the first three seed use cases, then asks each connected toolkit for its accounts.
-        server.enqueue(toolCall(searchWithToolkits(5, connectedEvery = 5), id = 2))
-        server.enqueue(toolCall(searchWithToolkits(5, connectedEvery = 5), id = 3))
-        server.enqueue(toolCall(searchWithToolkits(5, connectedEvery = 5), id = 4))
+        // Discovery searches one query per known app plus the general seeds (7 in all), then asks each connected
+        // toolkit for its accounts. Ids run 2..8 for the searches, 9 for the account list.
+        for (id in 2..8) server.enqueue(toolCall(searchWithToolkits(5, connectedEvery = 5), id = id))
         val accountsData = JsonObject().apply {
             add("results", JsonObject().apply {
                 add("app5", JsonObject().apply {
@@ -155,7 +154,7 @@ class ComposioConnectTest {
                 })
             })
         }
-        server.enqueue(toolCall(payload(accountsData), id = 5))
+        server.enqueue(toolCall(payload(accountsData), id = 9))
         val accounts = client().listConnectedAccounts()
         assertEquals(1, accounts.size)
         assertEquals("ca_app5_1", accounts.first().id)

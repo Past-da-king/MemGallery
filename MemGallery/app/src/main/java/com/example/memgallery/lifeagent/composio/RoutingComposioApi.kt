@@ -23,7 +23,10 @@ class RoutingComposioApi(
     }
 
     private suspend fun <T> route(block: suspend (ComposioApi) -> T): T {
-        if (isConsumer()) return block(connect)
+        if (isConsumer()) {
+            LifeAgentLog.add("door: connect (consumer key)")
+            return block(connect)
+        }
         return try {
             block(rest)
         } catch (e: ComposioException) {
@@ -55,6 +58,12 @@ class RoutingComposioApi(
         route { it.createConnectLink(toolkitSlug, userId, callbackUrl) }
 
     override suspend fun listProjects(): List<ComposioProject> = route { it.listProjects() }
+
+    override suspend fun pull(toolkit: String, accountId: String, since: Long): List<RawItem>? =
+        route { it.pull(toolkit, accountId, since) }
+
+    override suspend fun awaitActive(toolkit: String, timeoutMs: Long): Boolean =
+        route { it.awaitActive(toolkit, timeoutMs) }
 
     /**
      * Tries the door the key should belong to, and the other one when that fails, so a `ck_` key, an unknown prefix

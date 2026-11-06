@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.memgallery.lifeagent.collect.CollectionProgressBus
 import com.example.memgallery.lifeagent.collect.CollectionRunner
 import com.example.memgallery.lifeagent.composio.ComposioApi
+import com.example.memgallery.lifeagent.composio.LifeAgentLog
 import com.example.memgallery.lifeagent.composio.ComposioCatalog
 import com.example.memgallery.lifeagent.composio.ComposioException
 import com.example.memgallery.lifeagent.composio.ComposioProject
@@ -193,10 +194,13 @@ class LifeAgentRepository @Inject constructor(
     suspend fun syncConnections(): List<ConnectOutcome> {
         val accounts = composio.listConnectedAccounts()
         val active = accounts.filter { it.active }
-        val slugs = (dao.getToolkits().map { it.slug } + active.map { it.toolkit }).distinct()
-        val now = System.currentTimeMillis()
+        // Every toolkit the key can see: the cached catalog, plus anything with an account, half-finished included.
+        val slugs = (dao.getToolkits().map { it.slug } + accounts.map { it.toolkit }).distinct()
         for (slug in slugs) {
             val acc = active.firstOrNull { it.toolkit.equals(slug, ignoreCase = true) }
+            val pending = accounts.firstOrNull {
+                it.toolkit.equals(slug, ignoreCase = true) && !it.active
+            }
             val old = dao.getConnection(slug)
             val name = dao.getToolkit(slug)?.name ?: LifeApp.from(slug)?.label ?: slug
             dao.upsertConnection(
@@ -204,14 +208,20 @@ class LifeAgentRepository @Inject constructor(
                     id = slug,
                     label = old?.label ?: name,
                     connected = acc != null,
-                    accountLabel = acc?.label ?: old?.accountLabel,
-                    lastPulledAt = old?.lastPulledAt ?: 0L,
-                    lastError = if (acc == null) old?.lastError else null,
+                    accountLabel = acc?.label ?: pending?.label ?: old?.accountLabel,
+                    lastPulledAt = if (acc != null) old?.lastPulledAt ?: 0L else old?.lastPulledAt ?: 0L,
+                    // A half-finished connection says so, instead of looking connected and quietly returning nothing.
+                    lastError = when {
+                        acc != null -> null
+                        pending != null -> "Composio says this connection is ${pending.status}: finish it in Composio"
+                        else -> old?.lastError
+                    },
                     accountId = acc?.id,
                     userId = acc?.userId,
                 )
             )
         }
+        LifeAgentLog.add("connections synced: ${active.size} active, ${accounts.size - active.size} pending")
         changed()
         return slugs.map { ConnectOutcome.Connected(dao.getConnection(it)?.accountLabel) }
     }
@@ -284,6 +294,15 @@ class LifeAgentRepository @Inject constructor(
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    /** Waits after a connect link until Composio reports the account active, so the screen can say connected itself. */
+    suspend fun waitForConnection(slug: String, timeoutMs: Long = 60_000): Boolean = try {
+        composio.awaitActive(slug, timeoutMs)
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
     }
 
     /** Checks the stored key with Composio and remembers which kind it is and the project it lands in. */

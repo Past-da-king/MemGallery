@@ -279,6 +279,7 @@
     <string name="la_key_ok">Composio accepted the key</string>
     <string name="la_catalog_failed">Could not load the app list</string>
     <string name="la_connected_named">%1$s is connected</string>
+    <string name="la_still_pending">%1$s is not confirmed yet. Finish in the browser and come back, the list refreshes itself.</string>
     <string name="la_finish_in_browser">Finish connecting %1$s in the browser, then come back here</string>
     <string name="la_still_not_connected">%1$s is still not connected. Check that the account finished linking in Composio.</string>
     <string name="la_test_key">Test key</string>

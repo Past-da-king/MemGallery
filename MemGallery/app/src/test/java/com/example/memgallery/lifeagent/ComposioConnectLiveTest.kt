@@ -27,8 +27,15 @@ class ComposioConnectLiveTest {
         assertTrue("the endpoint lost its meta tools", tools.contains("COMPOSIO_MULTI_EXECUTE_TOOL"))
         assertTrue("a code-running tool appeared", tools.contains("COMPOSIO_REMOTE_BASH_TOOL"))
 
-        // Read only, and only the connection list. No tool of his is called.
+        // Read only. The list first, then one real read per app that is connected, counts only.
         val accounts = client.listConnectedAccounts()
-        println("live connect: ${accounts.size} connected account(s): ${accounts.map { it.toolkit }}")
+        println("live connect: ${accounts.size} connected account(s): ${accounts.map { it.toolkit to it.label }}")
+        val since = System.currentTimeMillis() - 30L * 24 * 3600 * 1000
+        for (toolkit in listOf("clickup", "slack")) {
+            val account = accounts.firstOrNull { it.toolkit.equals(toolkit, true) && it.active } ?: continue
+            val items = client.pull(toolkit, account.id, since) ?: emptyList()
+            println("live read $toolkit (${account.id}): ${items.size} item(s)")
+            assertTrue("$toolkit returned nothing", items.isNotEmpty())
+        }
     }
 }
