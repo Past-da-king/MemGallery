@@ -258,3 +258,13 @@ html.dark .strip .cap { text-shadow: 0 1px 4px rgb(0 0 0 / .6); }
 .chat .sug .i { font-size: 16px; width: 16px; height: 16px; color: var(--tertiary); font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 20; }
 .chat .cmp { height: 40px; bottom: 6px; }
 .chat .cmp i { width: 32px; height: 32px; }
+
+/* v3 */
+.strip .gc { top: 12px; width: 76px; height: 48px; padding: 9px 10px; opacity: .6; display: flex; flex-direction: column; gap: 6px; }
+.strip .gc i { display: block; height: 6px; border-radius: 3px; background: var(--on-tertiary-container); opacity: .7; }
+.strip .gc i.s { width: 60%; opacity: .45; }
+.strip .trail { top: 34px; }
+.wl-bar { top: 2px; right: 0; width: 4px; height: 96px; opacity: .55; }
+.wl-scroll .in { padding-right: 10px; }
+.wl-div { height: 1px; margin: 4px 8px 0; background: var(--outline-variant); flex: none; opacity: .7; }
+.wl-card { margin-top: 4px; }
