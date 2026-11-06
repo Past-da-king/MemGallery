@@ -69,39 +69,45 @@ class LifeAgentWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = LifeAgentWidgetData.load(context)
         updateAppWidgetState(context, id) { prefs -> prefs[SnapshotKey] = snapshot.toJson() }
-        provideContent {
-            val ctx = LocalContext.current
-            val size = LocalSize.current
-            val snap = LifeWidgetSnapshot.fromJson(currentState(SnapshotKey))
-            val dark = (ctx.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
-            val palette = resolvePalette(
-                context = ctx,
-                themeMode = snap.themeMode,
-                amoledMode = snap.amoled,
-                customColor = snap.accent,
-                dynamicTheming = snap.dynamic,
-                isSystemDark = dark,
-            )
-            Box(
-                GlanceModifier
-                    .fillMaxSize()
-                    .cornerRadius(26.dp)
-                    .background(palette.background)
-                    .padding(14.dp),
-                contentAlignment = Alignment.TopStart,
-            ) {
-                when {
-                    size.width < 220.dp && size.height < 220.dp -> SmallBody(ctx, snap, palette)
-                    size.height < 220.dp -> WideBody(ctx, snap, palette)
-                    else -> LargeBody(ctx, snap, palette)
-                }
-            }
-        }
+        provideContent { LifeAgentWidgetContent() }
     }
 
     private companion object {
-        val SnapshotKey = stringPreferencesKey("life_agent_snapshot")
+        val SnapshotKey = LifeSnapshotKey
+    }
+}
+
+internal val LifeSnapshotKey = stringPreferencesKey("life_agent_snapshot")
+
+/** The whole widget drawing, separate from provideGlance so a Glance unit test can drive it with seeded state and a size. */
+@Composable
+internal fun LifeAgentWidgetContent() {
+    val ctx = LocalContext.current
+    val size = LocalSize.current
+    val snap = LifeWidgetSnapshot.fromJson(currentState(LifeSnapshotKey))
+    val dark = (ctx.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        Configuration.UI_MODE_NIGHT_YES
+    val palette = resolvePalette(
+        context = ctx,
+        themeMode = snap.themeMode,
+        amoledMode = snap.amoled,
+        customColor = snap.accent,
+        dynamicTheming = snap.dynamic,
+        isSystemDark = dark,
+    )
+    Box(
+        GlanceModifier
+            .fillMaxSize()
+            .cornerRadius(26.dp)
+            .background(palette.background)
+            .padding(14.dp),
+        contentAlignment = Alignment.TopStart,
+    ) {
+        when {
+            size.width < 220.dp && size.height < 220.dp -> SmallBody(ctx, snap, palette)
+            size.height < 220.dp -> WideBody(ctx, snap, palette)
+            else -> LargeBody(ctx, snap, palette)
+        }
     }
 }
 

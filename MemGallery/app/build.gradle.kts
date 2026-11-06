@@ -129,6 +129,7 @@ dependencies {
     // Glance Widget
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+    testImplementation(libs.androidx.glance.appwidget.testing)
 
     // Agent Bridge — embedded HTTP + SSE server
     implementation(libs.ktor.server.core)
