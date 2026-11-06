@@ -5,21 +5,21 @@ const SRC = { gmail: ['mail', '--tertiary-container', '--on-tertiary-container',
 const sc = k => { const [i, bg, fg, l] = SRC[k]; return `<span class="src" style="background:var(${bg});color:var(${fg})">${ic(i)}${l}</span>`; };
 const mountB = (html, time) => { mount(html); document.querySelector('.status span').textContent = time; };
 
-const sec = (l, c) => `<div class="sec" style="height:24px"><span class="l">${l}${c !== undefined ? `<span class="c">${c}</span>` : ''}</span></div>`;
+const sec = (l, c) => `<div class="sec" style="height:22px"><span class="l">${l}${c !== undefined ? `<span class="c">${c}</span>` : ''}</span></div>`;
 /* aware: a shaped kind icon instead of a tick, the whole row opens the source */
 const aware = (icon, tn, shape, t, src, when) => `<div class="row" style="min-height:50px"><div class="shi" style="width:36px;height:36px;${tone(tn)}${clip(shape)}">${ic(icon, 'f s20')}</div><div class="txt"><div class="ttl" style="font-size:14px">${t}</div><div class="meta" style="margin-top:1px">${sc(src)}<span class="t">${when}</span></div></div><div class="ib" style="width:40px">${ic('arrow_outward', 's20')}</div></div>`;
 const task = (t, src, when, o = {}) => `<div class="row ${o.late ? 'late' : ''}" style="min-height:50px"><div class="tickw"><div class="tick ${o.late ? 'late' : ''}"></div></div><div class="txt"><div class="ttl" style="font-size:14px">${t}</div><div class="meta" style="margin-top:1px">${sc(src)}<span class="t ${o.late ? 'late' : ''}">${when}</span></div></div><div class="ib" style="width:44px">${ic('snooze', 's20')}</div></div>`;
-const oc = (t, i) => `<span class="chip" style="height:30px;padding:0 12px 0 10px;font-size:13px;gap:6px">${ic(i || 'radio_button_unchecked')}${t}</span>`;
+const oc = t => `<span class="chip" style="height:30px;padding:0 12px;font-size:13px">${t}</span>`;
 
 mountB(`
-${blobHeader({ eyebrow: 'FRIDAY 6 NOVEMBER', title: '<span style="font:700 36px/42px var(--font);letter-spacing:-.8px">Daily report</span>', back: 1, h: 148, icon1: 'history', icon2: 'tune' })}
-<div class="abs" style="top:112px;left:16px;right:16px;display:flex;gap:6px;color:var(--on-primary-container)">
+${blobHeader({ eyebrow: 'FRIDAY 6 NOVEMBER', title: '<span style="font:700 36px/42px var(--font);letter-spacing:-.8px">Daily report</span>', back: 1, h: 150, icon1: 'history', icon2: 'tune' })}
+<div class="abs" style="top:114px;left:16px;right:16px;display:flex;gap:6px;color:var(--on-primary-container)">
   <span class="pill" style="background:color-mix(in srgb,var(--on-primary-container) 12%,transparent)">${ic('sync')}Collected 17:04</span>
   <span class="pill" style="background:color-mix(in srgb,var(--on-primary-container) 12%,transparent)">3 due today</span>
   <span class="pill err">1 overdue</span>
 </div>
 
-<div class="abs" style="top:154px;left:0;right:0">
+<div class="abs" style="top:156px;left:0;right:0">
   ${sec('TO BE AWARE OF', 4)}
   <div class="grp" style="gap:2px">
     ${aware('schedule', 't', 'cookie9', 'Nomsa\'s lease is due tomorrow', 'gmail', 'Sat 7 Nov, 16:00')}
