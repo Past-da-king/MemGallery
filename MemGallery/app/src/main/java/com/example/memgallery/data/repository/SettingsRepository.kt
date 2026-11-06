@@ -99,6 +99,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val THEME_VERSION = intPreferencesKey("theme_version")
         val IMAGES_DEEPSEEK_UPGRADED = androidx.datastore.preferences.core.booleanPreferencesKey("images_deepseek_upgraded")
 
+        // Life Agent
+        val LIFE_AGENT_ENABLED = booleanPreferencesKey("life_agent_enabled")
+        val LIFE_AGENT_HOUR = intPreferencesKey("life_agent_hour")
+        val LIFE_AGENT_MINUTE = intPreferencesKey("life_agent_minute")
+        val LIFE_AGENT_LAST_RUN = longPreferencesKey("life_agent_last_run")
+
         // Deletion Sync
         val SYNC_DELETION_ENABLED = booleanPreferencesKey("sync_deletion_enabled")
     }
@@ -699,4 +705,31 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     val tavilyApiKeyFlow: Flow<String?> = flow { emit(encryptedPrefs.getString("tavily_api_key_secure", null)) }
     suspend fun saveTavilyApiKey(k: String) { with(encryptedPrefs.edit()) { putString("tavily_api_key_secure", k); apply() } }
     suspend fun clearTavilyApiKey() { with(encryptedPrefs.edit()) { remove("tavily_api_key_secure"); apply() } }
+
+    // ---- Life Agent (read only connections to the user's own apps) ----
+    // The Composio key is the USER's own, kept encrypted next to the other keys; never in code or git.
+    private val composioKeyState = kotlinx.coroutines.flow.MutableStateFlow(encryptedPrefs.getString("composio_api_key_secure", null))
+    val composioApiKeyFlow: Flow<String?> = composioKeyState
+    suspend fun composioApiKey(): String? = composioKeyState.value
+    suspend fun saveComposioApiKey(apiKey: String) {
+        with(encryptedPrefs.edit()) { putString("composio_api_key_secure", apiKey.trim()); apply() }
+        composioKeyState.value = apiKey.trim()
+    }
+    suspend fun clearComposioApiKey() {
+        with(encryptedPrefs.edit()) { remove("composio_api_key_secure"); apply() }
+        composioKeyState.value = null
+    }
+
+    val lifeAgentEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.LIFE_AGENT_ENABLED] ?: false }
+    suspend fun setLifeAgentEnabled(on: Boolean) { context.dataStore.edit { it[PreferencesKeys.LIFE_AGENT_ENABLED] = on } }
+    val lifeAgentHourFlow: Flow<Int> = context.dataStore.data.map { it[PreferencesKeys.LIFE_AGENT_HOUR] ?: 17 }
+    val lifeAgentMinuteFlow: Flow<Int> = context.dataStore.data.map { it[PreferencesKeys.LIFE_AGENT_MINUTE] ?: 0 }
+    suspend fun setLifeAgentTime(hour: Int, minute: Int) {
+        context.dataStore.edit {
+            it[PreferencesKeys.LIFE_AGENT_HOUR] = hour.coerceIn(0, 23)
+            it[PreferencesKeys.LIFE_AGENT_MINUTE] = minute.coerceIn(0, 59)
+        }
+    }
+    val lifeAgentLastRunFlow: Flow<Long> = context.dataStore.data.map { it[PreferencesKeys.LIFE_AGENT_LAST_RUN] ?: 0L }
+    suspend fun setLifeAgentLastRun(at: Long) { context.dataStore.edit { it[PreferencesKeys.LIFE_AGENT_LAST_RUN] = at } }
 }

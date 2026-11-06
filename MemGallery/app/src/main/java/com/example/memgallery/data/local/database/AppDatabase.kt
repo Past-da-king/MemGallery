@@ -25,9 +25,17 @@ import com.example.memgallery.data.local.entity.MemoryCollectionCrossRef
         com.example.memgallery.data.local.entity.AgentAskEntity::class,
         com.example.memgallery.data.local.entity.AgentEventEntity::class,
         com.example.memgallery.data.local.entity.AgentWebhookEntity::class,
-        com.example.memgallery.data.local.entity.AgentAuditEntity::class
+        com.example.memgallery.data.local.entity.AgentAuditEntity::class,
+        com.example.memgallery.lifeagent.data.LifeConnectionEntity::class,
+        com.example.memgallery.lifeagent.data.LifeItemEntity::class,
+        com.example.memgallery.lifeagent.data.LifeProposalEntity::class,
+        com.example.memgallery.lifeagent.data.LifePersonEntity::class,
+        com.example.memgallery.lifeagent.data.LifeTaskEntity::class,
+        com.example.memgallery.lifeagent.data.LifeMeetingEntity::class,
+        com.example.memgallery.lifeagent.data.LifeRunEntity::class,
+        com.example.memgallery.lifeagent.data.LifeLearningEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 @TypeConverters(TagListConverter::class, com.example.memgallery.data.local.converters.ActionListConverter::class, com.example.memgallery.data.local.converters.IntListConverter::class)
@@ -40,6 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun agentAskDao(): com.example.memgallery.data.local.dao.AgentAskDao
     abstract fun agentOutboxDao(): com.example.memgallery.data.local.dao.AgentOutboxDao
     abstract fun agentAuditDao(): com.example.memgallery.data.local.dao.AgentAuditDao
+    abstract fun lifeAgentDao(): com.example.memgallery.lifeagent.data.LifeAgentDao
 
     companion object {
         val MIGRATION_14_15 = object : androidx.room.migration.Migration(14, 15) {
@@ -345,6 +354,22 @@ abstract class AppDatabase : RoomDatabase() {
                 """.trimIndent())
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_audit_at` ON `agent_audit` (`at`)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_agent_audit_clientId` ON `agent_audit` (`clientId`)")
+            }
+        }
+
+        /** Life Agent: eight new tables, nothing existing is touched. Keep in step with lifeagent/data/LifeAgentEntities.kt. */
+        val MIGRATION_18_19 = object : androidx.room.migration.Migration(18, 19) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_connections` (`id` TEXT NOT NULL, `label` TEXT NOT NULL, `connected` INTEGER NOT NULL, `accountLabel` TEXT, `lastPulledAt` INTEGER NOT NULL, `lastError` TEXT, `accountId` TEXT, `userId` TEXT, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_items` (`id` TEXT NOT NULL, `app` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `kind` TEXT NOT NULL, `title` TEXT NOT NULL, `snippet` TEXT NOT NULL, `author` TEXT, `url` TEXT, `occurredAt` INTEGER NOT NULL, `ingestedAt` INTEGER NOT NULL, `fingerprint` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_life_items_fingerprint` ON `life_items` (`fingerprint`)")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_proposals` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `title` TEXT NOT NULL, `detail` TEXT NOT NULL, `app` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `sourceTitle` TEXT NOT NULL, `sourceUrl` TEXT, `personName` TEXT, `dueAt` INTEGER, `amountCents` INTEGER, `currency` TEXT, `confidence` REAL NOT NULL, `status` TEXT NOT NULL, `reason` TEXT NOT NULL, `fingerprint` TEXT NOT NULL, `matchedTaskId` TEXT, `collectedAt` INTEGER NOT NULL, `decidedAt` INTEGER, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_life_proposals_fingerprint` ON `life_proposals` (`fingerprint`)")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_people` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `role` TEXT, `email` TEXT, `phone` TEXT, `lastSeenAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_tasks` (`id` TEXT NOT NULL, `source` TEXT NOT NULL, `listName` TEXT, `title` TEXT NOT NULL, `dueAt` INTEGER, `status` TEXT NOT NULL, `doneLocal` INTEGER NOT NULL, `snoozedUntil` INTEGER, `url` TEXT, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_meetings` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `startAt` INTEGER NOT NULL, `endAt` INTEGER NOT NULL, `location` TEXT, `joinUrl` TEXT, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_runs` (`id` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `finishedAt` INTEGER, `status` TEXT NOT NULL, `appStatsJson` TEXT NOT NULL, `noiseDropped` INTEGER NOT NULL, `proposalsCreated` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                database.execSQL("CREATE TABLE IF NOT EXISTS `life_learning` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `app` TEXT NOT NULL, `senderKey` TEXT NOT NULL, `kind` TEXT NOT NULL, `decision` TEXT NOT NULL, `decidedAt` INTEGER NOT NULL)")
             }
         }
 
