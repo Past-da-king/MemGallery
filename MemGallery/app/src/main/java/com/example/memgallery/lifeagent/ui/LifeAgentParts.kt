@@ -96,18 +96,18 @@ fun appLabel(app: LifeAppId?, fallback: String): String =
 
 /** The one-line banner every connection surface carries: this agent only reads. */
 @Composable
-fun ReadsOnlyBanner(modifier: Modifier = Modifier, title: String = stringResource(R.string.la_readonly_title), body: String = stringResource(R.string.la_readonly_body)) {
+fun ReadsOnlyBanner(modifier: Modifier = Modifier, title: String = stringResource(R.string.la_readonly_title), body: String = stringResource(R.string.la_readonly_body), compact: Boolean = false) {
     val mem = MaterialTheme.memColors
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(mem.successContainer).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(52.dp).clip(MemShape.softBurst).background(mem.success), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(if (compact) 40.dp else 52.dp).clip(MemShape.softBurst).background(mem.success), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Visibility, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(26.dp))
         }
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = mem.onSuccessContainer)
+            Text(title, style = (if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge).copy(fontWeight = FontWeight.Bold), color = mem.onSuccessContainer)
             if (body.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Text(body, style = MaterialTheme.typography.bodyMedium, color = mem.onSuccessContainer)

@@ -162,11 +162,11 @@ fun CollectingContent(
                         Text(stringResource(R.string.la_collect_review, state.proposalsCreated), style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
-                    OutlinedButton(onClick = { confirmCancel = true }, modifier = Modifier.height(56.dp)) {
+                    OutlinedButton(onClick = { confirmCancel = true }, modifier = Modifier.height(56.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp)) {
                         Text(stringResource(R.string.la_cancel), style = MaterialTheme.typography.titleMedium)
                     }
-                    Button(onClick = actions.onBackground, modifier = Modifier.weight(1f).height(56.dp)) {
-                        Text(stringResource(R.string.la_collect_background), style = MaterialTheme.typography.titleMedium)
+                    Button(onClick = actions.onBackground, modifier = Modifier.weight(1f).height(56.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
+                        Text(stringResource(R.string.la_collect_background), style = MaterialTheme.typography.titleMedium, maxLines = 1)
                     }
                 }
             }
@@ -243,7 +243,7 @@ private fun AppStepCard(a: CollectAppUi) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AppBadge(a.app, size = 32.dp)
                 Spacer(Modifier.width(8.dp))
-                Text(appLabel(a.app, ""), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = scheme.onSurface, modifier = Modifier.weight(1f))
+                Text(appLabel(a.app, ""), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = scheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1)
                 val (tag, tagColor) = when (a.state) {
                     StepState.Done -> stringResource(R.string.la_collect_found_new, a.found) to mem.success
                     StepState.Running -> stringResource(R.string.la_collect_pulling) to scheme.primary

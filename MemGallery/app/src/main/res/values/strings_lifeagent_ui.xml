@@ -27,7 +27,7 @@
     <string name="la_connections_eyebrow">Settings · Advanced</string>
     <string name="la_key_section">Your Composio key</string>
     <string name="la_key_label">API key</string>
-    <string name="la_key_private">Encrypted, kept on this phone</string>
+    <string name="la_key_private">Encrypted on this phone</string>
     <string name="la_key_change">Change key</string>
     <string name="la_nokey_title">Add your Composio key</string>
     <string name="la_nokey_body">Your key lets MemGallery read your own apps. Nothing is connected until you add it.</string>

@@ -165,9 +165,9 @@ private fun PersonRow(p: PersonRowUi, onClick: () -> Unit) {
                 if (p.commitmentKind != null && p.commitmentText != null) {
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(commitmentLabel(p.commitmentKind), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold), color = commitmentColor(p.commitmentKind))
+                        Text(commitmentLabel(p.commitmentKind), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold), color = commitmentColor(p.commitmentKind))
                         Spacer(Modifier.width(8.dp))
-                        Text(p.commitmentText, style = MaterialTheme.typography.bodyLarge, color = scheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(p.commitmentText, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

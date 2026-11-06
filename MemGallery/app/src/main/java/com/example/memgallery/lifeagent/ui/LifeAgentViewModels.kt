@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memgallery.R
 import com.example.memgallery.data.repository.SettingsRepository
+import com.example.memgallery.lifeagent.data.LifeAgentControls
 import com.example.memgallery.lifeagent.data.LifeAgentRepository
 import com.example.memgallery.lifeagent.data.LifeProposal
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -70,6 +71,7 @@ fun snoozeUntil(choice: SnoozeChoice, ctx: LifeCtx): Long = when (choice) {
 class ConnectionsViewModel @Inject constructor(
     private val repo: LifeAgentRepository,
     private val settings: SettingsRepository,
+    private val controls: LifeAgentControls,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val busy = MutableStateFlow<Set<LifeAppId>>(emptySet())
@@ -91,9 +93,11 @@ class ConnectionsViewModel @Inject constructor(
         keyError.value = null
         viewModelScope.launch {
             keySaving.value = true
-            try { settings.saveComposioApiKey(k) } finally { keySaving.value = false }
+            try { controls.saveKey(k) } finally { keySaving.value = false }
         }
     }
+
+    init { viewModelScope.launch { controls.ensureScheduled() } }
 
     fun connect(app: LifeAppId) = launchBusy(app) { repo.connect(app.id) }
     fun disconnect(app: LifeAppId) = launchBusy(app) { repo.disconnect(app.id) }
@@ -105,8 +109,8 @@ class ConnectionsViewModel @Inject constructor(
         }
     }
 
-    fun setEnabled(on: Boolean) { viewModelScope.launch { settings.setLifeAgentEnabled(on) } }
-    fun setTime(hour: Int, minute: Int) { viewModelScope.launch { settings.setLifeAgentTime(hour, minute) } }
+    fun setEnabled(on: Boolean) { viewModelScope.launch { controls.setEnabled(on) } }
+    fun setTime(hour: Int, minute: Int) { viewModelScope.launch { controls.setTime(hour, minute) } }
     fun collectNow() = startCollection(repo)
 }
 
@@ -136,53 +140,27 @@ class CollectingViewModel @Inject constructor(
 
 // ---- Review ----
 
-@HiltViewModel
-class ReviewViewModel @Inject constructor(
-    private val repo: LifeAgentRepository,
-    private val settings: SettingsRepository,
-    @ApplicationContext private val context: Context,
-) : ViewModel() {
-    private data class Decision(val id: String, val keep: Boolean)
+/**
+ * The swipe deck's decisions. The last decision waits [undoWindowMs] so it can be undone; the next decision, leaving
+ * the screen or Approve all writes it. Plain class so it can be tested with a fake [write] and virtual time.
+ */
+class DeckSession(
+    private val scope: CoroutineScope,
+    private val undoWindowMs: Long,
+    private val write: suspend (id: String, keep: Boolean) -> Unit,
+) {
+    data class Decision(val id: String, val keep: Boolean)
 
-    /** The last decision, still in its undo window. Everything before it is already written. */
-    private val pending = MutableStateFlow<Decision?>(null)
-    private val committedKept = MutableStateFlow(0)
-    private val committedTotal = MutableStateFlow(0)
+    val pending = MutableStateFlow<Decision?>(null)
+    val committedKept = MutableStateFlow(0)
+    val committedTotal = MutableStateFlow(0)
     private var commitJob: Job? = null
 
-    private val deck = combine(repo.proposals, repo.tasks, repo.people, pending) { proposals, tasks, people, pend ->
-        Quad(proposals, tasks, people, pend)
-    }
-    private data class Quad(val proposals: List<LifeProposal>, val tasks: List<com.example.memgallery.lifeagent.data.LifeTask>, val people: List<com.example.memgallery.lifeagent.data.LifePerson>, val pending: Decision?)
-
-    private val prefs = combine(settings.lifeAgentEnabledFlow, settings.lifeAgentHourFlow, settings.lifeAgentMinuteFlow) { e, h, m -> Triple(e, h, m) }
-    private val counts = combine(committedKept, committedTotal) { k, t -> k to t }
-
-    val state: StateFlow<ReviewUiState> = combine(deck, counts, repo.learned, repo.latestRun, prefs) { d, c, learned, run, p ->
-        val ctx = ctxFor(context)
-        val remainingModels = d.proposals.filter { it.id != d.pending?.id }
-        val taskMap = d.tasks.associateBy { it.id }
-        val remaining = remainingModels.map { mapCard(it, taskMap, d.people, ctx) }
-        val pendingCount = if (d.pending != null) 1 else 0
-        val decided = c.second + pendingCount
-        val kept = c.first + if (d.pending?.keep == true) 1 else 0
-        val (rows, droppedTotal) = mapLearned(learned, ctx)
-        ReviewUiState(
-            remaining = remaining, decided = decided, total = decided + remaining.size, keptSoFar = kept,
-            collectedLabel = run?.let { ctx.clock(it.finishedAt ?: it.startedAt) }.orEmpty(),
-            canUndo = d.pending != null, learned = rows, droppedTotal = droppedTotal,
-            nextCollectionLabel = nextCollectionLabel(p.first, p.second, p.third, ctx),
-        )
-    }.asState(viewModelScope, ReviewUiState())
-
-    fun keep(id: String) = decide(id, true)
-    fun drop(id: String) = decide(id, false)
-
-    private fun decide(id: String, keep: Boolean) {
+    fun decide(id: String, keep: Boolean) {
         commitPending()
         pending.value = Decision(id, keep)
-        commitJob = LifeAgentUiScope.scope.launch {
-            delay(UNDO_WINDOW_MS)
+        commitJob = scope.launch {
+            delay(undoWindowMs)
             commitPending()
         }
     }
@@ -193,37 +171,85 @@ class ReviewViewModel @Inject constructor(
         pending.value = null
     }
 
-    /** Writes the decision that is still waiting. Called when the next card is decided, and when the screen is left. */
+    /** Writes the decision that is still waiting. */
     fun commitPending() {
         commitJob?.cancel()
-        val d = pending.getAndSet(null) ?: return
+        val d = pending.value ?: return
+        pending.value = null
         committedTotal.update { it + 1 }
         if (d.keep) committedKept.update { it + 1 }
-        LifeAgentUiScope.scope.launch { if (d.keep) repo.keep(d.id) else repo.drop(d.id) }
+        scope.launch { write(d.id, d.keep) }
     }
 
-    /** Applies MemGallery's own pick to every card that is left. */
-    fun approveAll() {
+    /** Applies a pick to every card that is left: (id, keep). */
+    fun approve(picks: List<Pair<String, Boolean>>) {
         commitPending()
-        val cards = state.value.remaining
-        committedTotal.update { it + cards.size }
-        committedKept.update { it + cards.count { c -> c.suggestKeep } }
-        LifeAgentUiScope.scope.launch {
-            cards.forEach { if (it.suggestKeep) repo.keep(it.id) else repo.drop(it.id) }
-        }
+        committedTotal.update { it + picks.size }
+        committedKept.update { it + picks.count { p -> p.second } }
+        scope.launch { picks.forEach { (id, keep) -> write(id, keep) } }
     }
+}
+
+@HiltViewModel
+class ReviewViewModel @Inject constructor(
+    private val repo: LifeAgentRepository,
+    private val settings: SettingsRepository,
+    @ApplicationContext private val context: Context,
+) : ViewModel() {
+    private val session = DeckSession(LifeAgentUiScope.scope, UNDO_WINDOW_MS) { id, keep -> if (keep) repo.keep(id) else repo.drop(id) }
+
+    private val deck = combine(repo.proposals, repo.tasks, repo.people, session.pending) { proposals, tasks, people, pend ->
+        Deck(proposals, tasks.associateBy { it.id }, people, pend)
+    }
+    private class Deck(
+        val proposals: List<LifeProposal>,
+        val tasks: Map<String, com.example.memgallery.lifeagent.data.LifeTask>,
+        val people: List<com.example.memgallery.lifeagent.data.LifePerson>,
+        val pending: DeckSession.Decision?,
+    )
+
+    private val prefs = combine(settings.lifeAgentEnabledFlow, settings.lifeAgentHourFlow, settings.lifeAgentMinuteFlow) { e, h, m -> Triple(e, h, m) }
+    private val counts = combine(session.committedKept, session.committedTotal) { k, t -> k to t }
+
+    val state: StateFlow<ReviewUiState> = combine(deck, counts, repo.learned, repo.latestRun, prefs) { d, c, learned, run, p ->
+        val ctx = ctxFor(context)
+        val remaining = d.proposals.filter { it.id != d.pending?.id }.map { mapCard(it, d.tasks, d.people, ctx) }
+        val (rows, droppedTotal) = mapLearned(learned, ctx)
+        mapReview(
+            remaining = remaining, committedTotal = c.second, committedKept = c.first, pendingKeep = d.pending?.keep,
+            collectedLabel = run?.let { ctx.clock(it.finishedAt ?: it.startedAt) }.orEmpty(),
+            learned = rows, droppedTotal = droppedTotal, next = nextCollectionLabel(p.first, p.second, p.third, ctx),
+        )
+    }.asState(viewModelScope, ReviewUiState())
+
+    fun keep(id: String) = session.decide(id, true)
+    fun drop(id: String) = session.decide(id, false)
+    fun undo() = session.undo()
+    fun commitPending() = session.commitPending()
+    fun approveAll() = session.approve(state.value.remaining.map { it.id to it.suggestKeep })
 
     override fun onCleared() {
         // The undo window ends with the screen: write what is waiting.
-        val d = pending.value
-        if (d != null) LifeAgentUiScope.scope.launch { if (d.keep) repo.keep(d.id) else repo.drop(d.id) }
+        session.commitPending()
         super.onCleared()
     }
 
     companion object { const val UNDO_WINDOW_MS = 6_000L }
 }
 
-private fun <T> MutableStateFlow<T>.getAndSet(v: T): T { val old = value; value = v; return old }
+/** The review state from the cards left and the decisions made so far. */
+fun mapReview(
+    remaining: List<ReviewCardUi>, committedTotal: Int, committedKept: Int, pendingKeep: Boolean?,
+    collectedLabel: String, learned: List<LearnedCountUi>, droppedTotal: Int, next: String,
+): ReviewUiState {
+    val decided = committedTotal + if (pendingKeep != null) 1 else 0
+    val kept = committedKept + if (pendingKeep == true) 1 else 0
+    return ReviewUiState(
+        remaining = remaining, decided = decided, total = decided + remaining.size, keptSoFar = kept,
+        collectedLabel = collectedLabel, canUndo = pendingKeep != null, learned = learned, droppedTotal = droppedTotal,
+        nextCollectionLabel = next,
+    )
+}
 
 // ---- People ----
 

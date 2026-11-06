@@ -337,7 +337,7 @@ fun ConnectSheet(app: LifeAppId, onConnect: () -> Unit, onDismiss: () -> Unit) {
             }
             ReadsOnlyBanner(
                 Modifier.padding(horizontal = 24.dp),
-                title = stringResource(R.string.la_connect_banner), body = ""
+                title = stringResource(R.string.la_connect_banner), body = "", compact = true
             )
             Spacer(Modifier.height(16.dp))
             Overline(stringResource(R.string.la_it_will))

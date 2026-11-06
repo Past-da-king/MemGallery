@@ -105,8 +105,8 @@ fun PersonContent(
                         PersonAvatar(state.name, size = 112.dp, fontSize = 40.sp)
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(state.name, style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold), color = scheme.onPrimaryContainer)
-                            if (state.role.isNotBlank()) Text(state.role, style = MaterialTheme.typography.titleLarge, color = scheme.onPrimaryContainer)
+                            Text(state.name, style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold), color = scheme.onPrimaryContainer)
+                            if (state.role.isNotBlank()) Text(state.role, style = MaterialTheme.typography.titleMedium, color = scheme.onPrimaryContainer)
                             Text(stringResource(R.string.la_person_last, state.lastLabel), style = MaterialTheme.typography.bodyMedium, color = scheme.onPrimaryContainer.copy(alpha = 0.8f))
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -164,7 +164,11 @@ fun PersonContent(
             Spacer(Modifier.height(120.dp))
         }
 
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp).appNavigationBarsPadding()) {
+        Box(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color.Transparent, scheme.surface, scheme.surface)))
+                .padding(16.dp).padding(top = 24.dp).appNavigationBarsPadding()
+        ) {
             Button(
                 onClick = { actions.onAsk(state.name) },
                 modifier = Modifier.fillMaxWidth().height(64.dp).shadow(6.dp, RoundedCornerShape(32.dp)),

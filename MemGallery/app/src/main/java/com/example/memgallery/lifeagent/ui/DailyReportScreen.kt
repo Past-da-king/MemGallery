@@ -100,7 +100,7 @@ fun DailyReportContent(
                             style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.4.sp),
                             color = scheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
-                        Text(stringResource(R.string.la_report_title), style = MaterialTheme.typography.displayMedium, color = scheme.onPrimaryContainer)
+                        Text(stringResource(R.string.la_report_title), style = MaterialTheme.typography.displayMedium.copy(fontSize = 38.sp), color = scheme.onPrimaryContainer, maxLines = 1)
                     }
                     RoundIconButton(Icons.Rounded.Groups, stringResource(R.string.la_people_title), actions.onPeople, Modifier.padding(top = 6.dp))
                     RoundIconButton(Icons.Rounded.Refresh, stringResource(R.string.la_report_refresh), actions.onRefresh, Modifier.padding(top = 6.dp))

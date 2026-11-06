@@ -176,8 +176,7 @@ private fun Deck(state: ReviewUiState, actions: ReviewActions) {
             behind.asReversed().forEachIndexed { i, _ ->
                 val depth = behind.size - i // 2 = furthest
                 Box(
-                    Modifier.fillMaxSize().padding(bottom = 4.dp)
-                        .offset(y = (10 * depth).dp).padding(horizontal = (6 * depth).dp)
+                    Modifier.fillMaxSize().padding(bottom = (34 - 14 * depth).dp).padding(horizontal = (8 * depth).dp)
                         .rotate(if (depth == 1) -1.5f else 1.2f)
                         .clip(RoundedCornerShape(32.dp))
                         .background(if (depth == 1) scheme.secondaryContainer else scheme.tertiaryContainer)
@@ -190,7 +189,7 @@ private fun Deck(state: ReviewUiState, actions: ReviewActions) {
                     widthPx = with(LocalDensity.current) { maxWidth.toPx() },
                     onDecided = { keep -> if (keep) actions.onKeep(top.id) else actions.onDrop(top.id) },
                     onOpenSource = actions.onOpenSource,
-                    modifier = Modifier.padding(bottom = 16.dp),
+                    modifier = Modifier.padding(bottom = 34.dp),
                 )
             }
         }
