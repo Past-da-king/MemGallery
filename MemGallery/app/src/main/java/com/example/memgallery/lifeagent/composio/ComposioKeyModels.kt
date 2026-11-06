@@ -14,6 +14,12 @@ enum class KeyKind(val header: String, val label: String) {
     /** Organisation key: the whole organisation rather than one project. */
     ORG("x-org-api-key", "Org key"),
 
+    /**
+     * Consumer key (the "For You" / Connect key a personal Composio account gets, usually `ck_`). It only works on
+     * Composio's Connect MCP endpoint, not on the backend REST API, and only ever reads here.
+     */
+    CONSUMER("x-consumer-api-key", "Consumer key (Composio Connect)"),
+
     /** Nothing has been confirmed yet. */
     UNKNOWN("", "Key");
 
@@ -28,6 +34,7 @@ enum class KeyKind(val header: String, val label: String) {
                 k.startsWith("uak_", ignoreCase = true) || k.startsWith("uk_", ignoreCase = true) -> USER
                 k.startsWith("ak_", ignoreCase = true) -> PROJECT
                 k.startsWith("ok_", ignoreCase = true) -> ORG
+                k.startsWith("ck_", ignoreCase = true) -> CONSUMER
                 else -> UNKNOWN
             }
         }
