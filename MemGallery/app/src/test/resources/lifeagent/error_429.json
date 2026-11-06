@@ -1,0 +1,1 @@
+{"error":{"message":"Rate limit exceeded. Retry after 2 seconds.","code":1429,"slug":"RATE_LIMITED","status":429,"request_id":"req_0002","suggested_fix":"Slow down","retry_after_seconds":2}}

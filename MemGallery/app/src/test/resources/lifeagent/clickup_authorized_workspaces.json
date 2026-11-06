@@ -1,0 +1,10 @@
+{
+  "data": {
+    "teams": [
+      {"id": "9001234", "name": "Studio Workspace", "color": "#536cfe", "avatar": null, "members": [{"user": {"id": 1001, "username": "Owner Example"}}]}
+    ]
+  },
+  "error": null,
+  "successful": true,
+  "log_id": "log_clickup_0000"
+}

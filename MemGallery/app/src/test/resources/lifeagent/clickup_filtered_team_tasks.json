@@ -1,0 +1,60 @@
+{
+  "data": {
+    "tasks": [
+      {
+        "id": "86abc001", "custom_id": null, "name": "Q4 expense sheet for Kagiso",
+        "text_content": "Collect receipts and fill in the sheet.", "description": "Collect receipts and fill in the sheet.",
+        "status": {"status": "to do", "color": "#d3d3d3", "type": "open", "orderindex": 0},
+        "orderindex": "1.0", "date_created": "1793000000000", "date_updated": "1793900000000", "date_closed": null,
+        "creator": {"id": 1001, "username": "Owner Example", "email": "owner@example.test"},
+        "assignees": [{"id": 1001, "username": "Owner Example", "email": "owner@example.test"}],
+        "priority": {"id": "2", "priority": "high", "color": "#ffcc00", "orderindex": "2"},
+        "due_date": "1794297600000", "start_date": null, "parent": null,
+        "list": {"id": "901100", "name": "Studio", "access": true},
+        "folder": {"id": "5001", "name": "Finance"}, "space": {"id": "700"},
+        "url": "https://app.clickup.com/t/86abc001"
+      },
+      {
+        "id": "86abc002", "name": "Send SEO audit to Ndlovu", "text_content": null, "description": null,
+        "status": {"status": "in progress", "color": "#4194f6", "type": "custom", "orderindex": 1},
+        "date_created": "1792900000000", "date_updated": "1793800000000",
+        "assignees": [],
+        "priority": {"id": "1", "priority": "urgent", "color": "#f50000", "orderindex": "1"},
+        "due_date": "1793836800000", "parent": null,
+        "list": {"id": "901100", "name": "Studio"},
+        "url": "https://app.clickup.com/t/86abc002"
+      },
+      {
+        "id": "86abc003", "name": "Review contract draft", "description": "",
+        "status": {"status": "to do", "type": "open"},
+        "date_created": "1792800000000", "date_updated": "1792800000000",
+        "assignees": [{"id": 1001, "username": "Owner Example"}],
+        "priority": null, "due_date": null, "parent": null,
+        "list": {"id": "901101", "name": "Legal"},
+        "url": "https://app.clickup.com/t/86abc003"
+      },
+      {
+        "id": "86abc004", "name": "Book venue for year-end", "description": "Three quotes needed",
+        "status": {"status": "to do", "type": "open"},
+        "date_created": "1792700000000", "date_updated": "1793700000000",
+        "assignees": [{"id": 1002, "email": "kagiso@studio.example"}],
+        "priority": {"id": "3", "priority": "normal"},
+        "due_date": "1795132800000", "parent": "86abc001",
+        "list": {"id": "901100", "name": "Studio"},
+        "url": "https://app.clickup.com/t/86abc004"
+      },
+      {
+        "id": "86abc005", "name": "Archive old brand files",
+        "status": {"status": "complete", "type": "closed"},
+        "date_created": "1790000000000", "date_updated": "1793600000000", "date_closed": "1793600000000",
+        "assignees": [], "priority": null, "due_date": null, "parent": null,
+        "list": {"id": "901102", "name": "Ops"},
+        "url": "https://app.clickup.com/t/86abc005"
+      }
+    ],
+    "last_page": true
+  },
+  "error": null,
+  "successful": true,
+  "log_id": "log_clickup_0001"
+}

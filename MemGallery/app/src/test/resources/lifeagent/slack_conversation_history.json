@@ -1,0 +1,19 @@
+{
+  "data": {
+    "ok": true,
+    "messages": [
+      {"type": "message", "user": "U02AAA111", "text": "Can you send the revised quote to Ndlovu by Monday?\nThey want it before the pitch.", "ts": "1793948400.000100", "team": "T01TEAM", "client_msg_id": "a1b2c3"},
+      {"type": "message", "user": "U02BBB222", "text": "On it", "ts": "1793948700.000200", "thread_ts": "1793948400.000100", "parent_user_id": "U02AAA111"},
+      {"type": "message", "user": "U02CCC333", "text": "Standup moved to 08:30 on Monday", "ts": "1793950200.000300", "thread_ts": "1793950200.000300", "reply_count": 2, "reply_users_count": 2, "latest_reply": "1793950900.000400"},
+      {"type": "message", "subtype": "bot_message", "bot_id": "B03BOT444", "username": "GitHub", "text": "Build #412 passed on main", "ts": "1793951000.000500"},
+      {"type": "message", "subtype": "channel_join", "user": "U02DDD444", "text": "<@U02DDD444> has joined the channel", "ts": "1793951500.000600"},
+      {"type": "message", "user": "U02AAA111", "text": "Decision: we go with option B for the logo. Thanks all.", "ts": "1793952000.000700", "reactions": [{"name": "thumbsup", "count": 3}]}
+    ],
+    "has_more": false,
+    "pin_count": 0,
+    "response_metadata": {"next_cursor": ""}
+  },
+  "error": null,
+  "successful": true,
+  "log_id": "log_slack_0002"
+}

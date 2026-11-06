@@ -1,0 +1,15 @@
+{
+  "data": {
+    "ok": true,
+    "channels": [
+      {"id": "C01GENERAL", "name": "general", "name_normalized": "general", "is_channel": true, "is_archived": false, "is_member": true, "num_members": 14},
+      {"id": "C02NDLOVU", "name": "proj-ndlovu", "is_channel": true, "is_private": false, "is_archived": false, "is_member": true},
+      {"id": "C03OLD", "name": "old-launch", "is_channel": true, "is_archived": true, "is_member": false},
+      {"id": "D04DM0001", "is_im": true, "user": "U02AAA111", "is_archived": false, "created": 1700000000}
+    ],
+    "response_metadata": {"next_cursor": ""}
+  },
+  "error": null,
+  "successful": true,
+  "log_id": "log_slack_0001"
+}
