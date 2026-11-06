@@ -31,9 +31,9 @@ html.dark .wp {
 .wp-hills path { fill: var(--wp-hill); }
 .wp-sea { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(180deg, var(--wp-sea1) 0%, var(--wp-sea2) 100%); }
 .wp-sea::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 26px; background: linear-gradient(180deg, rgb(255 255 255 / .38), transparent); }
-.wp-sea::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, transparent 0 13px, rgb(255 255 255 / .045) 13px 14px); }
+.wp-sea::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 60% at 70% 0%, rgb(255 255 255 / .10), transparent 70%); }
 .wp-shine { position: absolute; left: 70%; top: 62%; width: 90px; height: 32%; margin-left: -45px; opacity: .8;
-  background: repeating-linear-gradient(180deg, rgb(255 255 255 / .6) 0 2px, transparent 2px 7px);
+  background: radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / .55) 0%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 0%, rgb(0 0 0) 0, transparent 72%); mask-image: radial-gradient(ellipse at 50% 0%, rgb(0 0 0) 0, transparent 72%); }
 .wp-grain { position: absolute; inset: 0; opacity: .16; mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
