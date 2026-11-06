@@ -4,7 +4,10 @@ import android.util.Log
 import com.example.memgallery.data.repository.SettingsRepository
 import com.example.memgallery.lifeagent.composio.ComposioApi
 import com.example.memgallery.lifeagent.composio.ComposioCatalog
+import com.example.memgallery.lifeagent.composio.ComposioErrorKind
 import com.example.memgallery.lifeagent.composio.ComposioException
+import com.example.memgallery.lifeagent.composio.GenericParser
+import com.example.memgallery.lifeagent.composio.ReadToolRules
 import com.example.memgallery.lifeagent.composio.RawItem
 import com.example.memgallery.lifeagent.composio.RawType
 import com.example.memgallery.lifeagent.data.AppProgress
@@ -112,33 +115,41 @@ class CollectionRunner(
             val seenProposalFps = HashSet<String>()
 
             for (conn in conns) {
-                val app = LifeApp.from(conn.id) ?: continue
-                progress[conn.id] = progress.getValue(conn.id).copy(state = AppState.RUNNING)
+                val known = LifeApp.from(conn.id)
+                val label = displayLabel(conn)
+                progress[conn.id] = progress.getValue(conn.id).copy(label = label, state = AppState.RUNNING)
                 bus.update(CollectionProgress(true, started, progress.values.toList()))
                 val stat = try {
-                    val acc = accounts?.firstOrNull { it.active && it.toolkit.equals(ComposioCatalog.toolkit(app), true) }
+                    // gcal is "googlecalendar" in Composio; an unknown toolkit's id is its own slug.
+                    val toolkitSlug = known?.let { ComposioCatalog.toolkit(it) } ?: conn.id
+                    val acc = accounts?.firstOrNull { it.active && it.toolkit.equals(toolkitSlug, true) }
                     val accountId = conn.accountId ?: acc?.id
-                        ?: throw ComposioException(com.example.memgallery.lifeagent.composio.ComposioErrorKind.NOT_FOUND, "No ${app.label} account is connected in Composio")
+                        ?: throw ComposioException(ComposioErrorKind.NOT_FOUND, "No $label account is connected in Composio")
                     val userId = conn.userId ?: acc?.userId
-                    val first = conn.lastPulledAt <= 0L
-                    val since = if (first) started - 7 * DAY else conn.lastPulledAt
-                    val sinceArg = if (app == LifeApp.CLICKUP && first) 0L else since
-                    val raw = ComposioCatalog.pull(api, app, accountId, userId, sinceArg, started)
-                    val r = process(app, raw, since, ctx, filter, builder, seenProposalFps, started, noise)
+                    val r = if (known != null) {
+                        val first = conn.lastPulledAt <= 0L
+                        val since = if (first) started - 7 * DAY else conn.lastPulledAt
+                        val sinceArg = if (known == LifeApp.CLICKUP && first) 0L else since
+                        val raw = ComposioCatalog.pull(api, known, accountId, userId, sinceArg, started)
+                        process(known.id, label, raw, since, ctx, filter, builder, seenProposalFps, started, noise)
+                    } else {
+                        // Any other connected toolkit: its own read tools, through the generic parser.
+                        anyToolkit(conn.id, label, accountId, userId, ctx, filter, builder, seenProposalFps, started, noise)
+                    }
                     created += r.proposed
                     dao.upsertConnection(conn.copy(lastPulledAt = started, lastError = null, accountId = accountId, userId = userId))
                     r
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val msg = (e.message ?: "Could not read ${app.label}").take(160)
-                    Log.w(TAG, "${app.id} failed: $msg")
+                    val msg = (e.message ?: "Could not read $label").take(160)
+                    Log.w(TAG, "${conn.id} failed: $msg")
                     dao.upsertConnection(conn.copy(lastError = msg))
-                    AppRunStat(app.id, 0, 0, 0, "failed", msg)
+                    AppRunStat(conn.id, 0, 0, 0, "failed", msg)
                 }
                 stats += stat
                 progress[conn.id] = AppProgress(
-                    conn.id, conn.label, stat.found, stat.dropped,
+                    conn.id, label, stat.found, stat.dropped,
                     if (stat.state == "failed") AppState.FAILED else AppState.DONE, stat.note,
                 )
                 bus.update(CollectionProgress(true, started, progress.values.toList()))
@@ -164,7 +175,8 @@ class CollectionRunner(
     }
 
     private suspend fun process(
-        app: LifeApp,
+        toolkit: String,
+        label: String,
         raw: List<RawItem>,
         since: Long,
         ctx: BuildContext,
@@ -174,7 +186,8 @@ class CollectionRunner(
         now: Long,
         noise: MutableMap<String, Int>,
     ): AppRunStat {
-        // What each app writes locally, besides memories.
+        // What each app writes locally, besides memories. An unknown toolkit writes nothing locally.
+        val app = LifeApp.from(toolkit)
         var candidates = raw
         when (app) {
             LifeApp.GCAL -> {
@@ -246,8 +259,83 @@ class CollectionRunner(
             )
         }
         val proposed = if (entities.isEmpty()) 0 else dao.insertProposals(entities).count { it != -1L }
-        return AppRunStat(app.id, found, dropped, proposed, "done", null)
+        Log.d(TAG, "$label: ${raw.size} read, $found found, $dropped dropped, $proposed proposed")
+        return AppRunStat(toolkit, found, dropped, proposed, "done", null)
     }
+
+    /**
+     * Any connected toolkit with no hand-written parser: its own read tools with empty arguments, the generic parser,
+     * then the same noise and proposal pipeline. At most [MAX_GENERIC_TOOLS] tools per run, and one tool failing never
+     * stops the rest. A toolkit with no read tool at all fails on its own, with a note the Collecting screen shows.
+     */
+    private suspend fun anyToolkit(
+        toolkit: String,
+        label: String,
+        accountId: String,
+        userId: String?,
+        ctx: BuildContext,
+        filter: NoiseFilter,
+        builder: ProposalBuilder,
+        seenProposalFps: MutableSet<String>,
+        now: Long,
+        noise: MutableMap<String, Int>,
+    ): AppRunStat {
+        val tools = readToolsFor(toolkit).filter { it !in ComposioCatalog.READ_TOOLS }.take(MAX_GENERIC_TOOLS)
+        if (tools.isEmpty()) throw ComposioException(ComposioErrorKind.NOT_FOUND, "No read tool found for $label")
+        val raw = ArrayList<RawItem>()
+        val notes = LinkedHashMap<String, String>()
+        var answered = 0
+        for (slug in tools) {
+            val result = try {
+                api.execute(slug, accountId, userId, emptyMap())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                notes[slug] = "$slug refused: ${(e.message ?: "no answer").take(60)}"
+                continue
+            }
+            if (!result.successful) {
+                notes[slug] = "$slug refused: ${(result.error ?: "no answer").take(60)}"
+                continue
+            }
+            answered++
+            val got = GenericParser.items(toolkit, slug, result.data, now)
+            if (got.isEmpty()) notes[slug] = "$slug returned nothing" else raw += got
+        }
+        if (answered == 0) {
+            throw ComposioException(ComposioErrorKind.TOOL_FAILED, notes.values.firstOrNull() ?: "$label refused every read")
+        }
+        val stat = process(toolkit, label, raw, now, ctx, filter, builder, seenProposalFps, now, noise)
+        return stat.copy(note = notes.values.take(3).joinToString("; ").take(160).ifBlank { null })
+    }
+
+    /** The read tools of a toolkit: the cached row, or a fresh look at its catalog. Empty means none found. */
+    private suspend fun readToolsFor(toolkit: String): List<String> {
+        val cached = dao.getToolkit(toolkit)?.readTools?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
+        if (!cached.isNullOrEmpty()) return cached
+        return try {
+            val reads = api.listTools(toolkit, limit = 100).items.map { it.slug }
+                .filter { ReadToolRules.isReadTool(it) }.distinct().take(MAX_READ_TOOLS)
+            dao.setToolkitReadTools(toolkit, reads.takeIf { it.isNotEmpty() }?.joinToString(","))
+            reads
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /** The name the Collecting screen shows: the connection's own label, else the cached toolkit row, else the slug. */
+    private suspend fun displayLabel(conn: LifeConnectionEntity): String {
+        val known = LifeApp.from(conn.id)
+        if (known != null) return conn.label.ifBlank { known.label }
+        val own = conn.label.takeIf { it.isNotBlank() && !it.equals(conn.id, true) }
+        val cached = dao.getToolkit(conn.id)?.name?.takeIf { it.isNotBlank() }
+        return own ?: cached ?: prettySlug(conn.id)
+    }
+
+    private fun prettySlug(slug: String): String = slug.split('_', '-', ' ').filter { it.isNotBlank() }
+        .joinToString(" ") { part -> part.replaceFirstChar { it.uppercaseChar() } }
 
     private fun itemFp(i: RawItem): String =
         if (i.type == RawType.EVENT) "${i.app}:${i.sourceId}:${i.startAt}" else "${i.app}:${i.sourceId}"
@@ -258,5 +346,8 @@ class CollectionRunner(
     companion object {
         private const val TAG = "LifeAgentRunner"
         private const val DAY = 24L * 60 * 60 * 1000
+        /** How many read tools of an unknown toolkit one run calls. */
+        private const val MAX_GENERIC_TOOLS = 5
+        private const val MAX_READ_TOOLS = 12
     }
 }
